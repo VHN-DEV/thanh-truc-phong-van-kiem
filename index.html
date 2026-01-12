@@ -86,7 +86,8 @@
         /* ========= ENEMY SYSTEM (Hành tinh đa sắc) ========= */
         class Enemy {
             constructor(x, y) {
-                this.r = (20 + Math.random() * 5) * scaleFactor; // bán kính biến thiên
+                // Bán kính từ 10 đến 80, tỉ lệ phi tuyến
+                this.r = (10 + Math.pow(Math.random(), 1.5) * 50) * scaleFactor; // bán kính biến thiên
                 this.maxHp = 1 + Math.floor(Math.random() * 100);
                 this.hp = this.maxHp;
                 this.x = x; this.y = y;
