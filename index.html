@@ -242,27 +242,42 @@ class Sword{
         ctx.shadowColor="#8fffe0";
         ctx.shadowBlur=20*scaleFactor;
 
-        // Mũi kiếm
+        // ===== Mũi kiếm =====
         ctx.beginPath();
-        ctx.moveTo(-3*scaleFactor,-62*scaleFactor);
-        ctx.quadraticCurveTo(0,-80*scaleFactor,3*scaleFactor,-62*scaleFactor);
-        ctx.fillStyle="#f0fff9";
+        ctx.moveTo(0,-70*scaleFactor);
+        ctx.bezierCurveTo(2*scaleFactor,-80*scaleFactor, -2*scaleFactor,-80*scaleFactor, 0,-70*scaleFactor);
+        ctx.fillStyle="#e0fff7";
         ctx.fill();
 
-        // Thân kiếm
-        const g=ctx.createLinearGradient(0,-60*scaleFactor,0,8*scaleFactor);
-        g.addColorStop(0,"#eafff7");
-        g.addColorStop(0.6,"#7fdcc0");
+        // ===== Thân kiếm (thon dài, hơi cong) =====
+        const swordWidth = 4*scaleFactor;
+        const swordLength = 70*scaleFactor;
+        const g = ctx.createLinearGradient(0,-swordLength,0,0);
+        g.addColorStop(0,"#d0fff5");
+        g.addColorStop(0.5,"#7fdcc0");
         g.addColorStop(1,"#3fa78a");
-        ctx.fillStyle=g;
-        ctx.fillRect(-2.6*scaleFactor,-60*scaleFactor,5.2*scaleFactor,68*scaleFactor);
+        ctx.fillStyle = g;
 
-        // Chuôi kiếm
-        const h=ctx.createLinearGradient(0,8*scaleFactor,0,28*scaleFactor);
+        ctx.beginPath();
+        ctx.moveTo(-swordWidth/2,0);
+        ctx.lineTo(-swordWidth/2,-swordLength);
+        ctx.quadraticCurveTo(0,-swordLength-10*scaleFactor, swordWidth/2,-swordLength);
+        ctx.lineTo(swordWidth/2,0);
+        ctx.closePath();
+        ctx.fill();
+
+        // ===== Chuôi kiếm (ngắn, hơi mở rộng) =====
+        const h = ctx.createLinearGradient(0,0,0,20*scaleFactor);
         h.addColorStop(0,"#6bcbb0");
         h.addColorStop(1,"#2f7f68");
-        ctx.fillStyle=h;
-        ctx.fillRect(-2.3*scaleFactor,8*scaleFactor,4.6*scaleFactor,20*scaleFactor);
+        ctx.fillStyle = h;
+        ctx.beginPath();
+        ctx.moveTo(-6*scaleFactor,0);
+        ctx.lineTo(-4*scaleFactor,20*scaleFactor);
+        ctx.lineTo(4*scaleFactor,20*scaleFactor);
+        ctx.lineTo(6*scaleFactor,0);
+        ctx.closePath();
+        ctx.fill();
 
         ctx.restore();
     }
