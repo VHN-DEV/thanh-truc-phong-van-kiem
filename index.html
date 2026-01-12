@@ -1,341 +1,361 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
-<meta charset="UTF-8">
-<title>72 Thanh Trúc Phong Vân Kiếm – Kiếm Khí Phiêu Dật</title>
-<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-<style>
-html,body{
-    margin:0;
-    padding:0;
-    background:radial-gradient(circle,#040a14,#000);
-    overflow:hidden;
-    cursor:none;
-    touch-action: none;
-}
-canvas{display:block}
-</style>
+    <meta charset="UTF-8">
+    <title>72 Thanh Trúc Phong Vân Kiếm – Kiếm Khí Phiêu Dật</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <style>
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            background: radial-gradient(circle, #040a14, #000);
+            overflow: hidden;
+            cursor: none;
+            touch-action: none;
+        }
+
+        canvas {
+            display: block
+        }
+    </style>
 </head>
+
 <body>
-<canvas id="c"></canvas>
+    <canvas id="c"></canvas>
 
-<script>
-/* ========= CANVAS SETUP ========= */
-const canvas = document.getElementById("c");
-const ctx = canvas.getContext("2d");
+    <script>
+        /* ========= CANVAS SETUP ========= */
+        const canvas = document.getElementById("c");
+        const ctx = canvas.getContext("2d");
 
-let scaleFactor = 1;
-
-function resize(){
-    canvas.width = innerWidth;
-    canvas.height = innerHeight;
-    const baseWidth = 1920;
-    scaleFactor = canvas.width / baseWidth;
-}
-resize();
-addEventListener("resize", resize);
-
-/* ========= INPUT & PHYSIC STATE ========= */
-const mouse = { x: innerWidth/2, y: innerHeight/2, px:0, py:0 };
-let attack = false;
-let mouseSpeed = 0;
-let guardForm = 1;
-
-// Tâm trận pháp với hệ thống vận tốc để tạo độ trễ (Easing)
-const guardCenter = { 
-    x: mouse.x, 
-    y: mouse.y,
-    vx: 0, 
-    vy: 0 
-};
-
-/* ========= TIMING ========= */
-let lastTapTime = 0;
-let attackTimer = null;
-const DOUBLE_TAP_DELAY = 300;
-const ATTACK_DELAY = 180;
-
-/* ========= POINTER EVENTS ========= */
-function getPointerPos(e){
-    if(e.pointerType === "touch" && e.touches && e.touches.length>0){
-        return { x: e.touches[0].clientX, y: e.touches[0].clientY };
-    }
-    return { x: e.clientX, y: e.clientY };
-}
-
-addEventListener("pointermove", e=>{
-    e.preventDefault();
-    mouse.px = mouse.x;
-    mouse.py = mouse.y;
-    const p = getPointerPos(e);
-    mouse.x = p.x;
-    mouse.y = p.y;
-},{passive:false});
-
-addEventListener("pointerdown", e=>{
-    e.preventDefault();
-    const now = performance.now();
-    if(now - lastTapTime < DOUBLE_TAP_DELAY){
-        guardForm = guardForm === 1 ? 2 : 1;
-        clearTimeout(attackTimer);
-        attackTimer = null;
-        attack = false;
-        lastTapTime = 0;
-        return;
-    }
-    lastTapTime = now;
-    attackTimer = setTimeout(()=> attack = true, ATTACK_DELAY);
-},{passive:false});
-
-addEventListener("pointerup", e=>{
-    e.preventDefault();
-    attack = false;
-    clearTimeout(attackTimer);
-    attackTimer = null;
-},{passive:false});
-
-/* ========= ENEMY SYSTEM ========= */
-class Enemy{
-    constructor(x,y){
-        this.r = (14 + Math.random()*26) * scaleFactor;
-        this.maxHp = 1 + Math.floor(Math.random()*100);
-        this.hp = this.maxHp;
-        this.x=x; this.y=y;
-    }
-    hit(){ 
-        this.hp--; 
-        if(this.hp <= 0){
-            spawnEnemy();
-            return true;
+        let scaleFactor = 1;
+        function resize() {
+            canvas.width = innerWidth;
+            canvas.height = innerHeight;
+            const baseWidth = 1920;
+            scaleFactor = canvas.width / baseWidth;
         }
-        return false;
-    }
-    draw(){
-        ctx.save();
-        ctx.translate(this.x,this.y);
-        ctx.shadowColor="#ff7777";
-        ctx.shadowBlur=18*scaleFactor;
-        ctx.beginPath();
-        ctx.arc(0,0,this.r,0,Math.PI*2);
-        ctx.fillStyle="rgba(255,90,90,0.85)";
-        ctx.fill();
-        ctx.restore();
-    }
-}
+        resize();
+        addEventListener("resize", resize);
 
-const enemies=[];
-function spawnEnemy(){
-    enemies.push(new Enemy(
-        Math.random()*canvas.width,
-        Math.random()*canvas.height
-    ));
-}
-for(let i=0;i<6;i++) spawnEnemy();
+        /* ========= INPUT & PHYSIC STATE ========= */
+        const mouse = { x: innerWidth / 2, y: innerHeight / 2, px: 0, py: 0 };
+        let attack = false;
+        let mouseSpeed = 0;
+        let guardForm = 1;
+        const guardCenter = { x: mouse.x, y: mouse.y, vx: 0, vy: 0 };
+        let lastTapTime = 0;
+        let attackTimer = null;
+        const DOUBLE_TAP_DELAY = 300;
+        const ATTACK_DELAY = 180;
 
-/* ========= SWORD CLASS ========= */
-const COUNT = 72;
-const swords=[];
-
-class Sword{
-    constructor(i){
-        this.layer = Math.floor(i/24);
-        this.baseAngle = (Math.PI*2/24)*(i%24);
-        this.spinAngle = 0;
-        this.spinSpeed = (0.07/(this.layer+1))*(this.layer%2? -1:1);
-        this.radius = (130 + this.layer*70) * scaleFactor;
-        this.x=mouse.x; this.y=mouse.y;
-        this.vx=0; this.vy=0;
-        this.drawAngle=0;
-        this.trail=[];
-        this.breath = Math.random()*Math.PI*2;
-        this.breathSpeed = 0.015 + Math.random()*0.01;
-        this.attackDelay = this.layer*6 + Math.random()*10;
-        this.attackFrame = 0;
-    }
-
-    update(){
-        this.breath += this.breathSpeed;
-        const breathPulse = Math.sin(this.breath)*8*scaleFactor;
-        const r = this.radius + breathPulse;
-
-        let mode;
-        if(mouseSpeed < 3){
-            mode = guardForm===1 ? "STABLE":"DYNAMIC";
-        } else mode="FOLLOW";
-
-        if(!attack){
-            this.spinAngle += this.spinSpeed;
-            const a = this.baseAngle + this.spinAngle;
-            const tx = guardCenter.x + Math.cos(a)*r;
-            const ty = guardCenter.y + Math.sin(a)*r;
-
-            // Di chuyển mượt mà hơn với hệ số bám thấp (0.1 - 0.2)
-            if(mode==="STABLE"){
-                this.x += (tx-this.x)*0.15;
-                this.y += (ty-this.y)*0.15;
-                this.vx*=0.3; this.vy*=0.3;
-                this.drawAngle = a + Math.PI/2;
-            }
-            else if(mode==="DYNAMIC"){
-                const dx=tx-this.x, dy=ty-this.y;
-                const d=Math.hypot(dx,dy)||1;
-                this.vx+=(dx/d)*Math.min(d*0.05, 4*scaleFactor);
-                this.vy+=(dy/d)*Math.min(d*0.05, 4*scaleFactor);
-                this.vx*=0.85; this.vy*=0.85;
-                this.x+=this.vx; this.y+=this.vy;
-                this.drawAngle=Math.atan2(this.vy,this.vx)+Math.PI/2;
-            }
-            else{
-                this.x += (tx-this.x)*0.1;
-                this.y += (ty-this.y)*0.1;
-                this.drawAngle=Math.atan2(ty-this.y,tx-this.x)+Math.PI/2;
-            }
-
-            this.attackFrame = 0;
-            this.trail = [];
+        function getPointerPos(e) {
+            if (e.pointerType === "touch" && e.touches && e.touches.length > 0) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            return { x: e.clientX, y: e.clientY };
         }
-        else{
-            // Logic tấn công giữ nguyên
-            this.attackFrame++;
-            if(this.attackFrame < this.attackDelay) return;
 
-            let t=null, md=1e9;
-            for(const e of enemies){
-                const d=Math.hypot(e.x-mouse.x,e.y-mouse.y);
-                if(d<md){md=d;t=e;}
+        addEventListener("pointermove", e => {
+            e.preventDefault();
+            mouse.px = mouse.x; mouse.py = mouse.y;
+            const p = getPointerPos(e);
+            mouse.x = p.x; mouse.y = p.y;
+        }, { passive: false });
+
+        addEventListener("pointerdown", e => {
+            e.preventDefault();
+            const now = performance.now();
+            if (now - lastTapTime < DOUBLE_TAP_DELAY) {
+                guardForm = guardForm === 1 ? 2 : 1;
+                clearTimeout(attackTimer); attackTimer = null; attack = false;
+                lastTapTime = 0;
+                return;
             }
-            if(t){
-                const dx=t.x-this.x, dy=t.y-this.y;
-                const d=Math.hypot(dx,dy)||1;
-                this.vx+=(dx/d)*10*scaleFactor;
-                this.vy+=(dy/d)*10*scaleFactor;
-                this.vx*=0.92; this.vy*=0.92;
-                this.x+=this.vx; this.y+=this.vy;
-                this.drawAngle=Math.atan2(this.vy,this.vx)+Math.PI/2;
-                if(Math.hypot(this.x-t.x,this.y-t.y) < t.r){
-                    const dead = t.hit();
-                    if(dead){
-                        const index = enemies.indexOf(t);
-                        if(index !== -1) enemies.splice(index,1);
+            lastTapTime = now;
+            attackTimer = setTimeout(() => attack = true, ATTACK_DELAY);
+        }, { passive: false });
+
+        addEventListener("pointerup", e => {
+            e.preventDefault();
+            attack = false;
+            clearTimeout(attackTimer);
+            attackTimer = null;
+        }, { passive: false });
+
+        /* ========= ENEMY SYSTEM (Hành tinh đa sắc) ========= */
+        class Enemy {
+            constructor(x, y) {
+                this.r = (20 + Math.random() * 5) * scaleFactor; // bán kính biến thiên
+                this.maxHp = 1 + Math.floor(Math.random() * 100);
+                this.hp = this.maxHp;
+                this.x = x; this.y = y;
+                // Gradient màu hành tinh
+                const colors = [
+                    ["#ff9999", "#cc3333"],   // đỏ
+                    ["#99ccff", "#3366cc"],   // xanh dương
+                    ["#99ff99", "#33cc33"],   // xanh lá
+                    ["#ffcc99", "#cc6600"],   // cam
+                    ["#ff99ff", "#cc33cc"],   // tím
+                    ["#ffff99", "#cccc33"]    // vàng
+                ];
+                const c = colors[Math.floor(Math.random() * colors.length)];
+                this.gradientColors = c;
+            }
+            hit() {
+                this.hp--;
+                if (this.hp <= 0) {
+                    spawnEnemy();
+                    return true;
+                }
+                return false;
+            }
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                const g = ctx.createRadialGradient(0, 0, this.r * 0.2, 0, 0, this.r);
+                g.addColorStop(0, this.gradientColors[0]);
+                g.addColorStop(1, this.gradientColors[1]);
+                ctx.shadowColor = this.gradientColors[1];
+                ctx.shadowBlur = 10 * scaleFactor;
+                ctx.beginPath();
+                ctx.arc(0, 0, this.r, 0, Math.PI * 2);
+                ctx.fillStyle = g;
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        const enemies = [];
+        function spawnEnemy() {
+            enemies.push(new Enemy(
+                Math.random() * canvas.width,
+                Math.random() * canvas.height
+            ));
+        }
+        for (let i = 0; i < 6; i++) spawnEnemy();
+
+        /* ========= SWORD CLASS ========= */
+        const COUNT = 72;
+        const swords = [];
+        class Sword {
+            constructor(i) {
+                this.layer = Math.floor(i / 24);
+                this.baseAngle = (Math.PI * 2 / 24) * (i % 24);
+                this.spinAngle = 0;
+                this.spinSpeed = (0.07 / (this.layer + 1)) * (this.layer % 2 ? -1 : 1);
+                this.radius = (130 + this.layer * 70) * scaleFactor;
+                this.x = mouse.x; this.y = mouse.y;
+                this.vx = 0; this.vy = 0;
+                this.drawAngle = 0;
+                this.trail = [];
+                this.breath = Math.random() * Math.PI * 2;
+                this.breathSpeed = 0.015 + Math.random() * 0.01;
+                this.attackDelay = this.layer * 6 + Math.random() * 10;
+                this.attackFrame = 0;
+            }
+            update() {
+                this.breath += this.breathSpeed;
+                const breathPulse = Math.sin(this.breath) * 8 * scaleFactor;
+                const r = this.radius + breathPulse;
+                let mode;
+                if (mouseSpeed < 3) mode = guardForm === 1 ? "STABLE" : "DYNAMIC";
+                else mode = "FOLLOW";
+
+                if (!attack) {
+                    this.spinAngle += this.spinSpeed;
+                    const a = this.baseAngle + this.spinAngle;
+                    const tx = guardCenter.x + Math.cos(a) * r;
+                    const ty = guardCenter.y + Math.sin(a) * r;
+                    if (mode === "STABLE") {
+                        this.x += (tx - this.x) * 0.15;
+                        this.y += (ty - this.y) * 0.15;
+                        this.vx *= 0.3; this.vy *= 0.3;
+                        this.drawAngle = a + Math.PI / 2;
+                    } else if (mode === "DYNAMIC") {
+                        const dx = tx - this.x, dy = ty - this.y;
+                        const d = Math.hypot(dx, dy) || 1;
+                        this.vx += (dx / d) * Math.min(d * 0.05, 4 * scaleFactor);
+                        this.vy += (dy / d) * Math.min(d * 0.05, 4 * scaleFactor);
+                        this.vx *= 0.85; this.vy *= 0.85;
+                        this.x += this.vx; this.y += this.vy;
+                        this.drawAngle = Math.atan2(this.vy, this.vx) + Math.PI / 2;
+                    } else {
+                        this.x += (tx - this.x) * 0.1;
+                        this.y += (ty - this.y) * 0.1;
+                        this.drawAngle = Math.atan2(ty - this.y, tx - this.x) + Math.PI / 2;
+                    }
+                    this.attackFrame = 0;
+                    this.trail = [];
+                } else {
+                    this.attackFrame++;
+                    if (this.attackFrame < this.attackDelay) return;
+                    let t = null, md = 1e9;
+                    for (const e of enemies) {
+                        const d = Math.hypot(e.x - mouse.x, e.y - mouse.y);
+                        if (d < md) { md = d; t = e; }
+                    }
+                    if (t) {
+                        const dx = t.x - this.x, dy = t.y - this.y;
+                        const d = Math.hypot(dx, dy) || 1;
+                        this.vx += (dx / d) * 10 * scaleFactor;
+                        this.vy += (dy / d) * 10 * scaleFactor;
+                        this.vx *= 0.92; this.vy *= 0.92;
+                        this.x += this.vx; this.y += this.vy;
+                        this.drawAngle = Math.atan2(this.vy, this.vx) + Math.PI / 2;
+                        if (Math.hypot(this.x - t.x, this.y - t.y) < t.r) {
+                            const dead = t.hit();
+                            if (dead) {
+                                const index = enemies.indexOf(t);
+                                if (index !== -1) enemies.splice(index, 1);
+                            }
+                        }
+                        this.trail.push({ x: this.x, y: this.y });
+                        if (this.trail.length > 6) this.trail.shift();
                     }
                 }
-                this.trail.push({x:this.x, y:this.y});
-                if(this.trail.length>6) this.trail.shift();
+            }
+            draw() {
+                if (this.trail.length > 1) {
+                    ctx.beginPath();
+                    ctx.moveTo(this.trail[0].x, this.trail[0].y);
+                    for (const p of this.trail) ctx.lineTo(p.x, p.y);
+                    ctx.strokeStyle = "rgba(120,255,210,0.3)";
+                    ctx.lineWidth = 2 * scaleFactor;
+                    ctx.stroke();
+                }
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.drawAngle);
+                // Hiệu ứng điện
+                const auraCount = 3 + Math.floor(Math.random() * 2);
+                for (let i = 0; i < auraCount; i++) {
+                    ctx.save();
+                    ctx.shadowColor = "#fffaa0";
+                    ctx.shadowBlur = 8 * scaleFactor;
+                    ctx.beginPath();
+                    const swordLength = 70 * scaleFactor;
+                    let py = -Math.random() * swordLength;
+                    let px = (Math.random() - 0.5) * 6 * scaleFactor;
+                    ctx.moveTo(px, py);
+                    const segments = 3 + Math.floor(Math.random() * 2);
+                    for (let s = 0; s < segments; s++) {
+                        px += (Math.random() - 0.5) * 8 * scaleFactor;
+                        py += (Math.random() - 0.5) * 6 * scaleFactor;
+                        ctx.lineTo(px, py);
+                    }
+                    ctx.strokeStyle = `rgba(255,255,180,${0.35 + Math.random() * 0.3})`;
+                    ctx.lineWidth = 1.5 * scaleFactor;
+                    ctx.stroke();
+                    ctx.restore();
+                }
+                ctx.shadowColor = "#8fffe0";
+                ctx.shadowBlur = 20 * scaleFactor;
+                // Mũi kiếm
+                ctx.beginPath();
+                ctx.moveTo(0, -70 * scaleFactor);
+                ctx.bezierCurveTo(2 * scaleFactor, -80 * scaleFactor, -2 * scaleFactor, -80 * scaleFactor, 0, -70 * scaleFactor);
+                ctx.fillStyle = "#e0fff7";
+                ctx.fill();
+                // Thân kiếm
+                const swordWidth = 4 * scaleFactor;
+                const swordLength = 70 * scaleFactor;
+                const g = ctx.createLinearGradient(0, -swordLength, 0, 0);
+                g.addColorStop(0, "#d0fff5");
+                g.addColorStop(0.5, "#7fdcc0");
+                g.addColorStop(1, "#3fa78a");
+                ctx.fillStyle = g;
+                ctx.beginPath();
+                ctx.moveTo(-swordWidth / 2, 0);
+                ctx.lineTo(-swordWidth / 2, -swordLength);
+                ctx.quadraticCurveTo(0, -swordLength - 10 * scaleFactor, swordWidth / 2, -swordLength);
+                ctx.lineTo(swordWidth / 2, 0);
+                ctx.closePath();
+                ctx.fill();
+                // Chuôi kiếm
+                const h = ctx.createLinearGradient(0, 0, 0, 14 * scaleFactor);
+                h.addColorStop(0, "#6bcbb0");
+                h.addColorStop(1, "#2f7f68");
+                ctx.fillStyle = h;
+                ctx.beginPath();
+                ctx.moveTo(-3 * scaleFactor, 0);
+                ctx.lineTo(-2 * scaleFactor, 14 * scaleFactor);
+                ctx.lineTo(2 * scaleFactor, 14 * scaleFactor);
+                ctx.lineTo(3 * scaleFactor, 0);
+                ctx.closePath();
+                ctx.fill();
+                ctx.restore();
             }
         }
-    }
+        for (let i = 0; i < COUNT; i++) swords.push(new Sword(i));
 
-    draw(){
-        // Vẽ vệt kiếm khi bay
-        if(this.trail.length > 1){
+        /* ========= FORMATION RENDER ========= */
+        function drawFormationCore() {
+            ctx.save();
+            ctx.translate(guardCenter.x, guardCenter.y);
+            ctx.rotate(performance.now() * 0.0002);
+            ctx.strokeStyle = "rgba(120,255,210,0.1)";
+            ctx.lineWidth = 1.5 * scaleFactor;
             ctx.beginPath();
-            ctx.moveTo(this.trail[0].x, this.trail[0].y);
-            for(const p of this.trail) ctx.lineTo(p.x,p.y);
-            ctx.strokeStyle="rgba(120,255,210,0.3)";
-            ctx.lineWidth=2*scaleFactor;
+            ctx.arc(0, 0, 50 * scaleFactor, 0, Math.PI * 2);
             ctx.stroke();
+            ctx.restore();
         }
 
-        ctx.save();
-        ctx.translate(this.x,this.y);
-        ctx.rotate(this.drawAngle);
-        ctx.shadowColor="#8fffe0";
-        ctx.shadowBlur=20*scaleFactor;
+        function drawCursor() {
+            ctx.beginPath();
+            ctx.arc(mouse.x, mouse.y, 4 * scaleFactor, 0, Math.PI * 2);
+            ctx.fillStyle = "#6fffe0";
+            ctx.fill();
+        }
 
-        // ===== Mũi kiếm =====
-        ctx.beginPath();
-        ctx.moveTo(0,-70*scaleFactor);
-        ctx.bezierCurveTo(2*scaleFactor,-80*scaleFactor, -2*scaleFactor,-80*scaleFactor, 0,-70*scaleFactor);
-        ctx.fillStyle="#e0fff7";
-        ctx.fill();
+        /* ========= STARFIELD ========= */
+        const STAR_COUNT = 150;
+        const stars = [];
+        for (let i = 0; i < STAR_COUNT; i++) {
+            stars.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                r: Math.random() * 1.5 * scaleFactor + 0.5 * scaleFactor,
+                alpha: Math.random() * 0.8 + 0.2,
+                delta: Math.random() * 0.02 + 0.005
+            });
+        }
+        function drawStars() {
+            for (const s of stars) {
+                s.alpha += (Math.random() * 0.02 - 0.01);
+                if (s.alpha > 1) s.alpha = 1;
+                if (s.alpha < 0.2) s.alpha = 0.2;
+                ctx.beginPath();
+                ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255,255,255,${s.alpha})`;
+                ctx.fill();
+            }
+        }
 
-        // ===== Thân kiếm (thon dài, hơi cong) =====
-        const swordWidth = 4*scaleFactor;
-        const swordLength = 70*scaleFactor;
-        const g = ctx.createLinearGradient(0,-swordLength,0,0);
-        g.addColorStop(0,"#d0fff5");
-        g.addColorStop(0.5,"#7fdcc0");
-        g.addColorStop(1,"#3fa78a");
-        ctx.fillStyle = g;
+        /* ========= MAIN LOOP ========= */
+        function animate() {
+            ctx.fillStyle = "rgba(0,0,8,0.25)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        ctx.beginPath();
-        ctx.moveTo(-swordWidth/2,0);
-        ctx.lineTo(-swordWidth/2,-swordLength);
-        ctx.quadraticCurveTo(0,-swordLength-10*scaleFactor, swordWidth/2,-swordLength);
-        ctx.lineTo(swordWidth/2,0);
-        ctx.closePath();
-        ctx.fill();
+            mouseSpeed = Math.hypot(mouse.x - mouse.px, mouse.y - mouse.py);
 
-        // ===== Chuôi kiếm (nhỏ gọn, vừa đủ) =====
-        const h = ctx.createLinearGradient(0,0,0,14*scaleFactor); // chiều dài chuôi giảm từ 20 → 14
-        h.addColorStop(0,"#6bcbb0");
-        h.addColorStop(1,"#2f7f68");
-        ctx.fillStyle = h;
-        ctx.beginPath();
-        ctx.moveTo(-3*scaleFactor,0);   // rộng giảm từ 6 → 3
-        ctx.lineTo(-2*scaleFactor,14*scaleFactor);
-        ctx.lineTo(2*scaleFactor,14*scaleFactor);
-        ctx.lineTo(3*scaleFactor,0);
-        ctx.closePath();
-        ctx.fill();
+            let dx = mouse.x - guardCenter.x;
+            let dy = mouse.y - guardCenter.y;
+            guardCenter.vx += dx * 0.04; guardCenter.vy += dy * 0.04;
+            guardCenter.vx *= 0.82; guardCenter.vy *= 0.82;
+            guardCenter.x += guardCenter.vx; guardCenter.y += guardCenter.vy;
 
-        ctx.restore();
-    }
-}
+            drawStars();
+            drawFormationCore();
+            enemies.forEach(e => e.draw());
+            swords.forEach(s => { s.update(); s.draw(); });
+            drawCursor();
 
-for(let i=0;i<COUNT;i++) swords.push(new Sword(i));
-
-/* ========= FORMATION RENDER ========= */
-function drawFormationCore(){
-    ctx.save();
-    ctx.translate(guardCenter.x,guardCenter.y);
-    ctx.rotate(performance.now()*0.0002);
-    ctx.strokeStyle="rgba(120,255,210,0.1)";
-    ctx.lineWidth=1.5*scaleFactor;
-    ctx.beginPath();
-    ctx.arc(0,0,50*scaleFactor,0,Math.PI*2);
-    ctx.stroke();
-    ctx.restore();
-}
-
-function drawCursor(){
-    ctx.beginPath();
-    ctx.arc(mouse.x,mouse.y,4*scaleFactor,0,Math.PI*2);
-    ctx.fillStyle="#6fffe0";
-    ctx.fill();
-}
-
-/* ========= MAIN LOOP ========= */
-function animate(){
-    // Hiệu ứng lưu ảnh (motion blur)
-    ctx.fillStyle="rgba(0,0,8,0.25)";
-    ctx.fillRect(0,0,canvas.width,canvas.height);
-
-    mouseSpeed = Math.hypot(mouse.x-mouse.px,mouse.y-mouse.py);
-
-    // VẬT LÝ TÂM TRẬN: Tạo độ trễ và bay lượn theo chuột
-    let dx = mouse.x - guardCenter.x;
-    let dy = mouse.y - guardCenter.y;
-    
-    // Lực đàn hồi kéo tâm trận về phía chuột
-    guardCenter.vx += dx * 0.04; 
-    guardCenter.vy += dy * 0.04;
-    
-    // Ma sát để làm mượt chuyển động (giá trị càng thấp càng mượt và trễ)
-    guardCenter.vx *= 0.82;
-    guardCenter.vy *= 0.82;
-    
-    guardCenter.x += guardCenter.vx;
-    guardCenter.y += guardCenter.vy;
-
-    drawFormationCore();
-    enemies.forEach(e=>e.draw());
-    swords.forEach(s=>{s.update();s.draw();});
-    drawCursor();
-
-    requestAnimationFrame(animate);
-}
-animate();
-</script>
+            requestAnimationFrame(animate);
+        }
+        animate();
+    </script>
 </body>
+
 </html>
