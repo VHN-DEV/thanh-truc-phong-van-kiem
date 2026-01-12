@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>72 Thanh Trúc Phong Vân Kiếm – Đại Canh Kiếm Trận</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
 <style>
 html,body{
     margin:0;
@@ -10,6 +11,7 @@ html,body{
     background:radial-gradient(circle,#040a14,#000);
     overflow:hidden;
     cursor:none;
+    touch-action: none; /* Ngăn scroll khi thao tác touch */
 }
 canvas{display:block}
 </style>
@@ -46,23 +48,28 @@ let attackTimer = null;
 const DOUBLE_TAP_DELAY = 300;
 const ATTACK_DELAY = 180;
 
+/* ========= POINTER ========= */
 function getPointerPos(e){
+    if(e.pointerType === "touch" && e.touches && e.touches.length>0){
+        return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    }
     return { x: e.clientX, y: e.clientY };
 }
 
-/* ========= POINTER ========= */
 addEventListener("pointermove", e=>{
+    e.preventDefault();
     mouse.px = mouse.x;
     mouse.py = mouse.y;
     const p = getPointerPos(e);
     mouse.x = p.x;
     mouse.y = p.y;
-});
+},{passive:false});
 
-addEventListener("pointerdown", ()=>{
+addEventListener("pointerdown", e=>{
+    e.preventDefault();
     const now = performance.now();
 
-    if (now - lastTapTime < DOUBLE_TAP_DELAY) {
+    if(now - lastTapTime < DOUBLE_TAP_DELAY){
         guardForm = guardForm === 1 ? 2 : 1;
         clearTimeout(attackTimer);
         attackTimer = null;
@@ -73,19 +80,20 @@ addEventListener("pointerdown", ()=>{
 
     lastTapTime = now;
     attackTimer = setTimeout(()=> attack = true, ATTACK_DELAY);
-});
+},{passive:false});
 
-addEventListener("pointerup", ()=>{
+addEventListener("pointerup", e=>{
+    e.preventDefault();
     attack = false;
     clearTimeout(attackTimer);
     attackTimer = null;
-});
+},{passive:false});
 
 /* ========= ENEMY ========= */
 class Enemy{
     constructor(x,y){
         this.r = 14 + Math.random()*26;
-        this.maxHp = 1 + Math.floor(Math.random()*100); // hp từ 1 đến 100
+        this.maxHp = 1 + Math.floor(Math.random()*100);
         this.hp = this.maxHp;
         this.x=x; this.y=y;
     }
