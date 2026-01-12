@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>72 Thanh Trúc Phong Vân Kiếm – Đại Canh Kiếm Trận</title>
+<style>
+html,body{
+    margin:0;
+    padding:0;
+    background:radial-gradient(circle,#030914,#000);
+    overflow:hidden;
+    cursor:none;
+}
+canvas{display:block}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<script>
+const canvas = document.getElementById("c");
+const ctx = canvas.getContext("2d");
+
+function resize(){
+    canvas.width = innerWidth;
+    canvas.height = innerHeight;
+}
+resize();
+addEventListener("resize", resize);
+
+/* ========= INPUT ========= */
+const mouse = { x: innerWidth/2, y: innerHeight/2, px:0, py:0 };
+let attack = false;
+
+/* guardForm:
+   1 = hộ thể ổn định
+   2 = hộ thể linh động */
+let guardForm = 1;
+
+const guardCenter = { x: mouse.x, y: mouse.y };
+
+/* ========= TIMING ========= */
+let lastTapTime = 0;
+let attackTimer = null;
+
+const DOUBLE_TAP_DELAY = 300;   // đổi trận
+const ATTACK_DELAY = 180;       // delay kích hoạt tấn công
+
+function getPointerPos(e){
+    return { x: e.clientX, y: e.clientY };
+}
+
+/* ========= POINTER MOVE ========= */
+addEventListener("pointermove", e=>{
+    mouse.px = mouse.x;
+    mouse.py = mouse.y;
+    const p = getPointerPos(e);
+    mouse.x = p.x;
+    mouse.y = p.y;
+});
+
+/* ========= POINTER DOWN ========= */
+addEventListener("pointerdown", e=>{
+    const now = performance.now();
+
+    // kiểm tra double-tap
+    if (now - lastTapTime < DOUBLE_TAP_DELAY) {
+        guardForm = guardForm === 1 ? 2 : 1;
+
+        // huỷ tấn công nếu đang chờ
+        clearTimeout(attackTimer);
+        attackTimer = null;
+        attack = false;
+
+        lastTapTime = 0;
+        return;
+    }
+
+    lastTapTime = now;
+
+    // delay tấn công
+    attackTimer = setTimeout(() => {
+        attack = true;
+    }, ATTACK_DELAY);
+});
+
+/* ========= POINTER UP ========= */
+addEventListener("pointerup", ()=>{
+    attack = false;
+    clearTimeout(attackTimer);
+    attackTimer = null;
+});
+
+/* ========= ENEMY ========= */
+class Enemy{
+    constructor(x,y){
+        this.r = 12 + Math.random()*26;
+        this.hp = Math.ceil(this.r/10);
+        this.x=x; this.y=y;
+        this.dead=false;
+    }
+    hit(){
+        this.hp--;
+        if(this.hp<=0 && !this.dead){
+            this.dead=true;
+            setTimeout(spawnEnemy,1000);
+        }
+    }
+    draw(){
+        ctx.save();
+        ctx.translate(this.x,this.y);
+        ctx.shadowColor="#ff6666";
+        ctx.shadowBlur=18;
+        ctx.beginPath();
+        ctx.arc(0,0,this.r,0,Math.PI*2);
+        ctx.fillStyle="rgba(255,80,80,0.9)";
+        ctx.fill();
+        ctx.restore();
+    }
+}
+
+const enemies=[];
+function spawnEnemy(){
+    enemies.push(new Enemy(
+        Math.random()*canvas.width,
+        Math.random()*canvas.height
+    ));
+}
+for(let i=0;i<6;i++) spawnEnemy();
+
+/* ========= SWORD ========= */
+const COUNT = 72;
+const swords=[];
+
+class Sword{
+    constructor(i){
+        this.layer = Math.floor(i/24);
+        this.baseAngle = (Math.PI*2/24)*(i%24);
+        this.spinAngle = 0;
+        this.spinSpeed =
+            (0.095/(this.layer+1)) *
+            (this.layer%2===0?1:-1);
+
+        this.radius = 110 + this.layer*60;
+        this.x=mouse.x; this.y=mouse.y;
+        this.vx=0; this.vy=0;
+        this.drawAngle=0;
+        this.trail=[];
+    }
+
+    update(){
+        /* xác định trạng thái theo tốc độ chuột */
+        let mode;
+        if(mouseSpeed < 2.8){
+            mode = guardForm===1
+                ? "GUARD_STABLE"
+                : "GUARD_DYNAMIC";
+        }else{
+            mode = "FOLLOW";
+        }
+
+        if(!attack){
+            this.spinAngle += this.spinSpeed;
+            const a = this.baseAngle + this.spinAngle;
+            const tx = guardCenter.x + Math.cos(a)*this.radius;
+            const ty = guardCenter.y + Math.sin(a)*this.radius;
+
+            if(mode==="GUARD_STABLE"){
+                this.x += (tx-this.x)*0.6;
+                this.y += (ty-this.y)*0.6;
+                this.vx*=0.35; this.vy*=0.35;
+                this.drawAngle = a + Math.PI/2;
+            }
+
+            else if(mode==="GUARD_DYNAMIC"){
+                const dx=tx-this.x, dy=ty-this.y;
+                const d=Math.hypot(dx,dy)||1;
+                const f=Math.min(d*0.085,3.8);
+                this.vx+=(dx/d)*f;
+                this.vy+=(dy/d)*f;
+                this.vx*=0.82; this.vy*=0.82;
+                this.x+=this.vx; this.y+=this.vy;
+                this.drawAngle=Math.atan2(this.vy,this.vx)+Math.PI/2;
+            }
+
+            else{
+                const dx=tx-this.x, dy=ty-this.y;
+                this.x+=dx*0.25;
+                this.y+=dy*0.25;
+                this.drawAngle=Math.atan2(dy,dx)+Math.PI/2;
+            }
+        }
+        else{
+            let t=null, md=1e9;
+            for(const e of enemies){
+                const d=Math.hypot(e.x-mouse.x,e.y-mouse.y);
+                if(d<md){md=d;t=e;}
+            }
+            if(t){
+                const dx=t.x-this.x, dy=t.y-this.y;
+                const d=Math.hypot(dx,dy)||1;
+                this.vx+=(dx/d)*9.2;
+                this.vy+=(dy/d)*9.2;
+                this.vx*=0.92; this.vy*=0.92;
+                this.x+=this.vx; this.y+=this.vy;
+                this.drawAngle=Math.atan2(this.vy,this.vx)+Math.PI/2;
+                if(Math.hypot(this.x-t.x,this.y-t.y)<t.r)
+                    t.hit();
+            }
+        }
+
+        this.trail.push({x:this.x,y:this.y});
+        if(this.trail.length>28) this.trail.shift();
+    }
+
+    draw(){
+        ctx.beginPath();
+        for(const p of this.trail) ctx.lineTo(p.x,p.y);
+        ctx.strokeStyle="rgba(120,255,210,0.45)";
+        ctx.lineWidth=2.1;
+        ctx.stroke();
+
+        ctx.save();
+        ctx.translate(this.x,this.y);
+        ctx.rotate(this.drawAngle);
+        ctx.shadowColor="#8fffe0";
+        ctx.shadowBlur=22;
+
+        ctx.beginPath();
+        ctx.moveTo(-3,-62);
+        ctx.quadraticCurveTo(0,-80,3,-62);
+        ctx.fillStyle="#f0fff9";
+        ctx.fill();
+
+        const g=ctx.createLinearGradient(0,-60,0,8);
+        g.addColorStop(0,"#eafff7");
+        g.addColorStop(0.6,"#7fdcc0");
+        g.addColorStop(1,"#3fa78a");
+        ctx.fillStyle=g;
+        ctx.fillRect(-2.6,-60,5.2,68);
+
+        const h=ctx.createLinearGradient(0,8,0,28);
+        h.addColorStop(0,"#6bcbb0");
+        h.addColorStop(1,"#2f7f68");
+        ctx.fillStyle=h;
+        ctx.fillRect(-2.3,8,4.6,20);
+
+        ctx.restore();
+    }
+}
+
+for(let i=0;i<COUNT;i++) swords.push(new Sword(i));
+
+function drawCursor(){
+    ctx.beginPath();
+    ctx.arc(mouse.x,mouse.y,4,0,Math.PI*2);
+    ctx.fillStyle="#3fffd8";
+    ctx.fill();
+}
+
+function animate(){
+    ctx.fillStyle="rgba(0,0,0,0.28)";
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+
+    mouseSpeed = Math.hypot(mouse.x-mouse.px, mouse.y-mouse.py);
+
+    guardCenter.x += (mouse.x-guardCenter.x)*0.35;
+    guardCenter.y += (mouse.y-guardCenter.y)*0.35;
+
+    enemies.forEach(e=>e.draw());
+    swords.forEach(s=>{s.update();s.draw();});
+
+    for(let i=enemies.length-1;i>=0;i--)
+        if(enemies[i].hp<=0) enemies.splice(i,1);
+
+    drawCursor();
+    requestAnimationFrame(animate);
+}
+animate();
+</script>
+</body>
+</html>
