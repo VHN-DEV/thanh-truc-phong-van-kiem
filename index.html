@@ -266,16 +266,16 @@ class Sword{
         ctx.closePath();
         ctx.fill();
 
-        // ===== Chuôi kiếm (ngắn, hơi mở rộng) =====
-        const h = ctx.createLinearGradient(0,0,0,20*scaleFactor);
+        // ===== Chuôi kiếm (nhỏ gọn, vừa đủ) =====
+        const h = ctx.createLinearGradient(0,0,0,14*scaleFactor); // chiều dài chuôi giảm từ 20 → 14
         h.addColorStop(0,"#6bcbb0");
         h.addColorStop(1,"#2f7f68");
         ctx.fillStyle = h;
         ctx.beginPath();
-        ctx.moveTo(-6*scaleFactor,0);
-        ctx.lineTo(-4*scaleFactor,20*scaleFactor);
-        ctx.lineTo(4*scaleFactor,20*scaleFactor);
-        ctx.lineTo(6*scaleFactor,0);
+        ctx.moveTo(-3*scaleFactor,0);   // rộng giảm từ 6 → 3
+        ctx.lineTo(-2*scaleFactor,14*scaleFactor);
+        ctx.lineTo(2*scaleFactor,14*scaleFactor);
+        ctx.lineTo(3*scaleFactor,0);
         ctx.closePath();
         ctx.fill();
 
