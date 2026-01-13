@@ -47,7 +47,6 @@
             border-radius: 50%;
             backdrop-filter: blur(5px);
             -webkit-tap-highlight-color: transparent;
-            active-state: scale(0.9);
         }
         .btn:active {
             background: rgba(143, 255, 224, 0.3);
