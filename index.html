@@ -1,388 +1,541 @@
 <!DOCTYPE html>
 <html lang="vi">
-
 <head>
     <meta charset="UTF-8">
-    <title>72 Thanh Trúc Phong Vân Kiếm – Đại Canh Kiếm Trận</title>
+    <title>72 Thanh Trúc Phong Vân Kiếm – Đại Canh Kiếm Trận (Optimized)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
     <style>
-        html,
-        body {
-            margin: 0;
-            padding: 0;
-            background: radial-gradient(circle, #040a14, #000);
+        /* --- STYLE CƠ BẢN --- */
+        html, body {
+            margin: 0; padding: 0;
+            background: #000; /* Fallback color */
+            background: radial-gradient(circle at center, #0a1525, #000); /* Màu nền sâu hơn */
             overflow: hidden;
-            cursor: none;
-            touch-action: none;
+            cursor: none; /* Ẩn con trỏ chuột mặc định */
+            touch-action: none; /* Chặn hành vi zoom/scroll trên mobile */
         }
-
-        canvas {
-            display: block
-        }
+        canvas { display: block; }
     </style>
 </head>
-
 <body>
     <canvas id="c"></canvas>
 
-    <script>
-        /* ========= CANVAS SETUP ========= */
-        const canvas = document.getElementById("c");
-        const ctx = canvas.getContext("2d");
-
-        let scaleFactor = 1;
-        function resize() {
-            canvas.width = innerWidth;
-            canvas.height = innerHeight;
-            const baseWidth = 1920;
-            scaleFactor = canvas.width / baseWidth;
+<script>
+    /**
+     * ====================================================================
+     * 1. CONFIGURATION (CẤU HÌNH)
+     * Thay đổi các thông số tại đây để tinh chỉnh dự án dễ dàng.
+     * ====================================================================
+     */
+    const CONFIG = {
+        CORE: {
+            BASE_WIDTH: 1920,      // Độ phân giải chuẩn để tính tỉ lệ (Scale)
+            FPS_LIMIT: 60,         // (Có thể mở rộng để giới hạn FPS nếu cần)
+        },
+        SWORD: {
+            COUNT: 72,             // Số lượng kiếm
+            BASE_RADIUS: 130,      // Khoảng cách vòng trong cùng
+            LAYER_SPACING: 70,     // Khoảng cách giữa các vòng kiếm
+            SPIN_SPEED_BASE: 0.07, // Tốc độ xoay cơ bản
+            ATTACK_DELAY_MS: 180,  // Độ trễ trước khi kích hoạt tấn công
+            TRAIL_LENGTH: 6,       // Độ dài vệt kiếm khi bay
+            SIZE: 70,              // Kích thước thanh kiếm (chiều dài)
+        },
+        INPUT: {
+            DOUBLE_TAP_DELAY: 300, // Thời gian nhận diện double tap (ms)
+        },
+        COLORS: {
+            BG_FADE: "rgba(0, 0, 8, 0.25)", // Màu làm mờ để tạo hiệu ứng trail cho toàn màn hình
+            SWORD_BLADE: ["#d0fff5", "#7fdcc0", "#3fa78a"], // Gradient thân kiếm
+            SWORD_CORE: "#e0fff7", // Lõi kiếm
+            SWORD_TRAIL: "rgba(120, 255, 210, 0.3)",
+        },
+        ENEMY: {
+            SPAWN_COUNT: 6,        // Số lượng kẻ thù ban đầu
+            PALETTES: [            // Bảng màu các hành tinh
+                ["#ff9999", "#cc3333"], ["#99ccff", "#3366cc"],
+                ["#99ff99", "#33cc33"], ["#ffcc99", "#cc6600"],
+                ["#ff99ff", "#cc33cc"], ["#ffff99", "#cccc33"]
+            ]
         }
-        resize();
-        addEventListener("resize", resize);
+    };
 
-        /* ========= INPUT & PHYSIC STATE ========= */
-        const mouse = { x: innerWidth / 2, y: innerHeight / 2, px: 0, py: 0 };
-        let attack = false;
-        let mouseSpeed = 0;
-        let guardForm = 1;
-        const guardCenter = { x: mouse.x, y: mouse.y, vx: 0, vy: 0 };
-        let lastTapTime = 0;
-        let attackTimer = null;
-        const DOUBLE_TAP_DELAY = 300;
-        const ATTACK_DELAY = 180;
+    /**
+     * ====================================================================
+     * 2. UTILS & SYSTEM (CÁC HÀM HỖ TRỢ & HỆ THỐNG)
+     * ====================================================================
+     */
+    const canvas = document.getElementById("c");
+    const ctx = canvas.getContext("2d", { alpha: false }); // alpha: false giúp tăng hiệu năng vẽ nền
+    
+    // Biến toàn cục hệ thống
+    let scaleFactor = 1;
+    let width, height;
 
-        function getPointerPos(e) {
-            if (e.pointerType === "touch" && e.touches && e.touches.length > 0) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
-            return { x: e.clientX, y: e.clientY };
-        }
+    // Hàm thay đổi kích thước màn hình
+    function resize() {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+        scaleFactor = width / CONFIG.CORE.BASE_WIDTH;
+    }
+    window.addEventListener("resize", resize);
+    resize();
 
-        addEventListener("pointermove", e => {
+    // Hàm random helper
+    const random = (min, max) => Math.random() * (max - min) + min;
+
+    /**
+     * ====================================================================
+     * 3. INPUT HANDLER (XỬ LÝ ĐẦU VÀO)
+     * Quản lý chuột và cảm ứng tách biệt để dễ bảo trì.
+     * ====================================================================
+     */
+    const Input = {
+        x: width / 2, y: height / 2, // Vị trí hiện tại
+        px: 0, py: 0,                // Vị trí trước đó (để tính tốc độ)
+        speed: 0,                    // Tốc độ di chuyển chuột
+        isAttacking: false,          // Trạng thái tấn công
+        guardForm: 1,                // 1: Ổn định, 2: Linh hoạt
+        lastTapTime: 0,
+        attackTimer: null,
+
+        update() {
+            // Tính toán tốc độ di chuyển của chuột
+            this.speed = Math.hypot(this.x - this.px, this.y - this.py);
+            this.px = this.x; 
+            this.py = this.y;
+        },
+
+        handleMove(e) {
             e.preventDefault();
-            mouse.px = mouse.x; mouse.py = mouse.y;
-            const p = getPointerPos(e);
-            mouse.x = p.x; mouse.y = p.y;
-        }, { passive: false });
+            const p = e.touches ? e.touches[0] : e;
+            this.x = p.clientX;
+            this.y = p.clientY;
+        },
 
-        addEventListener("pointerdown", e => {
+        handleDown(e) {
             e.preventDefault();
             const now = performance.now();
-            if (now - lastTapTime < DOUBLE_TAP_DELAY) {
-                guardForm = guardForm === 1 ? 2 : 1;
-                clearTimeout(attackTimer); attackTimer = null; attack = false;
-                lastTapTime = 0;
+            // Xử lý Double Tap để đổi đội hình
+            if (now - this.lastTapTime < CONFIG.INPUT.DOUBLE_TAP_DELAY) {
+                this.guardForm = this.guardForm === 1 ? 2 : 1;
+                clearTimeout(this.attackTimer);
+                this.isAttacking = false;
+                this.lastTapTime = 0;
                 return;
             }
-            lastTapTime = now;
-            attackTimer = setTimeout(() => attack = true, ATTACK_DELAY);
-        }, { passive: false });
+            this.lastTapTime = now;
+            // Giữ chuột lâu để tấn công
+            this.attackTimer = setTimeout(() => {
+                this.isAttacking = true;
+            }, CONFIG.SWORD.ATTACK_DELAY_MS);
+        },
 
-        addEventListener("pointerup", e => {
+        handleUp(e) {
             e.preventDefault();
-            attack = false;
-            clearTimeout(attackTimer);
-            attackTimer = null;
-        }, { passive: false });
+            this.isAttacking = false;
+            clearTimeout(this.attackTimer);
+        }
+    };
 
-        /* ========= ENEMY SYSTEM (Hành tinh đa sắc) ========= */
-        class Enemy {
-            constructor(x, y) {
-                // Bán kính từ 10 đến 80, tỉ lệ phi tuyến
-                this.r = (10 + Math.pow(Math.random(), 1.5) * 50) * scaleFactor; // bán kính biến thiên
-                this.maxHp = 1 + Math.floor(Math.random() * 100);
-                this.hp = this.maxHp;
-                this.x = x; this.y = y;
-                // Gradient màu hành tinh
-                const colors = [
-                    ["#ff9999", "#cc3333"],   // đỏ
-                    ["#99ccff", "#3366cc"],   // xanh dương
-                    ["#99ff99", "#33cc33"],   // xanh lá
-                    ["#ffcc99", "#cc6600"],   // cam
-                    ["#ff99ff", "#cc33cc"],   // tím
-                    ["#ffff99", "#cccc33"]    // vàng
-                ];
-                const c = colors[Math.floor(Math.random() * colors.length)];
-                this.gradientColors = c;
-            }
-            hit() {
-                this.hp--;
-                if (this.hp <= 0) {
-                    spawnEnemy();
-                    return true;
-                }
-                return false;
-            }
-            draw() {
-                ctx.save();
-                ctx.translate(this.x, this.y);
-                const g = ctx.createRadialGradient(0, 0, this.r * 0.2, 0, 0, this.r);
-                g.addColorStop(0, this.gradientColors[0]);
-                g.addColorStop(1, this.gradientColors[1]);
-                ctx.shadowColor = this.gradientColors[1];
-                ctx.shadowBlur = 10 * scaleFactor;
-                ctx.beginPath();
-                ctx.arc(0, 0, this.r, 0, Math.PI * 2);
-                ctx.fillStyle = g;
-                ctx.fill();
-                ctx.restore();
-            }
+    // Đăng ký sự kiện
+    ['pointermove', 'touchmove'].forEach(evt => window.addEventListener(evt, e => Input.handleMove(e), { passive: false }));
+    ['pointerdown', 'touchstart'].forEach(evt => window.addEventListener(evt, e => Input.handleDown(e), { passive: false }));
+    ['pointerup', 'touchend'].forEach(evt => window.addEventListener(evt, e => Input.handleUp(e), { passive: false }));
+
+
+    /**
+     * ====================================================================
+     * 4. GAME ENTITIES (CÁC ĐỐI TƯỢNG TRONG GAME)
+     * ====================================================================
+     */
+
+    // --- LỚP KẺ THÙ (HÀNH TINH) ---
+    class Enemy {
+        constructor() {
+            this.respawn();
         }
 
-        const enemies = [];
-        function spawnEnemy() {
-            enemies.push(new Enemy(
-                Math.random() * canvas.width,
-                Math.random() * canvas.height
-            ));
+        respawn() {
+            this.x = random(0, width);
+            this.y = random(0, height);
+            // Bán kính ngẫu nhiên phi tuyến tính
+            this.r = (10 + Math.pow(Math.random(), 1.5) * 50) * scaleFactor; 
+            this.maxHp = 1 + Math.floor(Math.random() * 100);
+            this.hp = this.maxHp;
+            this.colors = CONFIG.ENEMY.PALETTES[Math.floor(Math.random() * CONFIG.ENEMY.PALETTES.length)];
         }
-        for (let i = 0; i < 6; i++) spawnEnemy();
 
-        /* ========= SWORD CLASS ========= */
-        const COUNT = 72;
-        const swords = [];
-        class Sword {
-            constructor(i) {
-                this.layer = Math.floor(i / 24);
-                this.baseAngle = (Math.PI * 2 / 24) * (i % 24);
-                this.spinAngle = 0;
-                this.spinSpeed = (0.07 / (this.layer + 1)) * (this.layer % 2 ? -1 : 1);
-                this.radius = (130 + this.layer * 70) * scaleFactor;
-                this.x = mouse.x; this.y = mouse.y;
-                this.vx = 0; this.vy = 0;
-                this.drawAngle = 0;
-                this.trail = [];
-                this.breath = Math.random() * Math.PI * 2;
-                this.breathSpeed = 0.015 + Math.random() * 0.01;
-                this.attackDelay = this.layer * 6 + Math.random() * 10;
-                this.attackFrame = 0;
+        hit() {
+            this.hp--;
+            if (this.hp <= 0) {
+                this.respawn(); // Kẻ thù chết thì tái sinh chỗ khác
+                return true; // Trả về true để báo hiệu đã tiêu diệt
             }
-            update() {
-                this.breath += this.breathSpeed;
-                const breathPulse = Math.sin(this.breath) * 8 * scaleFactor;
-                const r = this.radius + breathPulse;
-                let mode;
-                if (mouseSpeed < 3) mode = guardForm === 1 ? "STABLE" : "DYNAMIC";
-                else mode = "FOLLOW";
-
-                if (!attack) {
-                    this.spinAngle += this.spinSpeed;
-                    const a = this.baseAngle + this.spinAngle;
-                    const tx = guardCenter.x + Math.cos(a) * r;
-                    const ty = guardCenter.y + Math.sin(a) * r;
-                    if (mode === "STABLE") {
-                        this.x += (tx - this.x) * 0.15;
-                        this.y += (ty - this.y) * 0.15;
-                        this.vx *= 0.3; this.vy *= 0.3;
-                        this.drawAngle = a + Math.PI / 2;
-                    } else if (mode === "DYNAMIC") {
-                        const dx = tx - this.x, dy = ty - this.y;
-                        const d = Math.hypot(dx, dy) || 1;
-                        this.vx += (dx / d) * Math.min(d * 0.05, 4 * scaleFactor);
-                        this.vy += (dy / d) * Math.min(d * 0.05, 4 * scaleFactor);
-                        this.vx *= 0.85; this.vy *= 0.85;
-                        this.x += this.vx; this.y += this.vy;
-                        this.drawAngle = Math.atan2(this.vy, this.vx) + Math.PI / 2;
-                    } else {
-                        this.x += (tx - this.x) * 0.1;
-                        this.y += (ty - this.y) * 0.1;
-                        this.drawAngle = Math.atan2(ty - this.y, tx - this.x) + Math.PI / 2;
-                    }
-                    this.attackFrame = 0;
-                    this.trail = [];
-                } else {
-                    this.attackFrame++;
-                    if (this.attackFrame < this.attackDelay) return;
-                    let t = null, md = 1e9;
-                    for (const e of enemies) {
-                        const d = Math.hypot(e.x - mouse.x, e.y - mouse.y);
-                        if (d < md) { md = d; t = e; }
-                    }
-                    if (t) {
-                        const dx = t.x - this.x, dy = t.y - this.y;
-                        const d = Math.hypot(dx, dy) || 1;
-                        this.vx += (dx / d) * 10 * scaleFactor;
-                        this.vy += (dy / d) * 10 * scaleFactor;
-                        this.vx *= 0.92; this.vy *= 0.92;
-                        this.x += this.vx; this.y += this.vy;
-                        this.drawAngle = Math.atan2(this.vy, this.vx) + Math.PI / 2;
-                        if (Math.hypot(this.x - t.x, this.y - t.y) < t.r) {
-                            const dead = t.hit();
-                            if (dead) {
-                                const index = enemies.indexOf(t);
-                                if (index !== -1) enemies.splice(index, 1);
-                            }
-                        }
-                        this.trail.push({ x: this.x, y: this.y });
-                        if (this.trail.length > 6) this.trail.shift();
-                    }
-                }
-            }
-            draw() {
-                if (this.trail.length > 1) {
-                    ctx.beginPath();
-                    ctx.moveTo(this.trail[0].x, this.trail[0].y);
-                    for (const p of this.trail) ctx.lineTo(p.x, p.y);
-                    ctx.strokeStyle = "rgba(120,255,210,0.3)";
-                    ctx.lineWidth = 2 * scaleFactor;
-                    ctx.stroke();
-                }
-                ctx.save();
-                ctx.translate(this.x, this.y);
-                ctx.rotate(this.drawAngle);
-                // Hiệu ứng điện
-                const auraCount = 3 + Math.floor(Math.random() * 2);
-                for (let i = 0; i < auraCount; i++) {
-                    ctx.save();
-                    ctx.shadowColor = "#fffaa0";
-                    ctx.shadowBlur = 8 * scaleFactor;
-                    ctx.beginPath();
-                    const swordLength = 70 * scaleFactor;
-                    let py = -Math.random() * swordLength;
-                    let px = (Math.random() - 0.5) * 6 * scaleFactor;
-                    ctx.moveTo(px, py);
-                    const segments = 3 + Math.floor(Math.random() * 2);
-                    for (let s = 0; s < segments; s++) {
-                        px += (Math.random() - 0.5) * 8 * scaleFactor;
-                        py += (Math.random() - 0.5) * 6 * scaleFactor;
-                        ctx.lineTo(px, py);
-                    }
-                    ctx.strokeStyle = `rgba(255,255,180,${0.35 + Math.random() * 0.3})`;
-                    ctx.lineWidth = 1.5 * scaleFactor;
-                    ctx.stroke();
-                    ctx.restore();
-                }
-                ctx.shadowColor = "#8fffe0";
-                ctx.shadowBlur = 20 * scaleFactor;
-                // Mũi kiếm
-                ctx.beginPath();
-                ctx.moveTo(0, -70 * scaleFactor);
-                ctx.bezierCurveTo(2 * scaleFactor, -80 * scaleFactor, -2 * scaleFactor, -80 * scaleFactor, 0, -70 * scaleFactor);
-                ctx.fillStyle = "#e0fff7";
-                ctx.fill();
-                // Thân kiếm
-                const swordWidth = 4 * scaleFactor;
-                const swordLength = 70 * scaleFactor;
-                const g = ctx.createLinearGradient(0, -swordLength, 0, 0);
-                g.addColorStop(0, "#d0fff5");
-                g.addColorStop(0.5, "#7fdcc0");
-                g.addColorStop(1, "#3fa78a");
-                ctx.fillStyle = g;
-                ctx.beginPath();
-                ctx.moveTo(-swordWidth / 2, 0);
-                ctx.lineTo(-swordWidth / 2, -swordLength);
-                ctx.quadraticCurveTo(0, -swordLength - 10 * scaleFactor, swordWidth / 2, -swordLength);
-                ctx.lineTo(swordWidth / 2, 0);
-                ctx.closePath();
-                ctx.fill();
-                // ===== HỘ THỦ / KIẾM CÁCH =====
-                ctx.save();
-                ctx.shadowColor = "#9fffe6";
-                ctx.shadowBlur = 10 * scaleFactor;
-                const guardWidth = 14 * scaleFactor;
-                const guardHeight = 2.4 * scaleFactor;
-                const guardGrad = ctx.createLinearGradient(
-                    -guardWidth / 2, 0,
-                    guardWidth / 2, 0
-                );
-                guardGrad.addColorStop(0, "#4fcfb2");
-                guardGrad.addColorStop(0.5, "#e0fff7");
-                guardGrad.addColorStop(1, "#4fcfb2");
-                ctx.fillStyle = guardGrad;
-                ctx.beginPath();
-                ctx.roundRect(
-                    -guardWidth / 2,
-                    -guardHeight / 2,
-                    guardWidth,
-                    guardHeight,
-                    guardHeight
-                );
-                ctx.fill();
-                ctx.restore();
-                // Chuôi kiếm
-                const h = ctx.createLinearGradient(0, 0, 0, 14 * scaleFactor);
-                h.addColorStop(0, "#6bcbb0");
-                h.addColorStop(1, "#2f7f68");
-                ctx.fillStyle = h;
-                ctx.beginPath();
-                ctx.moveTo(-3 * scaleFactor, 0);
-                ctx.lineTo(-2 * scaleFactor, 14 * scaleFactor);
-                ctx.lineTo(2 * scaleFactor, 14 * scaleFactor);
-                ctx.lineTo(3 * scaleFactor, 0);
-                ctx.closePath();
-                ctx.fill();
-                ctx.restore();
-            }
+            return false;
         }
-        for (let i = 0; i < COUNT; i++) swords.push(new Sword(i));
 
-        /* ========= FORMATION RENDER ========= */
-        function drawFormationCore() {
+        draw(ctx) {
             ctx.save();
-            ctx.translate(guardCenter.x, guardCenter.y);
-            ctx.rotate(performance.now() * 0.0002);
-            ctx.strokeStyle = "rgba(120,255,210,0.1)";
-            ctx.lineWidth = 1.5 * scaleFactor;
+            ctx.translate(this.x, this.y);
+            
+            // Vẽ Gradient hành tinh
+            const g = ctx.createRadialGradient(0, 0, this.r * 0.2, 0, 0, this.r);
+            g.addColorStop(0, this.colors[0]);
+            g.addColorStop(1, this.colors[1]);
+            
             ctx.beginPath();
-            ctx.arc(0, 0, 50 * scaleFactor, 0, Math.PI * 2);
-            ctx.stroke();
+            ctx.arc(0, 0, this.r, 0, Math.PI * 2);
+            ctx.fillStyle = g;
+            
+            // Hiệu ứng bóng đổ (Glow)
+            ctx.shadowColor = this.colors[1];
+            ctx.shadowBlur = 15 * scaleFactor;
+            ctx.fill();
+            ctx.restore();
+        }
+    }
+
+    // --- LỚP KIẾM (SWORD) ---
+    class Sword {
+        constructor(index) {
+            this.index = index;
+            // Tính toán lớp (vòng) của kiếm
+            this.layer = Math.floor(index / 24); 
+            // Góc cơ bản trong vòng tròn
+            this.baseAngle = (Math.PI * 2 / 24) * (index % 24);
+            
+            this.spinAngle = 0;
+            // Tốc độ xoay: Lớp chẵn xoay chiều này, lớp lẻ xoay chiều kia
+            this.spinSpeed = (CONFIG.SWORD.SPIN_SPEED_BASE / (this.layer + 1)) * (this.layer % 2 ? -1 : 1);
+            
+            this.radius = (CONFIG.SWORD.BASE_RADIUS + this.layer * CONFIG.SWORD.LAYER_SPACING) * scaleFactor;
+            
+            this.x = Input.x; 
+            this.y = Input.y;
+            this.vx = 0; 
+            this.vy = 0;
+            
+            this.drawAngle = 0;
+            this.trail = [];
+            
+            // Hiệu ứng "thở" (phập phồng)
+            this.breath = random(0, Math.PI * 2);
+            this.breathSpeed = random(0.015, 0.025);
+            
+            this.attackDelay = this.layer * 6 + random(0, 10);
+            this.attackFrame = 0;
+        }
+
+        update(guardCenter, enemies) {
+            this.breath += this.breathSpeed;
+            const breathPulse = Math.sin(this.breath) * 8 * scaleFactor;
+            const currentRadius = this.radius + breathPulse;
+
+            // Chế độ di chuyển: Tấn công hoặc Phòng thủ
+            if (!Input.isAttacking) {
+                this.updateGuardMode(guardCenter, currentRadius);
+            } else {
+                this.updateAttackMode(enemies);
+            }
+        }
+
+        // Logic bay quanh tâm (Phòng thủ)
+        updateGuardMode(guardCenter, r) {
+            this.spinAngle += this.spinSpeed;
+            const a = this.baseAngle + this.spinAngle;
+            const tx = guardCenter.x + Math.cos(a) * r;
+            const ty = guardCenter.y + Math.sin(a) * r;
+
+            let easing = 0.1;
+            
+            // Nếu chuột di chuyển nhanh, kiếm sẽ "đuổi theo" (Follow mode)
+            if (Input.speed > 3) {
+                const dx = tx - this.x, dy = ty - this.y;
+                const dist = Math.hypot(dx, dy) || 1;
+                // Vật lý đơn giản để tạo độ trễ quán tính
+                this.vx += (dx / dist) * Math.min(dist * 0.05, 4 * scaleFactor);
+                this.vy += (dy / dist) * Math.min(dist * 0.05, 4 * scaleFactor);
+                this.vx *= 0.85; this.vy *= 0.85; // Ma sát
+                this.x += this.vx; this.y += this.vy;
+                this.drawAngle = Math.atan2(this.vy, this.vx) + Math.PI / 2;
+            } else {
+                // Chế độ ổn định hoặc động (Stable/Dynamic) dựa trên Input.guardForm
+                if (Input.guardForm === 1) {
+                    // Form 1: Ổn định, về vị trí nhanh
+                    this.x += (tx - this.x) * 0.15;
+                    this.y += (ty - this.y) * 0.15;
+                    this.vx *= 0.3; this.vy *= 0.3;
+                    this.drawAngle = a + Math.PI / 2;
+                } else {
+                    // Form 2: Mượt hơn
+                    this.x += (tx - this.x) * 0.1;
+                    this.y += (ty - this.y) * 0.1;
+                    this.drawAngle = Math.atan2(ty - this.y, tx - this.x) + Math.PI / 2;
+                }
+            }
+            
+            this.attackFrame = 0;
+            this.trail = []; // Xóa vệt khi không tấn công
+        }
+
+        // Logic tìm và diệt (Tấn công)
+        updateAttackMode(enemies) {
+            this.attackFrame++;
+            if (this.attackFrame < this.attackDelay) return;
+
+            // Tìm kẻ thù gần nhất (chuột)
+            let target = null;
+            let minStartDist = Infinity;
+            
+            // Chiến thuật: Kiếm tìm kẻ thù gần con trỏ chuột nhất
+            for (const e of enemies) {
+                const d = Math.hypot(e.x - Input.x, e.y - Input.y);
+                if (d < minStartDist) { minStartDist = d; target = e; }
+            }
+
+            if (target) {
+                const dx = target.x - this.x;
+                const dy = target.y - this.y;
+                const d = Math.hypot(dx, dy) || 1;
+                
+                // Tăng tốc về phía mục tiêu
+                const speed = 10 * scaleFactor;
+                this.vx += (dx / d) * speed;
+                this.vy += (dy / d) * speed;
+                this.vx *= 0.92; this.vy *= 0.92; // Giới hạn tốc độ
+                
+                this.x += this.vx; 
+                this.y += this.vy;
+                this.drawAngle = Math.atan2(this.vy, this.vx) + Math.PI / 2;
+
+                // Kiểm tra va chạm
+                if (Math.hypot(this.x - target.x, this.y - target.y) < target.r) {
+                    target.hit();
+                }
+
+                // Lưu vị trí để vẽ vệt (Trail)
+                this.trail.push({ x: this.x, y: this.y });
+                if (this.trail.length > CONFIG.SWORD.TRAIL_LENGTH) this.trail.shift();
+            }
+        }
+
+        draw(ctx) {
+            // 1. Vẽ vệt kiếm (Trail)
+            if (this.trail.length > 1) {
+                ctx.beginPath();
+                ctx.moveTo(this.trail[0].x, this.trail[0].y);
+                for (let i = 1; i < this.trail.length; i++) {
+                    ctx.lineTo(this.trail[i].x, this.trail[i].y);
+                }
+                ctx.strokeStyle = CONFIG.COLORS.SWORD_TRAIL;
+                ctx.lineWidth = 2 * scaleFactor;
+                ctx.stroke();
+            }
+
+            ctx.save();
+            ctx.translate(this.x, this.y);
+            ctx.rotate(this.drawAngle);
+
+            // 2. Vẽ Hào quang (Aura - Điện)
+            this.drawAura(ctx);
+
+            // 3. Vẽ Thân Kiếm
+            this.drawBlade(ctx);
+
             ctx.restore();
         }
 
-        function drawCursor() {
-            ctx.beginPath();
-            ctx.arc(mouse.x, mouse.y, 4 * scaleFactor, 0, Math.PI * 2);
-            ctx.fillStyle = "#6fffe0";
-            ctx.fill();
+        drawAura(ctx) {
+             // Random số tia điện để tạo hiệu ứng nhấp nháy
+            const auraCount = Math.floor(random(2, 4));
+            ctx.shadowColor = "#fffaa0";
+            ctx.shadowBlur = 8 * scaleFactor;
+            
+            for (let i = 0; i < auraCount; i++) {
+                ctx.beginPath();
+                const len = CONFIG.SWORD.SIZE * scaleFactor;
+                let py = -random(0, len);
+                let px = random(-3, 3) * scaleFactor;
+                ctx.moveTo(px, py);
+                
+                // Vẽ đường gấp khúc (ziczac)
+                const segments = 3;
+                for (let s = 0; s < segments; s++) {
+                    px += random(-4, 4) * scaleFactor;
+                    py += random(-3, 3) * scaleFactor;
+                    ctx.lineTo(px, py);
+                }
+                ctx.strokeStyle = `rgba(255,255,180,${random(0.3, 0.6)})`;
+                ctx.lineWidth = 1.5 * scaleFactor;
+                ctx.stroke();
+            }
         }
 
-        /* ========= STARFIELD ========= */
-        const STAR_COUNT = 150;
-        const stars = [];
-        for (let i = 0; i < STAR_COUNT; i++) {
-            stars.push({
-                x: Math.random() * canvas.width,
-                y: Math.random() * canvas.height,
-                r: Math.random() * 1.5 * scaleFactor + 0.5 * scaleFactor,
-                alpha: Math.random() * 0.8 + 0.2,
-                delta: Math.random() * 0.02 + 0.005
-            });
+        drawBlade(ctx) {
+            const sLen = CONFIG.SWORD.SIZE * scaleFactor;
+            const sWid = 4 * scaleFactor;
+
+            // -- Bóng đổ chính của kiếm --
+            ctx.shadowColor = "#8fffe0";
+            ctx.shadowBlur = 15 * scaleFactor;
+
+            // -- Lưỡi kiếm --
+            // Gradient dọc thân kiếm
+            const g = ctx.createLinearGradient(0, -sLen, 0, 0);
+            g.addColorStop(0, CONFIG.COLORS.SWORD_BLADE[0]);
+            g.addColorStop(0.5, CONFIG.COLORS.SWORD_BLADE[1]);
+            g.addColorStop(1, CONFIG.COLORS.SWORD_BLADE[2]);
+            
+            ctx.fillStyle = g;
+            ctx.beginPath();
+            ctx.moveTo(-sWid / 2, 0);
+            ctx.lineTo(-sWid / 2, -sLen);
+            // Mũi nhọn cong
+            ctx.quadraticCurveTo(0, -sLen - 10 * scaleFactor, sWid / 2, -sLen);
+            ctx.lineTo(sWid / 2, 0);
+            ctx.fill();
+
+            // -- Kiếm cách (Hộ thủ - Guard) --
+            ctx.shadowColor = "#9fffe6";
+            const gW = 14 * scaleFactor;
+            const gH = 2.4 * scaleFactor;
+            ctx.fillStyle = "#4fcfb2"; // Giản lược gradient cho nhẹ
+            ctx.beginPath();
+            // Vẽ hình chữ nhật bo góc (hoặc dùng roundRect nếu trình duyệt hỗ trợ mới)
+            ctx.roundRect(-gW/2, -gH/2, gW, gH, gH);
+            ctx.fill();
+
+            // -- Chuôi kiếm (Hilt) --
+            ctx.fillStyle = "#2f7f68";
+            ctx.beginPath();
+            ctx.moveTo(-3 * scaleFactor, 0);
+            ctx.lineTo(-2 * scaleFactor, 14 * scaleFactor);
+            ctx.lineTo(2 * scaleFactor, 14 * scaleFactor);
+            ctx.lineTo(3 * scaleFactor, 0);
+            ctx.fill();
         }
-        function drawStars() {
-            for (const s of stars) {
-                s.alpha += (Math.random() * 0.02 - 0.01);
+    }
+
+    // --- LỚP SAO (BACKGROUND STARS) ---
+    class StarField {
+        constructor(count) {
+            this.stars = [];
+            for(let i=0; i<count; i++) {
+                this.stars.push({
+                    x: random(0, width),
+                    y: random(0, height),
+                    r: random(0.5, 2),
+                    alpha: random(0.2, 1),
+                    delta: random(0.005, 0.02)
+                });
+            }
+        }
+        draw(ctx) {
+            ctx.shadowBlur = 0; // Tắt shadow để vẽ sao cho nhẹ
+            for (const s of this.stars) {
+                // Hiệu ứng nhấp nháy
+                s.alpha += random(-0.01, 0.01);
                 if (s.alpha > 1) s.alpha = 1;
                 if (s.alpha < 0.2) s.alpha = 0.2;
+                
                 ctx.beginPath();
-                ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+                ctx.arc(s.x, s.y, s.r * scaleFactor, 0, Math.PI * 2);
                 ctx.fillStyle = `rgba(255,255,255,${s.alpha})`;
                 ctx.fill();
             }
         }
+    }
 
-        /* ========= MAIN LOOP ========= */
-        function animate() {
-            ctx.fillStyle = "rgba(0,0,8,0.25)";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+    /**
+     * ====================================================================
+     * 5. MAIN MANAGER (QUẢN LÝ CHÍNH)
+     * Khởi tạo và chạy vòng lặp game.
+     * ====================================================================
+     */
+    const enemies = [];
+    const swords = [];
+    let starField;
+    // Tâm ảo của kiếm trận (giúp di chuyển mượt mà hơn theo chuột)
+    const guardCenter = { x: width/2, y: height/2, vx: 0, vy: 0 };
 
-            mouseSpeed = Math.hypot(mouse.x - mouse.px, mouse.y - mouse.py);
-
-            let dx = mouse.x - guardCenter.x;
-            let dy = mouse.y - guardCenter.y;
-            guardCenter.vx += dx * 0.04; guardCenter.vy += dy * 0.04;
-            guardCenter.vx *= 0.82; guardCenter.vy *= 0.82;
-            guardCenter.x += guardCenter.vx; guardCenter.y += guardCenter.vy;
-
-            drawStars();
-            drawFormationCore();
-            enemies.forEach(e => e.draw());
-            swords.forEach(s => { s.update(); s.draw(); });
-            drawCursor();
-
-            requestAnimationFrame(animate);
+    function init() {
+        // Tạo sao
+        starField = new StarField(150);
+        
+        // Tạo kẻ thù
+        for (let i = 0; i < CONFIG.ENEMY.SPAWN_COUNT; i++) {
+            enemies.push(new Enemy());
         }
-        animate();
-    </script>
+
+        // Tạo kiếm
+        for (let i = 0; i < CONFIG.SWORD.COUNT; i++) {
+            swords.push(new Sword(i));
+        }
+    }
+
+    function updatePhysics() {
+        Input.update();
+
+        // Di chuyển tâm kiếm trận theo chuột (Hiệu ứng Spring/Lò xo)
+        let dx = Input.x - guardCenter.x;
+        let dy = Input.y - guardCenter.y;
+        guardCenter.vx += dx * 0.04; 
+        guardCenter.vy += dy * 0.04;
+        guardCenter.vx *= 0.82; // Ma sát
+        guardCenter.vy *= 0.82;
+        guardCenter.x += guardCenter.vx; 
+        guardCenter.y += guardCenter.vy;
+    }
+
+    function renderCursor() {
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = "#6fffe0";
+        ctx.beginPath();
+        ctx.arc(Input.x, Input.y, 4 * scaleFactor, 0, Math.PI * 2);
+        ctx.fillStyle = "#6fffe0";
+        ctx.fill();
+        ctx.shadowBlur = 0; // Reset
+    }
+
+    function animate() {
+        // Xóa màn hình với lớp phủ mờ để tạo hiệu ứng chuyển động (Motion Blur)
+        ctx.fillStyle = CONFIG.COLORS.BG_FADE;
+        ctx.fillRect(0, 0, width, height);
+
+        updatePhysics();
+
+        starField.draw(ctx);
+        
+        // Vẽ tâm trận pháp (Trang trí)
+        ctx.save();
+        ctx.translate(guardCenter.x, guardCenter.y);
+        ctx.rotate(performance.now() * 0.0002);
+        ctx.strokeStyle = "rgba(120,255,210,0.1)";
+        ctx.lineWidth = 1.5 * scaleFactor;
+        ctx.beginPath();
+        ctx.arc(0, 0, 50 * scaleFactor, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+
+        // Update & Vẽ Kẻ thù
+        enemies.forEach(e => e.draw(ctx));
+
+        // Update & Vẽ Kiếm
+        swords.forEach(s => {
+            s.update(guardCenter, enemies);
+            s.draw(ctx);
+        });
+
+        renderCursor();
+
+        requestAnimationFrame(animate);
+    }
+
+    // --- KHỞI CHẠY ---
+    init();
+    animate();
+
+</script>
 </body>
-
 </html>
-
-
