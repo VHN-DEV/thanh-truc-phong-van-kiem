@@ -1,0 +1,18 @@
+html, body {
+    margin: 0; padding: 0;
+    background: radial-gradient(circle at center, #0a1525, #000);
+    overflow: hidden;
+    cursor: none;
+    touch-action: none;
+}
+canvas { display: block; }
+/* Hướng dẫn sử dụng nhỏ ở góc */
+#ui {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    color: rgba(255,255,255,0.3);
+    font-family: monospace;
+    pointer-events: none;
+    user-select: none;
+}
