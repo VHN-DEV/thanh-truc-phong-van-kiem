@@ -234,6 +234,9 @@
             this.breathSpeed = random(0.015, 0.025);
             this.attackDelay = this.layer * 6 + random(0, 10);
             this.attackFrame = 0;
+            this.flowNoise = Math.random() * Math.PI * 2;
+            this.flowOffsetAngle = (Math.PI * 2 / 72) * index; // Mỗi thanh 1 góc khác nhau để tạo vòng lượn
+            this.flowOffsetRadius = (40 + Math.random() * 60) * scaleFactor; // Độ rộng vòng lượn
         }
 
         update(guardCenter, enemies) {
@@ -248,33 +251,72 @@
         }
 
         updateGuardMode(guardCenter, r) {
+            // 1. Luôn cập nhật thông số xoay cơ bản
             this.spinAngle += this.spinSpeed;
             const a = this.baseAngle + this.spinAngle;
+            
+            // Vị trí đích chuẩn trong đội hình
             const tx = guardCenter.x + Math.cos(a) * r;
             const ty = guardCenter.y + Math.sin(a) * r;
 
-            if (Input.speed > 3) {
-                const dx = tx - this.x, dy = ty - this.y;
-                const dist = Math.hypot(dx, dy) || 1;
-                this.vx += (dx / dist) * Math.min(dist * 0.05, 4 * scaleFactor);
-                this.vy += (dy / dist) * Math.min(dist * 0.05, 4 * scaleFactor);
-                this.vx *= 0.85; this.vy *= 0.85;
-                this.x += this.vx; this.y += this.vy;
+            // 2. Kiểm tra trạng thái di chuyển
+            if (Input.speed > 1.5) {
+                // --- CHẾ ĐỘ BAY LƯỢN ĐUỔI THEO (FLOW MODE) ---
+                this.flowNoise += 0.04; // Tốc độ tự uốn lượn của mỗi thanh kiếm
+
+                // Điểm mục tiêu ảo uốn lượn quanh con trỏ (fx, fy)
+                const fx = Input.x + Math.cos(this.flowOffsetAngle + this.flowNoise) * this.flowOffsetRadius;
+                const fy = Input.y + Math.sin(this.flowOffsetAngle + this.flowNoise) * this.flowOffsetRadius;
+
+                const dx = fx - this.x;
+                const dy = fy - this.y;
+                const d = Math.hypot(dx, dy) || 1;
+
+                // Lực kéo mềm (Steering) - scaleFactor giúp tương thích mọi màn hình
+                this.vx += (dx / d) * Math.min(d * 0.04, 3 * scaleFactor);
+                this.vy += (dy / d) * Math.min(d * 0.04, 3 * scaleFactor);
+
+                // Ma sát thấp (0.88 - 0.92) để tạo độ trượt lượn
+                this.vx *= 0.9; 
+                this.vy *= 0.9;
+
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // Hướng mũi kiếm theo hướng di chuyển
                 this.drawAngle = Math.atan2(this.vy, this.vx) + Math.PI / 2;
+
             } else {
+                // --- CHẾ ĐỘ HỒI ĐỘI HÌNH (STABLE MODE) ---
+                // Khi dừng lại, kéo kiếm về vị trí tx, ty
+                const dx = tx - this.x;
+                const dy = ty - this.y;
+                
+                // Lực kéo về đội hình nhanh dần đều
+                this.x += dx * 0.12;
+                this.y += dy * 0.12;
+                
+                // Triệt tiêu vận tốc dư thừa
+                this.vx *= 0.5;
+                this.vy *= 0.5;
+
+                // Xoay mũi kiếm về hướng của guardForm
+                let targetAngle;
                 if (Input.guardForm === 1) {
-                    this.x += (tx - this.x) * 0.15;
-                    this.y += (ty - this.y) * 0.15;
-                    this.vx *= 0.3; this.vy *= 0.3;
-                    this.drawAngle = a + Math.PI / 2;
+                    targetAngle = a + Math.PI / 2;
                 } else {
-                    this.x += (tx - this.x) * 0.1;
-                    this.y += (ty - this.y) * 0.1;
-                    this.drawAngle = Math.atan2(ty - this.y, tx - this.x) + Math.PI / 2;
+                    targetAngle = Math.atan2(ty - this.y, tx - this.x) + Math.PI / 2;
                 }
+
+                // Nội suy góc xoay để mượt mà
+                let diff = targetAngle - this.drawAngle;
+                while (diff < -Math.PI) diff += Math.PI * 2;
+                while (diff > Math.PI) diff -= Math.PI * 2;
+                this.drawAngle += diff * 0.15;
             }
+
             this.attackFrame = 0;
-            this.trail = [];
+            this.trail = []; 
         }
 
         updateAttackMode(enemies) {
