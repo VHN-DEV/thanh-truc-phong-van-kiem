@@ -273,6 +273,30 @@
                 ctx.lineTo(swordWidth / 2, 0);
                 ctx.closePath();
                 ctx.fill();
+                // ===== HỘ THỦ / KIẾM CÁCH =====
+                ctx.save();
+                ctx.shadowColor = "#9fffe6";
+                ctx.shadowBlur = 10 * scaleFactor;
+                const guardWidth = 14 * scaleFactor;
+                const guardHeight = 2.4 * scaleFactor;
+                const guardGrad = ctx.createLinearGradient(
+                    -guardWidth / 2, 0,
+                    guardWidth / 2, 0
+                );
+                guardGrad.addColorStop(0, "#4fcfb2");
+                guardGrad.addColorStop(0.5, "#e0fff7");
+                guardGrad.addColorStop(1, "#4fcfb2");
+                ctx.fillStyle = guardGrad;
+                ctx.beginPath();
+                ctx.roundRect(
+                    -guardWidth / 2,
+                    -guardHeight / 2,
+                    guardWidth,
+                    guardHeight,
+                    guardHeight
+                );
+                ctx.fill();
+                ctx.restore();
                 // Chuôi kiếm
                 const h = ctx.createLinearGradient(0, 0, 0, 14 * scaleFactor);
                 h.addColorStop(0, "#6bcbb0");
@@ -360,4 +384,5 @@
 </body>
 
 </html>
+
 
