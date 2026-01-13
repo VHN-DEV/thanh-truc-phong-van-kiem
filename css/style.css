@@ -88,11 +88,11 @@ canvas {
     border-radius: 50%;
     background: rgba(143, 255, 224, 0.1);
     border: 2px solid #8fffe0;
-    color: #8fffe0;
     cursor: pointer;
     transition: all 0.2s;
-    -webkit-tap-highlight-color: transparent;
     user-select: none;
+    -webkit-user-drag: none; 
+    touch-action: none;
     box-shadow: 0 0 15px rgba(143, 255, 224, 0.2);
 }
 
@@ -100,14 +100,11 @@ canvas {
     width: 50%;
     height: 50%;
     filter: drop-shadow(0 0 5px #8fffe0);
+    pointer-events: none;
 }
 
 .btn-attack:active {
     background: rgba(143, 255, 224, 0.4);
     transform: scale(0.9);
     box-shadow: 0 0 25px rgba(143, 255, 224, 0.5);
-}
-
-.btn-attack:active .sword-icon {
-    filter: drop-shadow(0 0 10px #8fffe0);
 }
