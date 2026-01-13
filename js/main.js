@@ -15,6 +15,9 @@ const Camera = {
     update() {
         this.currentZoom += (this.targetZoom - this.currentZoom) * CONFIG.ZOOM.SMOOTH;
     },
+    adjustZoom(amount) {
+        this.targetZoom = Math.max(CONFIG.ZOOM.MIN, Math.min(CONFIG.ZOOM.MAX, this.targetZoom + amount));
+    },
     screenToWorld(screenX, screenY) {
         const centerX = width / 2;
         const centerY = height / 2;
@@ -52,6 +55,8 @@ const Input = {
     },
 
     handleMove(e) {
+        if (e.target.closest('.btn')) return;
+
         e.preventDefault();
         const p = e.touches ? e.touches[0] : e;
         this.screenX = p.clientX;
@@ -59,6 +64,8 @@ const Input = {
     },
 
     handleDown(e) {
+        if (e.target.closest('.btn')) return;
+
         e.preventDefault();
         const now = performance.now();
         if (now - this.lastTapTime < CONFIG.INPUT.DOUBLE_TAP_DELAY) {
@@ -90,6 +97,39 @@ const Input = {
 ['pointerdown', 'touchstart'].forEach(evt => window.addEventListener(evt, e => Input.handleDown(e), { passive: false }));
 ['pointerup', 'touchend'].forEach(evt => window.addEventListener(evt, e => Input.handleUp(e), { passive: false }));
 window.addEventListener('wheel', e => Input.handleWheel(e), { passive: false });
+
+// Xử lý nút Zoom
+document.getElementById('btn-zoom-in').addEventListener('pointerdown', (e) => {
+    e.stopPropagation();
+    Camera.adjustZoom(CONFIG.ZOOM.STEP);
+});
+
+document.getElementById('btn-zoom-out').addEventListener('pointerdown', (e) => {
+    e.stopPropagation();
+    Camera.adjustZoom(-CONFIG.ZOOM.STEP);
+});
+
+// Xử lý nút Tấn công (Đè hoặc Click liên tục)
+const attackBtn = document.getElementById('btn-attack');
+
+const startAttack = (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    Input.isAttacking = true;
+};
+
+const stopAttack = (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    Input.isAttacking = false;
+};
+
+// Hỗ trợ cả Touch (Mobile) và Mouse (PC/Emulator)
+attackBtn.addEventListener('touchstart', startAttack);
+attackBtn.addEventListener('touchend', stopAttack);
+attackBtn.addEventListener('pointerdown', startAttack);
+attackBtn.addEventListener('pointerup', stopAttack);
+attackBtn.addEventListener('pointerleave', stopAttack); // Tránh kẹt nút khi kéo tay ra ngoài
 
 /**
  * ====================================================================

@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>72 Thanh Trúc Phong Vân Kiếm – Đại Canh Kiếm Trận</title>
+    <title>72 Thanh Trúc Phong Vân Kiếm – Mobile Edition</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
     <style>
         html, body {
@@ -13,21 +13,91 @@
             touch-action: none;
         }
         canvas { display: block; }
-        /* Hướng dẫn sử dụng nhỏ ở góc */
-        #ui {
+        
+        /* UI chung */
+        .game-ui {
             position: absolute;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
+            pointer-events: none;
+        }
+
+        #instructions {
             bottom: 20px;
             left: 20px;
             color: rgba(255,255,255,0.3);
-            font-family: monospace;
+            font-size: 12px;
+        }
+
+        /* Group điều khiển - Cho phép tương tác */
+        .controls-layer {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
             pointer-events: none;
-            user-select: none;
+        }
+        .btn {
+            pointer-events: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(143, 255, 224, 0.3);
+            color: #8fffe0;
+            border-radius: 50%;
+            backdrop-filter: blur(5px);
+            -webkit-tap-highlight-color: transparent;
+            active-state: scale(0.9);
+        }
+        .btn:active {
+            background: rgba(143, 255, 224, 0.3);
+            transform: scale(0.95);
+        }
+
+        /* Cụm Zoom */
+        .zoom-group {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .btn-zoom { width: 50px; height: 50px; font-size: 24px; font-weight: bold; }
+
+        /* Nút Tấn công */
+        .attack-group {
+            position: absolute;
+            bottom: 40px;
+            right: 40px;
+        }
+        .btn-attack {
+            width: 90px;
+            height: 90px;
+            font-size: 16px;
+            font-weight: bold;
+            border-width: 3px;
+            box-shadow: 0 0 20px rgba(143, 255, 224, 0.2);
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
     </style>
 </head>
 <body>
     <canvas id="c"></canvas>
-    <div id="ui">Scroll to Zoom • Double Tap to Change Form</div>
+    
+    <div id="instructions" class="game-ui">Double Tap: Change Form • Hold Button: Attack</div>
+
+    <div class="controls-layer">
+        <div class="zoom-group">
+            <div id="btn-zoom-in" class="btn btn-zoom">+</div>
+            <div id="btn-zoom-out" class="btn btn-zoom">−</div>
+        </div>
+
+        <div class="attack-group">
+            <div id="btn-attack" class="btn btn-attack">Công</div>
+        </div>
+    </div>
 
 <script>
     /**
@@ -38,10 +108,11 @@
     const CONFIG = {
         CORE: { BASE_WIDTH: 1920 },
         ZOOM: {
-            MIN: 0.5,           // Thu nhỏ tối đa
-            MAX: 3.0,           // Phóng to tối đa
-            SENSITIVITY: 0.001, // Độ nhạy khi lăn chuột
-            SMOOTH: 0.1         // Độ mượt (0.1 = chậm, 1 = tức thì)
+            MIN: 0.5,
+            MAX: 3.0,
+            SENSITIVITY: 0.001,
+            STEP: 0.2, // Bước zoom khi nhấn nút
+            SMOOTH: 0.1
         },
         SWORD: {
             COUNT: 72,
@@ -98,6 +169,9 @@
                 x: (screenX - centerX) / this.currentZoom + centerX,
                 y: (screenY - centerY) / this.currentZoom + centerY
             };
+        },
+        adjustZoom(amount) {
+            this.targetZoom = Math.max(CONFIG.ZOOM.MIN, Math.min(CONFIG.ZOOM.MAX, this.targetZoom + amount));
         }
     };
 
@@ -108,8 +182,6 @@
     }
     window.addEventListener("resize", resize);
     resize();
-
-    const random = (min, max) => Math.random() * (max - min) + min;
 
     /**
      * ====================================================================
@@ -138,53 +210,50 @@
         },
 
         handleMove(e) {
-            e.preventDefault();
+            if (e.target.closest('.btn')) return; // Không di chuyển khi chạm nút
             const p = e.touches ? e.touches[0] : e;
             this.screenX = p.clientX;
             this.screenY = p.clientY;
         },
 
         handleDown(e) {
-            e.preventDefault();
+            if (e.target.closest('.btn')) return; // Không tính double tap khi bấm nút UI
             const now = performance.now();
             if (now - this.lastTapTime < CONFIG.INPUT.DOUBLE_TAP_DELAY) {
                 this.guardForm = this.guardForm === 1 ? 2 : 1;
-                clearTimeout(this.attackTimer);
                 this.isAttacking = false;
                 this.lastTapTime = 0;
                 return;
             }
             this.lastTapTime = now;
-            this.attackTimer = setTimeout(() => { this.isAttacking = true; }, CONFIG.SWORD.ATTACK_DELAY_MS);
-        },
-
-        handleUp(e) {
-            e.preventDefault();
-            this.isAttacking = false;
-            clearTimeout(this.attackTimer);
-        },
-
-        handleWheel(e) {
-            // Zoom in/out dựa trên lăn chuột
-            const delta = -e.deltaY * CONFIG.ZOOM.SENSITIVITY;
-            Camera.targetZoom += delta;
-            
-            // Kẹp giá trị trong khoảng min/max
-            if (Camera.targetZoom < CONFIG.ZOOM.MIN) Camera.targetZoom = CONFIG.ZOOM.MIN;
-            if (Camera.targetZoom > CONFIG.ZOOM.MAX) Camera.targetZoom = CONFIG.ZOOM.MAX;
         }
     };
 
+    // Gắn sự kiện cho các nút UI
+    document.getElementById('btn-zoom-in').addEventListener('pointerdown', (e) => { e.stopPropagation(); Camera.adjustZoom(CONFIG.ZOOM.STEP); });
+    document.getElementById('btn-zoom-out').addEventListener('pointerdown', (e) => { e.stopPropagation(); Camera.adjustZoom(-CONFIG.ZOOM.STEP); });
+    
+    const attackBtn = document.getElementById('btn-attack');
+    const startAttack = (e) => { e.stopPropagation(); e.preventDefault(); Input.isAttacking = true; };
+    const endAttack = (e) => { e.stopPropagation(); e.preventDefault(); Input.isAttacking = false; };
+    
+    attackBtn.addEventListener('touchstart', startAttack);
+    attackBtn.addEventListener('touchend', endAttack);
+    attackBtn.addEventListener('pointerdown', startAttack);
+    attackBtn.addEventListener('pointerup', endAttack);
+
+    // Sự kiện Canvas
     ['pointermove', 'touchmove'].forEach(evt => window.addEventListener(evt, e => Input.handleMove(e), { passive: false }));
     ['pointerdown', 'touchstart'].forEach(evt => window.addEventListener(evt, e => Input.handleDown(e), { passive: false }));
-    ['pointerup', 'touchend'].forEach(evt => window.addEventListener(evt, e => Input.handleUp(e), { passive: false }));
-    window.addEventListener('wheel', e => Input.handleWheel(e), { passive: false });
+    window.addEventListener('wheel', e => Camera.adjustZoom(-e.deltaY * CONFIG.ZOOM.SENSITIVITY), { passive: false });
 
     /**
      * ====================================================================
      * 4. GAME ENTITIES
      * ====================================================================
      */
+    const random = (min, max) => Math.random() * (max - min) + min;
+
     class Enemy {
         constructor() { this.respawn(); }
         respawn() {
@@ -241,103 +310,56 @@
 
         update(guardCenter, enemies) {
             this.breath += this.breathSpeed;
-            const currentRadius = this.radius + Math.sin(this.breath) * 8 * scaleFactor;
+            const r = this.radius + Math.sin(this.breath) * 8 * scaleFactor;
 
             if (!Input.isAttacking) {
-                this.updateGuardMode(guardCenter, currentRadius);
-            } else {
-                this.updateAttackMode(enemies);
-            }
-        }
+                this.spinAngle += this.spinSpeed;
+                const a = this.baseAngle + this.spinAngle;
+                const tx = guardCenter.x + Math.cos(a) * r;
+                const ty = guardCenter.y + Math.sin(a) * r;
 
-        updateGuardMode(guardCenter, r) {
-            // 1. Luôn cập nhật thông số xoay cơ bản
-            this.spinAngle += this.spinSpeed;
-            const a = this.baseAngle + this.spinAngle;
-            
-            // Vị trí đích chuẩn trong đội hình
-            const tx = guardCenter.x + Math.cos(a) * r;
-            const ty = guardCenter.y + Math.sin(a) * r;
-
-            // 2. Kiểm tra trạng thái di chuyển
-            if (Input.speed > 1.5) {
-                // --- CHẾ ĐỘ BAY LƯỢN ĐUỔI THEO (FLOW MODE) ---
-                this.flowNoise += 0.04; // Tốc độ tự uốn lượn của mỗi thanh kiếm
-
-                // Điểm mục tiêu ảo uốn lượn quanh con trỏ (fx, fy)
-                const fx = Input.x + Math.cos(this.flowOffsetAngle + this.flowNoise) * this.flowOffsetRadius;
-                const fy = Input.y + Math.sin(this.flowOffsetAngle + this.flowNoise) * this.flowOffsetRadius;
-
-                const dx = fx - this.x;
-                const dy = fy - this.y;
-                const d = Math.hypot(dx, dy) || 1;
-
-                // Lực kéo mềm (Steering) - scaleFactor giúp tương thích mọi màn hình
-                this.vx += (dx / d) * Math.min(d * 0.04, 3 * scaleFactor);
-                this.vy += (dy / d) * Math.min(d * 0.04, 3 * scaleFactor);
-
-                // Ma sát thấp (0.88 - 0.92) để tạo độ trượt lượn
-                this.vx *= 0.9; 
-                this.vy *= 0.9;
-
-                this.x += this.vx;
-                this.y += this.vy;
-
-                // Hướng mũi kiếm theo hướng di chuyển
-                this.drawAngle = Math.atan2(this.vy, this.vx) + Math.PI / 2;
-
-            } else {
-                // --- CHẾ ĐỘ HỒI ĐỘI HÌNH (STABLE MODE) ---
-                // Khi dừng lại, kéo kiếm về vị trí tx, ty
-                const dx = tx - this.x;
-                const dy = ty - this.y;
-                
-                // Lực kéo về đội hình nhanh dần đều
-                this.x += dx * 0.12;
-                this.y += dy * 0.12;
-                
-                // Triệt tiêu vận tốc dư thừa
-                this.vx *= 0.5;
-                this.vy *= 0.5;
-
-                // Xoay mũi kiếm về hướng của guardForm
-                let targetAngle;
-                if (Input.guardForm === 1) {
-                    targetAngle = a + Math.PI / 2;
+                if (Input.speed > 1.5) {
+                    this.flowNoise += 0.04;
+                    const fx = Input.x + Math.cos(this.flowOffsetAngle + this.flowNoise) * this.flowOffsetRadius;
+                    const fy = Input.y + Math.sin(this.flowOffsetAngle + this.flowNoise) * this.flowOffsetRadius;
+                    const dx = fx - this.x, dy = fy - this.y;
+                    const d = Math.hypot(dx, dy) || 1;
+                    this.vx += (dx / d) * Math.min(d * 0.04, 3 * scaleFactor);
+                    this.vy += (dy / d) * Math.min(d * 0.04, 3 * scaleFactor);
+                    this.vx *= 0.9; this.vy *= 0.9;
+                    this.x += this.vx; this.y += this.vy;
+                    this.drawAngle = Math.atan2(this.vy, this.vx) + Math.PI / 2;
                 } else {
-                    targetAngle = Math.atan2(ty - this.y, tx - this.x) + Math.PI / 2;
+                    this.x += (tx - this.x) * 0.12;
+                    this.y += (ty - this.y) * 0.12;
+                    this.vx *= 0.5; this.vy *= 0.5;
+                    let targetAngle = (Input.guardForm === 1) ? a + Math.PI / 2 : Math.atan2(ty - this.y, tx - this.x) + Math.PI / 2;
+                    let diff = targetAngle - this.drawAngle;
+                    while (diff < -Math.PI) diff += Math.PI * 2;
+                    while (diff > Math.PI) diff -= Math.PI * 2;
+                    this.drawAngle += diff * 0.15;
                 }
-
-                // Nội suy góc xoay để mượt mà
-                let diff = targetAngle - this.drawAngle;
-                while (diff < -Math.PI) diff += Math.PI * 2;
-                while (diff > Math.PI) diff -= Math.PI * 2;
-                this.drawAngle += diff * 0.15;
-            }
-
-            this.attackFrame = 0;
-            this.trail = []; 
-        }
-
-        updateAttackMode(enemies) {
-            this.attackFrame++;
-            if (this.attackFrame < this.attackDelay) return;
-            let target = null, minStartDist = Infinity;
-            for (const e of enemies) {
-                const d = Math.hypot(e.x - Input.x, e.y - Input.y);
-                if (d < minStartDist) { minStartDist = d; target = e; }
-            }
-            if (target) {
-                const dx = target.x - this.x, dy = target.y - this.y;
-                const d = Math.hypot(dx, dy) || 1;
-                this.vx += (dx / d) * 10 * scaleFactor;
-                this.vy += (dy / d) * 10 * scaleFactor;
-                this.vx *= 0.92; this.vy *= 0.92;
-                this.x += this.vx; this.y += this.vy;
-                this.drawAngle = Math.atan2(this.vy, this.vx) + Math.PI / 2;
-                if (Math.hypot(this.x - target.x, this.y - target.y) < target.r) target.hit();
-                this.trail.push({ x: this.x, y: this.y });
-                if (this.trail.length > CONFIG.SWORD.TRAIL_LENGTH) this.trail.shift();
+                this.attackFrame = 0; this.trail = [];
+            } else {
+                this.attackFrame++;
+                if (this.attackFrame < this.attackDelay) return;
+                let target = null, minDist = Infinity;
+                for (const e of enemies) {
+                    const d = Math.hypot(e.x - Input.x, e.y - Input.y);
+                    if (d < minDist) { minDist = d; target = e; }
+                }
+                if (target) {
+                    const dx = target.x - this.x, dy = target.y - this.y;
+                    const d = Math.hypot(dx, dy) || 1;
+                    this.vx += (dx / d) * 10 * scaleFactor;
+                    this.vy += (dy / d) * 10 * scaleFactor;
+                    this.vx *= 0.92; this.vy *= 0.92;
+                    this.x += this.vx; this.y += this.vy;
+                    this.drawAngle = Math.atan2(this.vy, this.vx) + Math.PI / 2;
+                    if (Math.hypot(this.x - target.x, this.y - target.y) < target.r) target.hit();
+                    this.trail.push({ x: this.x, y: this.y });
+                    if (this.trail.length > CONFIG.SWORD.TRAIL_LENGTH) this.trail.shift();
+                }
             }
         }
 
@@ -353,60 +375,23 @@
             ctx.save();
             ctx.translate(this.x, this.y);
             ctx.rotate(this.drawAngle);
-            this.drawAura(ctx);
             this.drawBlade(ctx);
             ctx.restore();
-        }
-
-        drawAura(ctx) {
-            const auraCount = Math.floor(random(2, 4));
-            ctx.shadowColor = "#fffaa0";
-            ctx.shadowBlur = 8 * scaleFactor;
-            for (let i = 0; i < auraCount; i++) {
-                ctx.beginPath();
-                let py = -random(0, CONFIG.SWORD.SIZE * scaleFactor);
-                let px = random(-3, 3) * scaleFactor;
-                ctx.moveTo(px, py);
-                for (let s = 0; s < 3; s++) {
-                    px += random(-4, 4) * scaleFactor;
-                    py += random(-3, 3) * scaleFactor;
-                    ctx.lineTo(px, py);
-                }
-                ctx.strokeStyle = `rgba(255,255,180,${random(0.3, 0.6)})`;
-                ctx.lineWidth = 1.5 * scaleFactor;
-                ctx.stroke();
-            }
         }
 
         drawBlade(ctx) {
             const sLen = CONFIG.SWORD.SIZE * scaleFactor;
             const sWid = 4 * scaleFactor;
-            ctx.shadowColor = "#8fffe0";
-            ctx.shadowBlur = 15 * scaleFactor;
             const g = ctx.createLinearGradient(0, -sLen, 0, 0);
             g.addColorStop(0, CONFIG.COLORS.SWORD_BLADE[0]);
-            g.addColorStop(0.5, CONFIG.COLORS.SWORD_BLADE[1]);
             g.addColorStop(1, CONFIG.COLORS.SWORD_BLADE[2]);
             ctx.fillStyle = g;
+            ctx.shadowColor = "#8fffe0"; ctx.shadowBlur = 10 * scaleFactor;
             ctx.beginPath();
             ctx.moveTo(-sWid / 2, 0);
             ctx.lineTo(-sWid / 2, -sLen);
             ctx.quadraticCurveTo(0, -sLen - 10 * scaleFactor, sWid / 2, -sLen);
             ctx.lineTo(sWid / 2, 0);
-            ctx.fill();
-            
-            ctx.shadowColor = "#9fffe6";
-            ctx.fillStyle = "#4fcfb2";
-            ctx.beginPath();
-            ctx.roundRect(-7*scaleFactor, -1.2*scaleFactor, 14*scaleFactor, 2.4*scaleFactor, 2.4*scaleFactor);
-            ctx.fill();
-
-            ctx.fillStyle = "#2f7f68";
-            ctx.beginPath();
-            ctx.moveTo(-3 * scaleFactor, 0);
-            ctx.lineTo(-2 * scaleFactor, 14 * scaleFactor);
-            ctx.lineTo(2 * scaleFactor, 14 * scaleFactor);
-            ctx.lineTo(3 * scaleFactor, 0);
             ctx.fill();
         }
     }
@@ -414,22 +399,12 @@
     class StarField {
         constructor(count) {
             this.stars = [];
-            // Tạo sao trên vùng rộng gấp 3 lần màn hình để khi zoom out không bị đen
-            const limit = 3; 
             for(let i=0; i<count; i++) {
-                this.stars.push({
-                    x: random(-width, width * 2), 
-                    y: random(-height, height * 2),
-                    r: random(0.5, 2),
-                    alpha: random(0.2, 1)
-                });
+                this.stars.push({ x: random(-width, width * 2), y: random(-height, height * 2), r: random(0.5, 2), alpha: random(0.2, 1) });
             }
         }
         draw(ctx) {
-            ctx.shadowBlur = 0;
             for (const s of this.stars) {
-                s.alpha += random(-0.01, 0.01);
-                if (s.alpha > 1) s.alpha = 1; else if (s.alpha < 0.2) s.alpha = 0.2;
                 ctx.beginPath();
                 ctx.arc(s.x, s.y, s.r * scaleFactor, 0, Math.PI * 2);
                 ctx.fillStyle = `rgba(255,255,255,${s.alpha})`;
@@ -443,40 +418,14 @@
      * 5. MAIN MANAGER
      * ====================================================================
      */
-    const enemies = [];
-    const swords = [];
+    const enemies = [], swords = [];
     let starField;
     const guardCenter = { x: width/2, y: height/2, vx: 0, vy: 0 };
 
     function init() {
-        starField = new StarField(250); // Tăng số lượng sao vì không gian rộng hơn
+        starField = new StarField(250);
         for (let i = 0; i < CONFIG.ENEMY.SPAWN_COUNT; i++) enemies.push(new Enemy());
         for (let i = 0; i < CONFIG.SWORD.COUNT; i++) swords.push(new Sword(i));
-    }
-
-    function updatePhysics() {
-        Camera.update(); // Cập nhật zoom mượt
-        Input.update();  // Cập nhật tọa độ chuột dựa trên zoom
-
-        let dx = Input.x - guardCenter.x;
-        let dy = Input.y - guardCenter.y;
-        guardCenter.vx += dx * 0.04; 
-        guardCenter.vy += dy * 0.04;
-        guardCenter.vx *= 0.82;
-        guardCenter.vy *= 0.82;
-        guardCenter.x += guardCenter.vx; 
-        guardCenter.y += guardCenter.vy;
-    }
-
-    function renderCursor() {
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = "#6fffe0";
-        ctx.beginPath();
-        // Vẽ con trỏ tại tọa độ World (Input.x, Input.y)
-        ctx.arc(Input.x, Input.y, 4 * scaleFactor, 0, Math.PI * 2);
-        ctx.fillStyle = "#6fffe0";
-        ctx.fill();
-        ctx.shadowBlur = 0;
     }
 
     function animate() {
@@ -484,9 +433,14 @@
         ctx.fillStyle = CONFIG.COLORS.BG_FADE;
         ctx.fillRect(0, 0, width, height);
 
-        updatePhysics();
+        Camera.update();
+        Input.update();
 
-        // 2. Bắt đầu Camera Transform
+        let dx = Input.x - guardCenter.x, dy = Input.y - guardCenter.y;
+        guardCenter.vx = (guardCenter.vx + dx * 0.04) * 0.82;
+        guardCenter.vy = (guardCenter.vy + dy * 0.04) * 0.82;
+        guardCenter.x += guardCenter.vx; guardCenter.y += guardCenter.vy;
+
         ctx.save();
         // Dời gốc về giữa màn hình -> Zoom -> Trả gốc về
         ctx.translate(width / 2, height / 2);
@@ -495,27 +449,10 @@
 
         // --- Bắt đầu vẽ thế giới game (World Space) ---
         starField.draw(ctx);
-        
-        ctx.save();
-        ctx.translate(guardCenter.x, guardCenter.y);
-        ctx.rotate(performance.now() * 0.0002);
-        ctx.strokeStyle = "rgba(120,255,210,0.1)";
-        ctx.lineWidth = 1.5 * scaleFactor;
-        ctx.beginPath();
-        ctx.arc(0, 0, 50 * scaleFactor, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.restore();
-
         enemies.forEach(e => e.draw(ctx));
-        swords.forEach(s => {
-            s.update(guardCenter, enemies);
-            s.draw(ctx);
-        });
-        renderCursor();
-        // --- Kết thúc vẽ thế giới game ---
+        swords.forEach(s => { s.update(guardCenter, enemies); s.draw(ctx); });
 
-        ctx.restore(); // Kết thúc Camera Transform
-
+        ctx.restore();
         requestAnimationFrame(animate);
     }
 

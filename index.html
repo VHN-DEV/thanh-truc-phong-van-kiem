@@ -10,7 +10,18 @@
 
 <body>
     <canvas id="c"></canvas>
-    <div id="ui">Scroll to Zoom • Double Tap to Change Form</div>
+    <div id="instructions" class="game-ui">Double Tap: Change Form • Hold Button: Attack</div>
+
+    <div class="controls-layer">
+        <div class="zoom-group">
+            <div id="btn-zoom-in" class="btn btn-zoom">+</div>
+            <div id="btn-zoom-out" class="btn btn-zoom">−</div>
+        </div>
+
+        <div class="attack-group">
+            <div id="btn-attack" class="btn btn-attack">Công</div>
+        </div>
+    </div>
 
     <script src="js/config.js"></script>
     <script src="js/entities.js"></script>
