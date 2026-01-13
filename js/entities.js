@@ -71,28 +71,63 @@ class Sword {
         const ty = guardCenter.y + Math.sin(a) * r;
 
         if (Input.speed > 1.5) {
-            this.flowNoise += 0.04;
-            const fx = Input.x + Math.cos(this.flowOffsetAngle + this.flowNoise) * this.flowOffsetRadius;
-            const fy = Input.y + Math.sin(this.flowOffsetAngle + this.flowNoise) * this.flowOffsetRadius;
-            const dx = fx - this.x;
-            const dy = fy - this.y;
+            const dx = tx - this.x;
+            const dy = ty - this.y;
             const d = Math.hypot(dx, dy) || 1;
-            this.vx += (dx / d) * Math.min(d * 0.04, 3 * scaleFactor);
-            this.vy += (dy / d) * Math.min(d * 0.04, 3 * scaleFactor);
-            this.vx *= 0.9; this.vy *= 0.9;
-            this.x += this.vx; this.y += this.vy;
+
+            this.vx += (dx / d) * Math.min(d * 0.05, 4 * scaleFactor);
+            this.vy += (dy / d) * Math.min(d * 0.05, 4 * scaleFactor);
+            
+            this.vx *= 0.85; 
+            this.vy *= 0.85;
+            
+            this.x += this.vx; 
+            this.y += this.vy;
+
             this.drawAngle = Math.atan2(this.vy, this.vx) + Math.PI / 2;
         } else {
             const dx = tx - this.x;
             const dy = ty - this.y;
-            this.x += dx * 0.12; this.y += dy * 0.12;
-            this.vx *= 0.5; this.vy *= 0.5;
-            let targetAngle = (Input.guardForm === 1) ? a + Math.PI / 2 : Math.atan2(ty - this.y, tx - this.x) + Math.PI / 2;
+            
+            this.x += dx * 0.12; 
+            this.y += dy * 0.12;
+            
+            this.vx *= 0.5; 
+            this.vy *= 0.5;
+
+            let targetAngle = (Input.guardForm === 1) 
+                ? a + Math.PI / 2 
+                : Math.atan2(ty - this.y, tx - this.x) + Math.PI / 2;
+
             let diff = targetAngle - this.drawAngle;
             while (diff < -Math.PI) diff += Math.PI * 2;
             while (diff > Math.PI) diff -= Math.PI * 2;
             this.drawAngle += diff * 0.15;
         }
+
+        // if (Input.speed > 1.5) {
+        //     this.flowNoise += 0.04;
+        //     const fx = Input.x + Math.cos(this.flowOffsetAngle + this.flowNoise) * this.flowOffsetRadius;
+        //     const fy = Input.y + Math.sin(this.flowOffsetAngle + this.flowNoise) * this.flowOffsetRadius;
+        //     const dx = fx - this.x;
+        //     const dy = fy - this.y;
+        //     const d = Math.hypot(dx, dy) || 1;
+        //     this.vx += (dx / d) * Math.min(d * 0.04, 3 * scaleFactor);
+        //     this.vy += (dy / d) * Math.min(d * 0.04, 3 * scaleFactor);
+        //     this.vx *= 0.9; this.vy *= 0.9;
+        //     this.x += this.vx; this.y += this.vy;
+        //     this.drawAngle = Math.atan2(this.vy, this.vx) + Math.PI / 2;
+        // } else {
+        //     const dx = tx - this.x;
+        //     const dy = ty - this.y;
+        //     this.x += dx * 0.12; this.y += dy * 0.12;
+        //     this.vx *= 0.5; this.vy *= 0.5;
+        //     let targetAngle = (Input.guardForm === 1) ? a + Math.PI / 2 : Math.atan2(ty - this.y, tx - this.x) + Math.PI / 2;
+        //     let diff = targetAngle - this.drawAngle;
+        //     while (diff < -Math.PI) diff += Math.PI * 2;
+        //     while (diff > Math.PI) diff -= Math.PI * 2;
+        //     this.drawAngle += diff * 0.15;
+        // }
         this.attackFrame = 0;
         this.trail = []; 
     }
