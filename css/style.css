@@ -81,12 +81,34 @@ canvas {
 }
 
 .btn-attack {
-    width: 90px;
-    height: 90px;
-    font-size: 16px;
-    font-weight: bold;
-    border-width: 3px;
-    box-shadow: 0 0 20px rgba(143, 255, 224, 0.2);
-    text-transform: uppercase;
-    letter-spacing: 1px;
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(143, 255, 224, 0.1);
+    border: 2px solid #8fffe0;
+    color: #8fffe0;
+    cursor: pointer;
+    transition: all 0.2s;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    box-shadow: 0 0 15px rgba(143, 255, 224, 0.2);
+}
+
+.sword-icon {
+    width: 50%;
+    height: 50%;
+    filter: drop-shadow(0 0 5px #8fffe0);
+}
+
+.btn-attack:active {
+    background: rgba(143, 255, 224, 0.4);
+    transform: scale(0.9);
+    box-shadow: 0 0 25px rgba(143, 255, 224, 0.5);
+}
+
+.btn-attack:active .sword-icon {
+    filter: drop-shadow(0 0 10px #8fffe0);
 }
