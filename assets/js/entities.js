@@ -69,8 +69,12 @@ class Enemy {
     }
 
     hit(sword) {
+        // Lấy sát thương từ cảnh giới hiện tại
+        const currentRank = CONFIG.CULTIVATION.RANKS[Input.rankIndex];
+        const damage = currentRank ? currentRank.damage : 1;
+
         if (this.hasShield && this.shieldHp > 0) {
-            this.shieldHp--;
+            this.shieldHp -= damage; // Áp dụng sát thương cảnh giới
 
             let currentLevel = Math.floor((this.maxShieldHp - this.shieldHp) / 20);
 
@@ -86,11 +90,16 @@ class Enemy {
             return "shielded";
         }
 
-        this.hp--;
-        if (this.hp <= 0) { 
-            this.respawn(); 
-            Input.updateMana(CONFIG.MANA.GAIN_KILL); // CỘNG 1 MANA KHI DIỆT ĐỊCH
-            return "killed"; 
+        this.hp -= damage; // Áp dụng sát thương cảnh giới
+         if (this.hp <= 0) {
+            this.respawn();
+            Input.updateMana(CONFIG.MANA.GAIN_KILL);
+            
+            // CỘNG EXP: Khiên +2, Thường +1
+            const expGain = this.maxShieldHp > 0 ? 2 : 1;
+            Input.updateExp(expGain); 
+            
+            return "killed";
         }
         return "hit";
     }

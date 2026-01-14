@@ -54,44 +54,61 @@ canvas {
 // ====================================================================
 #mana-container {
     @include abs-pos($top: 20px, $left: 20px);
-    position: fixed; // Ghi đè absolute từ game-ui
+    position: fixed;
     width: 200px;
-    height: 25px;
-    background: rgba(0, 0, 0, 0.5);
-    border: 2px solid $mana-color;
-    border-radius: 12px;
-    overflow: hidden;
     z-index: 100;
-    transition: border-color 0.3s, box-shadow 0.3s;
 
-    #mana-bar {
+    #cultivation-rank {
+        display: block;
+        font-family: $ui-font;
+        font-weight: bold;
+        color: #4CAF50;
+        font-size: 13px;
+        margin-bottom: 6px; 
+        letter-spacing: 0.5px;
+        text-shadow: 0 0 8px rgba(76, 175, 80, 0.6); 
+        transition: color 0.5s ease, text-shadow 0.5s ease; 
+    }
+
+    #mana-bar-bg {
+        position: relative;
         width: 100%;
-        height: 100%;
-        background: $mana-color;
-        transition: width 0.3s ease-out, background-color 0.3s;
-        box-shadow: 0 0 15px $mana-color;
+        height: 22px;
+        background: rgba(0, 0, 0, 0.6);
+        border: 2px solid $mana-color;
+        border-radius: 12px;
+        overflow: hidden; 
+        transition: border-color 0.3s, box-shadow 0.3s;
 
-        &.low-mana {
-            background-color: $danger-color;
-            box-shadow: 0 0 15px $danger-color;
+        #mana-bar {
+            width: 100%;
+            height: 100%;
+            background: $mana-color;
+            transition: width 0.3s ease-out;
+            box-shadow: 0 0 15px $mana-color;
+        }
+
+        #mana-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            text-align: center;
+            color: white;
+            font-size: 11px;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px black;
+            pointer-events: none;
+            z-index: 10;
         }
     }
 
-    #mana-text {
-        @include abs-pos($top: 50%, $left: 50%);
-        transform: translate(-50%, -50%);
-        width: 100%;
-        text-align: center;
-        color: white;
-        font-size: 12px;
-        font-weight: bold;
-        text-shadow: 1px 1px 2px black;
-    }
-
     &.mana-empty-error {
-        border-color: $danger-color !important;
-        box-shadow: 0 0 20px $danger-color;
-        
+        #mana-bar-bg {
+            border-color: $danger-color !important;
+            box-shadow: 0 0 20px $danger-color;
+        }
         #mana-bar {
             background-color: $danger-color;
         }
@@ -235,4 +252,38 @@ canvas {
         text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
     }
 }
+
+// ====================================================================
+// 7. EXP BAR UI
+// ====================================================================
+#exp-container {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 10px;
+    background: rgba(0, 0, 0, 0.5);
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    z-index: 100;
+    
+    #exp-bar {
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, #ffeb3b, #f44336); /* Màu vàng cam thiên hướng tu luyện */
+        transition: width 0.3s ease;
+        box-shadow: 0 0 10px #ffeb3b;
+    }
+    
+    #exp-text {
+        position: absolute;
+        bottom: 15px;
+        left: 50%;
+        transform: translateX(-50%);
+        color: white;
+        font-size: 12px;
+        text-shadow: 1px 1px 2px black;
+        pointer-events: none;
+    }
+}
+
 // <!-- Create By: Vũ Hoài Nam -->

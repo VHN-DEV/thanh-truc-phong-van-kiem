@@ -53,10 +53,12 @@ const Input = {
     lastManaRegenTick: performance.now(),
     initialPinchDist: 0,
     lastFrameTime: performance.now(),
+    exp: 0,
+    rankIndex: 0, // Vị trí hiện tại trong mảng RANKS
 
     processActiveConsumption(dt) {
         // dt là thời gian trôi qua tính bằng giây (seconds)
-        
+
         let costTick = 0;
 
         // 1. TÍNH TOÁN CHI PHÍ DI CHUYỂN
@@ -82,7 +84,7 @@ const Input = {
                     this.isAttacking = false;
                     this.triggerManaShake();
                 }
-                
+
                 // (Tùy chọn) Ngắt di chuyển? 
                 // Thường game sẽ cho di chuyển chậm lại hoặc không cho dash, 
                 // nhưng ở đây ta chỉ cần báo hiệu hết mana.
@@ -103,7 +105,7 @@ const Input = {
         if (elapsed >= CONFIG.MANA.REGEN_INTERVAL_MS) {
             // Tính xem đã trôi qua bao nhiêu lần "1 phút"
             const manaToAdd = Math.floor(elapsed / CONFIG.MANA.REGEN_INTERVAL_MS);
-            
+
             if (manaToAdd > 0) {
                 this.updateMana(manaToAdd * CONFIG.MANA.REGEN_PER_MIN);
                 // Cập nhật lại mốc thời gian, giữ lại phần dư (ms) để không bị mất giây
@@ -118,8 +120,8 @@ const Input = {
         if (bar && text) {
             const percentage = (this.mana / this.maxMana) * 100;
             bar.style.width = percentage + '%';
-            text.innerText = `Mana: ${Math.floor(this.mana)}/${this.maxMana}`;
-            
+            text.innerText = `Linh lực: ${Math.floor(this.mana)}/${this.maxMana}`;
+
             // Logic đổi màu khi mana thấp (đã khai báo trong SCSS)
             if (percentage < 20) {
                 bar.classList.add('low-mana');
@@ -132,22 +134,98 @@ const Input = {
     triggerManaShake() {
         const el = document.getElementById('mana-container');
         el.classList.remove('mana-shake', 'mana-empty-error');
-        
+
         void el.offsetWidth; // Trigger reflow để restart animation
-        
+
         el.classList.add('mana-shake', 'mana-empty-error');
-        
+
         // Xóa màu đỏ sau 500ms (hoặc giữ nguyên tùy bạn, ở đây tôi xóa sau khi rung xong)
         setTimeout(() => {
             el.classList.remove('mana-shake', 'mana-empty-error');
         }, 500);
     },
 
+    updateExp(amount) {
+        this.exp += amount;
+        this.checkLevelUp();
+        this.renderExpUI();
+    },
+
+    checkLevelUp() {
+        const currentRank = CONFIG.CULTIVATION.RANKS[this.rankIndex];
+        if (!currentRank) return;
+
+        if (this.exp >= currentRank.exp) {
+            // Thử đột phá
+            const roll = Math.random();
+            if (roll <= currentRank.chance) {
+                // Đột phá thành công
+                this.exp -= currentRank.exp;
+                if (currentRank.bonus) this.exp += currentRank.bonus; // Thưởng exp khi qua đại cảnh giới
+                this.rankIndex++;
+                console.log("Đột phá thành công: " + CONFIG.CULTIVATION.RANKS[this.rankIndex].name);
+            } else {
+                // Đột phá thất bại: Trừ 10% exp hiện tại làm hình phạt
+                this.exp = Math.max(0, this.exp - Math.floor(currentRank.exp * 0.1));
+                this.triggerExpError(); // Hiệu ứng rung thanh EXP
+            }
+        }
+    },
+
+    renderExpUI() {
+        const rank = CONFIG.CULTIVATION.RANKS[this.rankIndex];
+        if (!rank) return;
+
+        // Lấy các phần tử UI
+        const barExp = document.getElementById('exp-bar');
+        const textExp = document.getElementById('exp-text'); // Cần cái này để hiện số
+        const barMana = document.getElementById('mana-bar');
+        const manaBg = document.getElementById('mana-bar-bg');
+        const rankText = document.getElementById('cultivation-rank');
+
+        // 1. Cập nhật nội dung chữ (Phần đạo hữu bị thiếu)
+        if (textExp) {
+            textExp.innerText = `Kinh nghiệm: ${Math.floor(this.exp)}/${rank.exp}`;
+        }
+        if (rankText) {
+            rankText.innerText = rank.name;
+        }
+
+        // 2. Cập nhật độ dài thanh EXP
+        const percentage = (this.exp / rank.exp) * 100;
+        if (barExp) {
+            barExp.style.width = Math.min(100, percentage) + '%';
+            
+            // Cập nhật màu sắc cho thanh EXP (Màu nhạt chuyển sang màu đậm)
+            barExp.style.background = `linear-gradient(90deg, ${rank.lightColor}, ${rank.color})`;
+            barExp.style.boxShadow = `0 0 10px ${rank.lightColor}`;
+        }
+
+        // 3. Cập nhật màu sắc chủ đạo cho hệ thống (Mana & Rank Name)
+        if (barMana) {
+            barMana.style.backgroundColor = rank.color;
+            barMana.style.boxShadow = `0 0 15px ${rank.color}`;
+        }
+        if (manaBg) {
+            manaBg.style.borderColor = rank.color;
+        }
+        if (rankText) {
+            rankText.style.color = rank.color;
+            rankText.style.textShadow = `0 0 8px ${rank.color}80`;
+        }
+    },
+
+    triggerExpError() {
+        const el = document.getElementById('exp-container');
+        el.classList.add('shake-red');
+        setTimeout(() => el.classList.remove('shake-red'), 500);
+    },
+
     update(dt) { // Nhận thêm tham số dt
         const worldPos = Camera.screenToWorld(this.screenX, this.screenY);
         this.x = worldPos.x;
         this.y = worldPos.y;
-        
+
         // Tính tốc độ di chuyển của con trỏ/ngón tay
         this.speed = Math.hypot(this.x - this.px, this.y - this.py);
         this.px = this.x; this.py = this.y;
@@ -158,7 +236,7 @@ const Input = {
 
     handleMove(e) {
         if (e.target.closest('.btn')) return;
-        
+
         // Pointermove hoạt động cho cả chuột và touch di chuyển
         const p = e.touches ? e.touches[0] : e;
         this.screenX = p.clientX;
@@ -169,12 +247,12 @@ const Input = {
         if (e.target.closest('.btn')) return;
 
         // LOGIC MỚI: Nếu là mobile, chạm màn hình KHÔNG kích hoạt tấn công
-        if (this.isTouchDevice) return; 
+        if (this.isTouchDevice) return;
 
         // Nếu là Desktop (chuột), vẫn giữ logic nhấn giữ để tấn công
         e.preventDefault();
-        this.attackTimer = setTimeout(() => { 
-            this.isAttacking = true; 
+        this.attackTimer = setTimeout(() => {
+            this.isAttacking = true;
         }, CONFIG.SWORD.ATTACK_DELAY_MS);
     },
 
@@ -193,7 +271,7 @@ const Input = {
 };
 
 // Đăng ký sự kiện Hệ thống (Gộp Pointer Events để tối ưu)
-window.addEventListener('pointermove', e => { if(!e.touches) Input.handleMove(e); });
+window.addEventListener('pointermove', e => { if (!e.touches) Input.handleMove(e); });
 window.addEventListener('pointerdown', e => Input.handleDown(e));
 window.addEventListener('pointerup', e => Input.handleUp(e));
 window.addEventListener('wheel', e => {
@@ -249,7 +327,7 @@ window.addEventListener('touchmove', e => {
 document.getElementById('btn-form').addEventListener('pointerdown', (e) => {
     e.stopPropagation();
     e.preventDefault();
-    
+
     // --- LOGIC MỚI: KIỂM TRA MANA ---
     const cost = CONFIG.MANA.COST_CHANGE_FORM;
 
@@ -258,7 +336,7 @@ document.getElementById('btn-form').addEventListener('pointerdown', (e) => {
         Input.updateMana(-cost);
 
         Input.guardForm = (Input.guardForm === 1) ? 2 : 1;
-        
+
         const icon = e.currentTarget.querySelector('.icon-form');
         if (icon) {
             icon.style.transform = `rotate(${Input.guardForm === 1 ? -15 : 165}deg)`;
@@ -309,10 +387,11 @@ attackBtn.addEventListener('pointerleave', stopAttack); // Khi kéo ngón tay ra
 const enemies = [];
 const swords = [];
 let starField;
-const guardCenter = { x: width/2, y: height/2, vx: 0, vy: 0 };
+const guardCenter = { x: width / 2, y: height / 2, vx: 0, vy: 0 };
 
 function init() {
     Input.renderManaUI();
+    Input.renderExpUI();
     starField = new StarField(250, width, height);
     for (let i = 0; i < CONFIG.ENEMY.SPAWN_COUNT; i++) enemies.push(new Enemy());
     for (let i = 0; i < CONFIG.SWORD.COUNT; i++) swords.push(new Sword(i, scaleFactor));
@@ -322,10 +401,10 @@ function updateSwordCounter(swords) {
     const aliveSwords = swords.filter(s => !s.isDead).length;
     const totalSwords = swords.length;
     const display = document.getElementById('sword-count-text');
-    
+
     if (display) {
         display.innerText = `${aliveSwords}/${totalSwords}`;
-        
+
         // Hiệu ứng đổi màu nếu số lượng kiếm quá thấp (tùy chọn)
         if (aliveSwords < totalSwords * 0.3) {
             display.style.color = "#ff4444";
@@ -337,15 +416,15 @@ function updateSwordCounter(swords) {
 
 function updatePhysics(dt) {
     Camera.update();
-    Input.update(dt); 
+    Input.update(dt);
     Input.regenMana();
     let dx = Input.x - guardCenter.x;
     let dy = Input.y - guardCenter.y;
-    guardCenter.vx += dx * 0.04; 
+    guardCenter.vx += dx * 0.04;
     guardCenter.vy += dy * 0.04;
     guardCenter.vx *= 0.82;
     guardCenter.vy *= 0.82;
-    guardCenter.x += guardCenter.vx; 
+    guardCenter.x += guardCenter.vx;
     guardCenter.y += guardCenter.vy;
 }
 
@@ -360,7 +439,7 @@ function renderCursor() {
 }
 
 function animate() {
-   // 1. Tính Delta Time (dt) tính bằng giây
+    // 1. Tính Delta Time (dt) tính bằng giây
     const now = performance.now();
     const dt = (now - lastTime) / 1000; // Chia 1000 để ra giây
     lastTime = now;
@@ -383,7 +462,7 @@ function animate() {
     ctx.translate(-width / 2, -height / 2);
 
     starField.draw(ctx, scaleFactor);
-    
+
     ctx.save();
     ctx.translate(guardCenter.x, guardCenter.y);
     ctx.rotate(performance.now() * 0.0002);
