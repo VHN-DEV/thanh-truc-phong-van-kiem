@@ -275,8 +275,6 @@ class Sword {
             return;
         }
 
-        this.spinAngle += this.spinSpeed;
-
         if (this.isStunned) {
             this.handleStun(scaleFactor);
             return;
@@ -322,8 +320,9 @@ class Sword {
     }
 
     updateGuardMode(guardCenter, r, Input, scaleFactor) {
-        this.spinAngle += this.spinSpeed;
-        const a = this.baseAngle + this.spinAngle;
+        const globalRotation = (performance.now() / 1000) * this.spinSpeed * (CONFIG.SWORD.SPEED_MULT || 50);
+        const a = this.baseAngle + globalRotation; 
+        
         const tx = guardCenter.x + Math.cos(a) * r;
         const ty = guardCenter.y + Math.sin(a) * r;
 
@@ -351,6 +350,11 @@ class Sword {
 
             this.vx *= 0.5;
             this.vy *= 0.5;
+
+            if (Math.hypot(dx, dy) < 0.5) {
+                this.x = tx;
+                this.y = ty;
+            }
 
             let targetAngle = (Input.guardForm === 1)
                 ? a + Math.PI / 2
