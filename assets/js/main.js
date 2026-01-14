@@ -8,6 +8,7 @@ const ctx = canvas.getContext("2d", { alpha: false });
 
 let scaleFactor = 1;
 let width, height;
+let frameCount = 0;
 
 const Camera = {
     currentZoom: 1,
@@ -307,6 +308,8 @@ function renderCursor() {
 }
 
 function animate() {
+    frameCount++;
+    
     ctx.fillStyle = CONFIG.COLORS.BG_FADE;
     ctx.fillRect(0, 0, width, height);
 
