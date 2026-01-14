@@ -46,6 +46,43 @@ const Input = {
     attackTimer: null,
     // Kiểm tra xem thiết bị có hỗ trợ cảm ứng không
     isTouchDevice: ('ontouchstart' in window) || (navigator.maxTouchPoints > 0),
+    mana: CONFIG.MANA.START || 100,
+    maxMana: CONFIG.MANA.MAX || 100,
+    lastManaRegenTick: performance.now(),
+
+   updateMana(amount) {
+        this.mana = Math.max(0, Math.min(this.maxMana, this.mana + amount));
+        this.renderManaUI();
+    },
+
+    // Cơ chế hồi 1 Mana mỗi 60.000ms (1 phút)
+    regenMana() {
+        const now = performance.now();
+        const elapsed = now - this.lastManaRegenTick;
+
+        // Nếu đã trôi qua 1 phút (60000ms)
+        if (elapsed >= CONFIG.MANA.REGEN_INTERVAL_MS) {
+            this.updateMana(CONFIG.MANA.REGEN_PER_MIN);
+            this.lastManaRegenTick = now; 
+        }
+    },
+
+    renderManaUI() {
+        const bar = document.getElementById('mana-bar');
+        const text = document.getElementById('mana-text');
+        if (bar && text) {
+            const percentage = (this.mana / this.maxMana) * 100;
+            bar.style.width = percentage + '%';
+            text.innerText = `Mana: ${Math.floor(this.mana)}/${this.maxMana}`;
+            
+            // Logic đổi màu khi mana thấp (đã khai báo trong SCSS)
+            if (percentage < 20) {
+                bar.classList.add('low-mana');
+            } else {
+                bar.classList.remove('low-mana');
+            }
+        }
+    },
 
     update() {
         const worldPos = Camera.screenToWorld(this.screenX, this.screenY);
@@ -159,6 +196,7 @@ let starField;
 const guardCenter = { x: width/2, y: height/2, vx: 0, vy: 0 };
 
 function init() {
+    Input.renderManaUI();
     starField = new StarField(250, width, height);
     for (let i = 0; i < CONFIG.ENEMY.SPAWN_COUNT; i++) enemies.push(new Enemy());
     for (let i = 0; i < CONFIG.SWORD.COUNT; i++) swords.push(new Sword(i, scaleFactor));

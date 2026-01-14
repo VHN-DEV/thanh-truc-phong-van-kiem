@@ -87,7 +87,11 @@ class Enemy {
         }
 
         this.hp--;
-        if (this.hp <= 0) { this.respawn(); return "killed"; }
+        if (this.hp <= 0) { 
+            this.respawn(); 
+            Input.updateMana(CONFIG.MANA.GAIN_KILL); // CỘNG 1 MANA KHI DIỆT ĐỊCH
+            return "killed"; 
+        }
         return "hit";
     }
 
@@ -256,21 +260,15 @@ class Sword {
     update(guardCenter, enemies, Input, scaleFactor) {
         if (this.isDead) {
             const now = performance.now();
-            if (now - this.deathTime < CONFIG.SWORD.DEATH_WAIT_MS) {
-                this.fragments.forEach(f => {
-                    f.x += f.vx;
-                    f.y += f.vy;
-                    f.angle += f.va;
-                    f.vx *= 0.9;
-                    f.vy *= 0.9;
-                    f.va *= 0.9;
-                });
-            } else {
-                this.fragments = [];
-            }
-
             if (now > this.respawnTimer) {
-                this.respawn(Input);
+                // KIỂM TRA MANA TRƯỚC KHI HỒI SINH
+                if (Input.mana >= Math.abs(CONFIG.MANA.COST_RESPAWN)) {
+                    Input.updateMana(CONFIG.MANA.COST_RESPAWN); // TRỪ 1 MANA KHI TÁI SINH
+                    this.respawn(Input);
+                } else {
+                    // Nếu không đủ mana, trì hoãn việc hồi sinh thêm 1 giây để kiểm tra lại sau
+                    this.respawnTimer = now + 1000;
+                }
             }
             return;
         }

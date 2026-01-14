@@ -84,5 +84,13 @@ const CONFIG = {
             ["#99ff99", "#33cc33"], ["#ffcc99", "#cc6600"],
             ["#ff99ff", "#cc33cc"], ["#ffff99", "#cccc33"]
         ]
-    }
+    },
+    MANA: {
+        MAX: 100,
+        START: 100,
+        REGEN_PER_MIN: 1,           // 1 phút hồi 1 mana
+        REGEN_INTERVAL_MS: 60000,    // 60 giây (tương ứng 1 phút)
+        COST_RESPAWN: -1,           // Tốn 1 mana khi tái sinh
+        GAIN_KILL: 1                // Nhận 1 mana khi diệt địch
+    },
 };

@@ -1,8 +1,33 @@
-// Khai báo biến
+// ====================================================================
+// 1. VARIABLES & CONFIG
+// ====================================================================
 $primary-color: #8fffe0;
+$mana-color: #00d4ff;
+$danger-color: #ff4444;
 $bg-gradient: radial-gradient(circle at center, #0a1525, #000);
 $shadow-color: rgba(0, 0, 0, 0.4);
+$ui-font: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 
+// ====================================================================
+// 2. MIXINS
+// ====================================================================
+@mixin flex-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+@mixin abs-pos($top: auto, $right: auto, $bottom: auto, $left: auto) {
+    position: absolute;
+    top: $top;
+    right: $right;
+    bottom: $bottom;
+    left: $left;
+}
+
+// ====================================================================
+// 3. BASE STYLES
+// ====================================================================
 html, body {
     margin: 0;
     padding: 0;
@@ -10,37 +35,78 @@ html, body {
     overflow: hidden;
     cursor: none;
     touch-action: none;
+    height: 100%;
 }
 
-canvas { display: block; }
+canvas { 
+    display: block; 
+}
 
 .game-ui {
     position: absolute;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: $ui-font;
     user-select: none;
     pointer-events: none;
 }
 
+// ====================================================================
+// 4. MANA SYSTEM UI
+// ====================================================================
+#mana-container {
+    @include abs-pos($top: 20px, $left: 20px);
+    position: fixed; // Ghi đè absolute từ game-ui
+    width: 200px;
+    height: 25px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 2px solid $mana-color;
+    border-radius: 12px;
+    overflow: hidden;
+    z-index: 100;
+
+    #mana-bar {
+        width: 100%;
+        height: 100%;
+        background: $mana-color;
+        transition: width 0.3s ease-out, background-color 0.3s;
+        box-shadow: 0 0 15px $mana-color;
+
+        &.low-mana {
+            background-color: $danger-color;
+            box-shadow: 0 0 15px $danger-color;
+        }
+    }
+
+    #mana-text {
+        @include abs-pos($top: 50%, $left: 50%);
+        transform: translate(-50%, -50%);
+        width: 100%;
+        text-align: center;
+        color: white;
+        font-size: 12px;
+        font-weight: bold;
+        text-shadow: 1px 1px 2px black;
+    }
+}
+
 #instructions {
-    bottom: 20px;
-    left: 20px;
+    @include abs-pos($bottom: 20px, $left: 20px);
     color: rgba(255, 255, 255, 0.3);
     font-size: 12px;
 }
 
+// ====================================================================
+// 5. CONTROLS & BUTTONS
+// ====================================================================
 .controls-layer {
-    position: absolute;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
+    @include abs-pos(0, auto, auto, 0);
+    width: 100%;
+    height: 100%;
     pointer-events: none;
 }
 
-// Nút bấm chung
 .btn {
     pointer-events: auto;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    @include flex-center;
     background: rgba($primary-color, 0.15);
     border: 1px solid rgba($primary-color, 0.4);
     color: $primary-color;
@@ -53,9 +119,6 @@ canvas { display: block; }
     transition: all 0.1s ease-out;
     box-shadow: 0 4px 0 $shadow-color, 0 0 10px rgba($primary-color, 0.2);
     user-select: none;
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
 
     &:active {
         top: 3px;
@@ -66,33 +129,35 @@ canvas { display: block; }
 }
 
 .zoom-group {
-    position: absolute;
-    top: 20px; right: 20px;
+    @include abs-pos($top: 20px, $right: 20px);
     display: flex;
     flex-direction: column;
     gap: 15px;
 
     .btn-zoom {
-        width: 50px; height: 50px;
-        font-size: 24px; font-weight: bold;
+        width: 50px;
+        height: 50px;
+        font-size: 24px;
+        font-weight: bold;
     }
 }
 
 .attack-group {
-    position: absolute;
-    bottom: 40px; right: 40px;
+    @include abs-pos($bottom: 40px, $right: 40px);
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 20px;
 
     .btn-form {
-        width: 50px; height: 50px;
+        width: 50px;
+        height: 50px;
         background: rgba($primary-color, 0.1);
     }
 
     .btn-attack {
-        width: 85px; height: 85px;
+        width: 85px;
+        height: 85px;
         border: 2px solid $primary-color;
         box-shadow: 0 6px 0 rgba(0, 0, 0, 0.5), 0 0 20px rgba($primary-color, 0.2);
 
@@ -105,13 +170,15 @@ canvas { display: block; }
 }
 
 .sword-icon {
-    width: 50%; height: 50%;
+    width: 50%;
+    height: 50%;
     filter: drop-shadow(0 0 5px $primary-color);
     pointer-events: none;
     transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 
     &.icon-form {
-        width: 55%; height: 55%;
+        width: 55%;
+        height: 55%;
         transform: rotate(-15deg);
     }
 }
