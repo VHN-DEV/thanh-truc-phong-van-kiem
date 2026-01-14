@@ -49,21 +49,27 @@ const Input = {
     mana: CONFIG.MANA.START || 100,
     maxMana: CONFIG.MANA.MAX || 100,
     lastManaRegenTick: performance.now(),
+    initialPinchDist: 0,
 
    updateMana(amount) {
         this.mana = Math.max(0, Math.min(this.maxMana, this.mana + amount));
         this.renderManaUI();
     },
 
-    // Cơ chế hồi 1 Mana mỗi 60.000ms (1 phút)
     regenMana() {
         const now = performance.now();
         const elapsed = now - this.lastManaRegenTick;
 
-        // Nếu đã trôi qua 1 phút (60000ms)
+        // Kiểm tra nếu đã trôi qua ít nhất 1 khoảng REGEN_INTERVAL_MS
         if (elapsed >= CONFIG.MANA.REGEN_INTERVAL_MS) {
-            this.updateMana(CONFIG.MANA.REGEN_PER_MIN);
-            this.lastManaRegenTick = now; 
+            // Tính xem đã trôi qua bao nhiêu lần "1 phút"
+            const manaToAdd = Math.floor(elapsed / CONFIG.MANA.REGEN_INTERVAL_MS);
+            
+            if (manaToAdd > 0) {
+                this.updateMana(manaToAdd * CONFIG.MANA.REGEN_PER_MIN);
+                // Cập nhật lại mốc thời gian, giữ lại phần dư (ms) để không bị mất giây
+                this.lastManaRegenTick = now - (elapsed % CONFIG.MANA.REGEN_INTERVAL_MS);
+            }
         }
     },
 
@@ -82,6 +88,20 @@ const Input = {
                 bar.classList.remove('low-mana');
             }
         }
+    },
+
+    triggerManaShake() {
+        const el = document.getElementById('mana-container');
+        el.classList.remove('mana-shake', 'mana-empty-error');
+        
+        void el.offsetWidth; // Trigger reflow để restart animation
+        
+        el.classList.add('mana-shake', 'mana-empty-error');
+        
+        // Xóa màu đỏ sau 500ms (hoặc giữ nguyên tùy bạn, ở đây tôi xóa sau khi rung xong)
+        setTimeout(() => {
+            el.classList.remove('mana-shake', 'mana-empty-error');
+        }, 500);
     },
 
     update() {
@@ -129,25 +149,57 @@ const Input = {
 };
 
 // Đăng ký sự kiện Hệ thống (Gộp Pointer Events để tối ưu)
-window.addEventListener('pointermove', e => Input.handleMove(e), { passive: false });
-window.addEventListener('pointerdown', e => Input.handleDown(e), { passive: false });
+window.addEventListener('pointermove', e => { if(!e.touches) Input.handleMove(e); });
+window.addEventListener('pointerdown', e => Input.handleDown(e));
 window.addEventListener('pointerup', e => Input.handleUp(e));
-window.addEventListener('wheel', e => Input.handleWheel(e), { passive: false });
+window.addEventListener('wheel', e => {
+    Camera.adjustZoom(-e.deltaY * CONFIG.ZOOM.SENSITIVITY);
+}, { passive: false });
+
+window.addEventListener('keydown', e => {
+    if (e.key === '+' || e.key === '=') Camera.adjustZoom(CONFIG.ZOOM.STEP);
+    if (e.key === '-' || e.key === '_') Camera.adjustZoom(-CONFIG.ZOOM.STEP);
+});
+
+// 2. Touch Events (Mobile - Pinch to Zoom)
+window.addEventListener('touchstart', e => {
+    if (e.touches.length === 2) {
+        Input.initialPinchDist = Math.hypot(
+            e.touches[0].clientX - e.touches[1].clientX,
+            e.touches[0].clientY - e.touches[1].clientY
+        );
+    }
+}, { passive: false });
+
+window.addEventListener('touchmove', e => {
+    if (e.touches.length === 2) {
+        e.preventDefault();
+        const currentDist = Math.hypot(
+            e.touches[0].clientX - e.touches[1].clientX,
+            e.touches[0].clientY - e.touches[1].clientY
+        );
+        const delta = (currentDist - Input.initialPinchDist) * 0.01;
+        Camera.adjustZoom(delta);
+        Input.initialPinchDist = currentDist;
+    } else {
+        Input.handleMove(e);
+    }
+}, { passive: false });
 
 /**
  * XỬ LÝ GIAO DIỆN (UI CONTROLS)
  */
 
 // 1. Nút Zoom
-document.getElementById('btn-zoom-in').addEventListener('pointerdown', (e) => {
-    e.stopPropagation();
-    Camera.adjustZoom(CONFIG.ZOOM.STEP);
-});
+// document.getElementById('btn-zoom-in').addEventListener('pointerdown', (e) => {
+//     e.stopPropagation();
+//     Camera.adjustZoom(CONFIG.ZOOM.STEP);
+// });
 
-document.getElementById('btn-zoom-out').addEventListener('pointerdown', (e) => {
-    e.stopPropagation();
-    Camera.adjustZoom(-CONFIG.ZOOM.STEP);
-});
+// document.getElementById('btn-zoom-out').addEventListener('pointerdown', (e) => {
+//     e.stopPropagation();
+//     Camera.adjustZoom(-CONFIG.ZOOM.STEP);
+// });
 
 // 2. Nút Đổi Hình Thái (Change Form)
 document.getElementById('btn-form').addEventListener('pointerdown', (e) => {
@@ -170,6 +222,17 @@ const attackBtn = document.getElementById('btn-attack');
 const startAttack = (e) => {
     e.stopPropagation();
     e.preventDefault();
+
+    // 1. Kiểm tra xem còn thanh kiếm nào còn sống (hp > 0) không
+    const aliveSwords = swords.filter(s => !s.isDead).length;
+
+    // 2. Nếu mana = 0 VÀ không còn kiếm nào sống
+    if (Input.mana <= 0 && aliveSwords === 0) {
+        Input.triggerManaShake();
+        Input.isAttacking = false; // Không cho phép tấn công
+        return;
+    }
+
     Input.isAttacking = true;
 };
 
@@ -205,6 +268,7 @@ function init() {
 function updatePhysics() {
     Camera.update();
     Input.update();
+    Input.regenMana();
     let dx = Input.x - guardCenter.x;
     let dy = Input.y - guardCenter.y;
     guardCenter.vx += dx * 0.04; 
