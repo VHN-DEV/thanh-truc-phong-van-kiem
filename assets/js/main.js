@@ -309,7 +309,7 @@ function renderCursor() {
 
 function animate() {
     frameCount++;
-    
+
     ctx.fillStyle = CONFIG.COLORS.BG_FADE;
     ctx.fillRect(0, 0, width, height);
 
@@ -350,3 +350,4 @@ function animate() {
 
 init();
 animate();
+// <!-- Create By: Vũ Hoài Nam -->

@@ -94,3 +94,4 @@ const CONFIG = {
         GAIN_KILL: 1                // Nhận 1 mana khi diệt địch
     },
 };
+// <!-- Create By: Vũ Hoài Nam -->
