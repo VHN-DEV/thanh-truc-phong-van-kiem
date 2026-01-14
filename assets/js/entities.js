@@ -510,19 +510,23 @@ class Sword {
         const sWid = 4 * scaleFactor;
 
         this.fragments.forEach(f => {
+            f.x += f.vx;
+            f.y += f.vy;
+            f.angle += f.va;
+
             ctx.save();
             ctx.translate(f.x, f.y);
             ctx.rotate(f.angle);
 
-            ctx.fillStyle = CONFIG.COLORS.SWORD_FRAGMENT;
-            ctx.shadowColor = CONFIG.COLORS.SWORD_GLOW_OUTER;
-            ctx.shadowBlur = 5 * scaleFactor;
+            ctx.shadowBlur = 0;
+            ctx.shadowColor = "transparent";
 
             ctx.beginPath();
             if (f.type === 'handle') {
                 ctx.fillStyle = CONFIG.COLORS.SWORD_HANDLE;
                 ctx.fillRect(-3 * scaleFactor, 0, 6 * scaleFactor, 14 * scaleFactor);
-                ctx.fillStyle = CONFIG.COLORS.SWORD_BLADE[2];
+                
+                ctx.fillStyle = CONFIG.COLORS.SWORD_BLADE[2]; 
                 ctx.moveTo(-sWid / 2, 0);
                 ctx.lineTo(sWid / 2, 0);
                 ctx.lineTo(sWid / 2, -sLen * 0.3);

@@ -51,7 +51,7 @@ const Input = {
     lastManaRegenTick: performance.now(),
     initialPinchDist: 0,
 
-   updateMana(amount) {
+    updateMana(amount) {
         this.mana = Math.max(0, Math.min(this.maxMana, this.mana + amount));
         this.renderManaUI();
     },
@@ -265,6 +265,23 @@ function init() {
     for (let i = 0; i < CONFIG.SWORD.COUNT; i++) swords.push(new Sword(i, scaleFactor));
 }
 
+function updateSwordCounter(swords) {
+    const aliveSwords = swords.filter(s => !s.isDead).length;
+    const totalSwords = swords.length;
+    const display = document.getElementById('sword-count-text');
+    
+    if (display) {
+        display.innerText = `${aliveSwords}/${totalSwords}`;
+        
+        // Hiệu ứng đổi màu nếu số lượng kiếm quá thấp (tùy chọn)
+        if (aliveSwords < totalSwords * 0.3) {
+            display.style.color = "#ff4444";
+        } else {
+            display.style.color = "#fff";
+        }
+    }
+}
+
 function updatePhysics() {
     Camera.update();
     Input.update();
@@ -294,6 +311,11 @@ function animate() {
     ctx.fillRect(0, 0, width, height);
 
     updatePhysics();
+
+    // Cập nhật số lượng kiếm mỗi frame (hoặc mỗi 10 frame để tối ưu)
+    if (frameCount % 10 === 0) {
+        updateSwordCounter(swords);
+    }
 
     ctx.save();
     ctx.translate(width / 2, height / 2);

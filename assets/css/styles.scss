@@ -203,3 +203,35 @@ canvas {
         transform: rotate(-15deg);
     }
 }
+
+// ====================================================================
+// 6. SWORD COUNTER UI
+// ====================================================================
+#sword-counter {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.5);
+    padding-top: 5px;
+    border-radius: 20px;
+    border: 1px border rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(5px);
+    pointer-events: none;
+
+    .counter-icon {
+        width: 24px;
+        height: 24px;
+        margin-right: 8px;
+        filter: drop-shadow(0 0 5px rgba(0, 255, 200, 0.5));
+    }
+    
+    #sword-count-text {
+        color: #fff;
+        font-family: Arial, sans-serif;
+        font-weight: bold;
+        font-size: 15px;
+        text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    }
+}

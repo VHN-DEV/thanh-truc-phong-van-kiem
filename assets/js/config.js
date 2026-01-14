@@ -48,7 +48,7 @@ const CONFIG = {
         SWORD_HANDLE: "#2f7f68",
         SWORD_GLOW_OUTER: "#8fffe0",
         SWORD_GLOW_INNER: "#9fffe6",
-        SWORD_FRAGMENT: "#4fcfb2",
+        SWORD_FRAGMENT: "#2a5a4d",
         SWORD_AURA_SHADOW: "#fffaa0",
         
         ENEMY_PARTICLE: "#8cf0ff",
