@@ -44,6 +44,8 @@ const Input = {
     isAttacking: false,
     guardForm: 1,
     attackTimer: null,
+    // Kiểm tra xem thiết bị có hỗ trợ cảm ứng không
+    isTouchDevice: ('ontouchstart' in window) || (navigator.maxTouchPoints > 0),
 
     update() {
         const worldPos = Camera.screenToWorld(this.screenX, this.screenY);
@@ -54,29 +56,33 @@ const Input = {
     },
 
     handleMove(e) {
-        // Ngăn điều khiển tâm nếu đang thao tác trên nút UI
         if (e.target.closest('.btn')) return;
-
-        e.preventDefault();
+        
+        // Pointermove hoạt động cho cả chuột và touch di chuyển
         const p = e.touches ? e.touches[0] : e;
         this.screenX = p.clientX;
         this.screenY = p.clientY;
     },
 
     handleDown(e) {
-        // Nếu nhấn trúng nút UI thì không xử lý tấn công màn hình
         if (e.target.closest('.btn')) return;
 
+        // LOGIC MỚI: Nếu là mobile, chạm màn hình KHÔNG kích hoạt tấn công
+        if (this.isTouchDevice) return; 
+
+        // Nếu là Desktop (chuột), vẫn giữ logic nhấn giữ để tấn công
         e.preventDefault();
-        // Giữ logic delay nhẹ để tạo cảm giác tụ lực khi nhấn màn hình
         this.attackTimer = setTimeout(() => { 
             this.isAttacking = true; 
         }, CONFIG.SWORD.ATTACK_DELAY_MS);
     },
 
     handleUp(e) {
-        this.isAttacking = false;
-        clearTimeout(this.attackTimer);
+        // Chỉ xử lý handleUp cho chuột trên desktop
+        if (!this.isTouchDevice) {
+            this.isAttacking = false;
+            clearTimeout(this.attackTimer);
+        }
     },
 
     handleWheel(e) {
@@ -121,9 +127,9 @@ document.getElementById('btn-form').addEventListener('pointerdown', (e) => {
     }
 });
 
-// 3. Nút Tấn công
 const attackBtn = document.getElementById('btn-attack');
 
+// Xử lý riêng cho nút bấm để không bị ảnh hưởng bởi logic handleDown của hệ thống
 const startAttack = (e) => {
     e.stopPropagation();
     e.preventDefault();
@@ -134,12 +140,13 @@ const stopAttack = (e) => {
     e.stopPropagation();
     e.preventDefault();
     Input.isAttacking = false;
+    if (Input.attackTimer) clearTimeout(Input.attackTimer);
 };
 
-// Đăng ký sự kiện nút Attack (Đồng bộ đa nền tảng)
+// Sử dụng pointerdown/up để nhạy nhất trên cả mobile và desktop
 attackBtn.addEventListener('pointerdown', startAttack);
 attackBtn.addEventListener('pointerup', stopAttack);
-attackBtn.addEventListener('pointerleave', stopAttack); 
+attackBtn.addEventListener('pointerleave', stopAttack); // Khi kéo ngón tay ra khỏi nút
 
 /**
  * ====================================================================

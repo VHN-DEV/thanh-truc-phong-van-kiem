@@ -52,6 +52,10 @@ canvas { display: block; }
     top: 0;
     transition: all 0.1s ease-out;
     box-shadow: 0 4px 0 $shadow-color, 0 0 10px rgba($primary-color, 0.2);
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
 
     &:active {
         top: 3px;
