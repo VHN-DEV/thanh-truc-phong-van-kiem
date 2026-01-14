@@ -1,0 +1,44 @@
+const gulp = require('gulp');
+const concat = require('gulp-concat');
+const terser = require('gulp-terser');
+const sass = require('gulp-sass')(require('sass'));
+const cleanCSS = require('gulp-clean-css');
+const rename = require('gulp-rename');
+
+// 1. Biên dịch styles.scss (Đã sửa tên cho khớp với ảnh của bạn)
+gulp.task('build-css', function() {
+  return gulp.src('assets/css/styles.scss') // Bỏ chữ 's' ở styles
+    .pipe(sass().on('error', sass.logError))
+    .pipe(cleanCSS())
+    .pipe(rename({ suffix: '.min' }))
+    .pipe(gulp.dest('public/assets/css'));
+});
+
+// 2. Gộp 3 file JS thành scripts.min.js
+gulp.task('build-js', function() {
+  return gulp.src([
+      'assets/js/config.js',
+      'assets/js/entities.js',
+      'assets/js/main.js'
+    ])
+    .pipe(concat('scripts.js'))
+    .pipe(terser())
+    .pipe(rename({ suffix: '.min' }))
+    .pipe(gulp.dest('public/assets/js'));
+});
+
+// 3. Copy hình ảnh sang public
+gulp.task('copy-images', function() {
+  return gulp.src('assets/images/**/*')
+    .pipe(gulp.dest('public/assets/images'));
+});
+
+// Task chạy mặc định
+gulp.task('default', gulp.parallel('build-css', 'build-js', 'copy-images'));
+
+// Task theo dõi thay đổi
+gulp.task('watch', function() {
+  gulp.watch('assets/css/**/*.scss', gulp.series('build-css'));
+  gulp.watch('assets/js/**/*.js', gulp.series('build-js'));
+  gulp.watch('assets/images/**/*', gulp.series('copy-images'));
+});

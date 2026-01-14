@@ -1,21 +1,66 @@
 # 72 Thanh Trúc Phong Vân Kiếm – Đại Canh Kiếm Trận
 
-Một demo HTML5 Canvas mô phỏng **72 thanh kiếm hộ thể** xoay quanh nhân vật, lấy cảm hứng từ thế giới *Phàm Nhân Tu Tiên*. Dự án tập trung vào hiệu ứng thị giác, chuyển động vật lý nhẹ và cơ chế điều khiển bằng chuột / touch (pointer events).
+Một demo HTML5 Canvas mô phỏng **72 thanh kiếm hộ thể** xoay quanh nhân vật, lấy cảm hứng từ thế giới *Phàm Nhân Tu Tiên*. Dự án tập trung vào hiệu ứng thị giác, chuyển động vật lý và quy trình tối ưu hóa mã nguồn hiện đại.
+
+---
+
+## ✦ Link Dự án
+
+* **Demo trực tuyến**: [https://vhn-dev.github.io/thanh-truc-phong-van-kiem/](https://vhn-dev.github.io/thanh-truc-phong-van-kiem/)
+* **Mã nguồn (GitHub)**: [https://github.com/VHN-DEV/thanh-truc-phong-van-kiem](https://github.com/VHN-DEV/thanh-truc-phong-van-kiem)
 
 ---
 
 ## ✦ Tổng quan
 
-- 72 thanh kiếm chia thành **3 tầng trận** (mỗi tầng 24 kiếm)
-- Kiếm xoay – bám tâm – phản ứng theo tốc độ chuột
-- Có **2 hộ thể kiếm trận** (guard form)
-- Có cơ chế **tấn công tự động** khi giữ chuột
-- Enemy sinh ngẫu nhiên để kiểm tra va chạm
+* **Số lượng**: 72 thanh kiếm chia thành **3 tầng trận** (mỗi tầng 24 kiếm).
+* **Hành vi**: Kiếm xoay, bám tâm và phản ứng linh hoạt theo tốc độ di chuyển của chuột/touch.
+* **Hình thức**: 2 chế độ hộ thể kiếm trận (Guard Form) có thể chuyển đổi linh hoạt.
+* **Chiến đấu**: Cơ chế tấn công tự động (Auto-attack) và Enemy sinh ngẫu nhiên để thử nghiệm va chạm.
 
-Dự án **không sử dụng thư viện ngoài**, chỉ dùng:
-- HTML5
-- Canvas 2D
-- JavaScript thuần (Vanilla JS)
+---
+
+## ✦ Cấu trúc Dự án (Pipeline)
+
+Dự án sử dụng quy trình **Build Pipeline** để tối ưu hóa hiệu suất tải trang:
+
+```text
+THANH-TRUC-PHONG-VAN-KIEM/
+├── assets/                 # Mã nguồn gốc (Development)
+│   ├── css/style.scss      # Kiểu dáng viết bằng SCSS
+│   ├── js/                 # Các module JS (config, entities, main)
+│   └── images/             # Tài nguyên ảnh gốc (SVG)
+├── public/                 # Bản phân phối đã tối ưu (Production)
+│   └── assets/
+│       ├── css/style.min.css    # CSS đã biên dịch và nén
+│       ├── js/scripts.min.js    # JS đã gộp module và nén
+│       └── images/              # Tài nguyên ảnh đã đồng bộ
+├── index.html              # Sử dụng tài nguyên từ thư mục /public
+├── gulpfile.js             # Cấu hình tự động nén và gộp file
+├── package.json            # Quản lý thư viện và scripts
+└── .gitignore              # Loại bỏ node_modules và các file build
+
+```
+
+---
+
+## ✦ Quy trình Phát triển
+
+### 1. Cài đặt
+
+Yêu cầu đã cài đặt [Node.js](https://nodejs.org/). Tại thư mục gốc, chạy:
+
+```bash
+npm install
+
+```
+
+### 2. Các lệnh thực thi (Gulp)
+
+| Lệnh | Mô tả |
+| --- | --- |
+| `npx gulp` | Biên dịch SCSS, gộp JS và copy ảnh sang `/public` (Chạy 1 lần). |
+| `npx gulp watch` | **Chế độ phát triển:** Tự động build lại mỗi khi bạn nhấn **Save (Ctrl+S)**. |
 
 ---
 
@@ -24,99 +69,37 @@ Dự án **không sử dụng thư viện ngoài**, chỉ dùng:
 ### Chuột / Touch
 
 | Thao tác | Chức năng |
-|--------|-----------|
-| Di chuyển | Điều khiển tâm kiếm trận |
-| Nhấn giữ | Kích hoạt tấn công (kiếm truy sát mục tiêu gần nhất) |
-| Double-click / Double-tap | Chuyển hộ thể kiếm trận |
+| --- | --- |
+| **Di chuyển** | Điều khiển tâm kiếm trận |
+| **Nhấn giữ nút Attack** | Kích hoạt tấn công mục tiêu gần nhất |
+| **Double-tap nút Form** | Chuyển đổi giữa 2 dạng hộ thể |
+| **Nút Zoom (+/-)** | Thay đổi khoảng cách camera |
 
 ### Guard Form
 
-- **Form 1 – Hộ thể ổn định**  
-  Kiếm bám vị trí trận chặt chẽ, chuyển động mượt và đều.
-
-- **Form 2 – Hộ thể linh động**  
-  Kiếm có quán tính, dao động mạnh hơn, cảm giác “linh hoạt – sống”.
-
----
-
-## ✦ Cơ chế chính
-
-### 1. Trạng thái kiếm
-
-Kiếm tự động chuyển trạng thái dựa trên tốc độ chuột:
-
-- `GUARD_STABLE` – Chuột đứng yên, hộ thể ổn định
-- `GUARD_DYNAMIC` – Chuột chậm, hộ thể linh động
-- `FOLLOW` – Chuột di chuyển nhanh, kiếm bám theo
-- `ATTACK` – Tự động lao về enemy gần con trỏ nhất
-
----
-
-### 2. Double-tap & Delay
-
-- `DOUBLE_TAP_DELAY = 300ms` – phát hiện đổi trận
-- `ATTACK_DELAY = 180ms` – tránh kích hoạt tấn công nhầm khi double-tap
-
-Cơ chế này giúp:
-- Không bị spam đổi trận
-- Tách rõ **ý định đổi trận** và **ý định tấn công**
-
----
-
-### 3. Enemy
-
-- Sinh ngẫu nhiên trên canvas
-- Máu phụ thuộc kích thước
-- Bị kiếm tấn công sẽ mất HP
-- Chết → respawn sau 1 giây
-
----
-
-## ✦ Cấu trúc file
-
-```text
-index.html   # Toàn bộ demo (HTML + CSS + JS)
-README.md    # Tài liệu mô tả dự án
-```
-
-Dự án được thiết kế **1 file duy nhất** để dễ demo và chia sẻ.
-
----
-
-## ✦ Cách chạy
-
-Chỉ cần mở file HTML bằng trình duyệt hiện đại:
-
-```bash
-open index.html
-```
-
-Hoặc dùng Live Server nếu muốn chỉnh sửa realtime.
+* **Form 1 (Ổn định)**: Kiếm bám vị trí trận chặt chẽ, mượt mà.
+* **Form 2 (Linh động)**: Kiếm có quán tính cao, dao động mạnh, cảm giác sống động.
 
 ---
 
 ## ✦ Định hướng mở rộng (Roadmap)
 
-- [ ] Thêm nhiều kiếm trận (Kiếm Vũ Tán Trận, Thiên La Kiếm Võng, …)
-- [ ] Hiệu ứng tụ khí khi đổi trận
-- [ ] Boss / Enemy AI
-- [ ] Âm thanh kiếm – khí tức
-- [ ] Phiên bản mobile tối ưu
+* [x] Chuyển đổi sang hệ thống Build (Gulp + SCSS).
+* [x] Tối ưu hóa dung lượng (Minification & Bundling).
+* [ ] Thêm hiệu ứng tụ khí (VFX) khi đổi trận.
+* [ ] Hệ thống âm thanh kiếm khí.
+* [ ] Boss AI và nhiều tầng kiếm trận phức tạp hơn.
 
 ---
 
-## ✦ Ghi chú
+## ✦ Tác giả
 
-Dự án mang tính **thử nghiệm hiệu ứng & cảm giác**, không phải game hoàn chỉnh.
-Mã nguồn ưu tiên **trực quan và dễ chỉnh** hơn là tối ưu hoá cực đoan.
+**VHN-DEV**
 
----
-
-## ✦ Giấy phép
-
-MIT License – Tự do sử dụng, chỉnh sửa và học tập.
+* Website: [https://github.com/VHN-DEV](https://www.google.com/search?q=https://github.com/VHN-DEV)
 
 ---
 
 > *“Kiếm trận không nằm ở số lượng, mà ở tâm không loạn.”*
 
+---
