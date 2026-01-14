@@ -43,7 +43,6 @@ const Input = {
     speed: 0,
     isAttacking: false,
     guardForm: 1,
-    lastTapTime: 0,
     attackTimer: null,
 
     update() {
@@ -55,6 +54,7 @@ const Input = {
     },
 
     handleMove(e) {
+        // Ngăn điều khiển tâm nếu đang thao tác trên nút UI
         if (e.target.closest('.btn')) return;
 
         e.preventDefault();
@@ -64,41 +64,38 @@ const Input = {
     },
 
     handleDown(e) {
+        // Nếu nhấn trúng nút UI thì không xử lý tấn công màn hình
         if (e.target.closest('.btn')) return;
 
         e.preventDefault();
-        const now = performance.now();
-        if (now - this.lastTapTime < CONFIG.INPUT.DOUBLE_TAP_DELAY) {
-            this.guardForm = this.guardForm === 1 ? 2 : 1;
-            clearTimeout(this.attackTimer);
-            this.isAttacking = false;
-            this.lastTapTime = 0;
-            return;
-        }
-        this.lastTapTime = now;
-        this.attackTimer = setTimeout(() => { this.isAttacking = true; }, CONFIG.SWORD.ATTACK_DELAY_MS);
+        // Giữ logic delay nhẹ để tạo cảm giác tụ lực khi nhấn màn hình
+        this.attackTimer = setTimeout(() => { 
+            this.isAttacking = true; 
+        }, CONFIG.SWORD.ATTACK_DELAY_MS);
     },
 
     handleUp(e) {
-        e.preventDefault();
         this.isAttacking = false;
         clearTimeout(this.attackTimer);
     },
 
     handleWheel(e) {
         const delta = -e.deltaY * CONFIG.ZOOM.SENSITIVITY;
-        Camera.targetZoom += delta;
-        if (Camera.targetZoom < CONFIG.ZOOM.MIN) Camera.targetZoom = CONFIG.ZOOM.MIN;
-        if (Camera.targetZoom > CONFIG.ZOOM.MAX) Camera.targetZoom = CONFIG.ZOOM.MAX;
+        Camera.adjustZoom(delta);
     }
 };
 
-['pointermove', 'touchmove'].forEach(evt => window.addEventListener(evt, e => Input.handleMove(e), { passive: false }));
-['pointerdown', 'touchstart'].forEach(evt => window.addEventListener(evt, e => Input.handleDown(e), { passive: false }));
-['pointerup', 'touchend'].forEach(evt => window.addEventListener(evt, e => Input.handleUp(e), { passive: false }));
+// Đăng ký sự kiện Hệ thống (Gộp Pointer Events để tối ưu)
+window.addEventListener('pointermove', e => Input.handleMove(e), { passive: false });
+window.addEventListener('pointerdown', e => Input.handleDown(e), { passive: false });
+window.addEventListener('pointerup', e => Input.handleUp(e));
 window.addEventListener('wheel', e => Input.handleWheel(e), { passive: false });
 
-// Xử lý nút Zoom
+/**
+ * XỬ LÝ GIAO DIỆN (UI CONTROLS)
+ */
+
+// 1. Nút Zoom
 document.getElementById('btn-zoom-in').addEventListener('pointerdown', (e) => {
     e.stopPropagation();
     Camera.adjustZoom(CONFIG.ZOOM.STEP);
@@ -109,7 +106,22 @@ document.getElementById('btn-zoom-out').addEventListener('pointerdown', (e) => {
     Camera.adjustZoom(-CONFIG.ZOOM.STEP);
 });
 
-// Xử lý nút Tấn công (Đè hoặc Click liên tục)
+// 2. Nút Đổi Hình Thái (Change Form)
+document.getElementById('btn-form').addEventListener('pointerdown', (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    
+    // Đổi trạng thái Form
+    Input.guardForm = (Input.guardForm === 1) ? 2 : 1;
+    
+    // Hiệu ứng xoay icon cho mượt mà
+    const icon = e.currentTarget.querySelector('.icon-form');
+    if (icon) {
+        icon.style.transform = `rotate(${Input.guardForm === 1 ? -15 : 165}deg)`;
+    }
+});
+
+// 3. Nút Tấn công
 const attackBtn = document.getElementById('btn-attack');
 
 const startAttack = (e) => {
@@ -124,12 +136,10 @@ const stopAttack = (e) => {
     Input.isAttacking = false;
 };
 
-// Hỗ trợ cả Touch (Mobile) và Mouse (PC/Emulator)
-attackBtn.addEventListener('touchstart', startAttack);
-attackBtn.addEventListener('touchend', stopAttack);
+// Đăng ký sự kiện nút Attack (Đồng bộ đa nền tảng)
 attackBtn.addEventListener('pointerdown', startAttack);
 attackBtn.addEventListener('pointerup', stopAttack);
-attackBtn.addEventListener('pointerleave', stopAttack); // Tránh kẹt nút khi kéo tay ra ngoài
+attackBtn.addEventListener('pointerleave', stopAttack); 
 
 /**
  * ====================================================================

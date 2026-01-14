@@ -37,7 +37,7 @@ canvas {
     pointer-events: none;
 }
 
-/* NÚT BẤM TỔNG QUÁT (Gộp tất cả thuộc tính chung) */
+/* NÚT BẤM TỔNG QUÁT (Hệ thống 3D cơ bản) */
 .btn {
     pointer-events: auto;
     display: flex;
@@ -56,16 +56,7 @@ canvas {
     box-shadow: 0 4px 0 rgba(0, 0, 0, 0.4), 0 0 10px rgba(143, 255, 224, 0.2);
 }
 
-/* Hiệu ứng Hover (chỉ dành cho thiết bị có chuột) */
-@media (hover: hover) {
-    .btn:hover {
-        background: rgba(143, 255, 224, 0.25);
-        box-shadow: 0 6px 0 rgba(0, 0, 0, 0.4), 0 0 15px rgba(143, 255, 224, 0.3);
-        top: -2px;
-    }
-}
-
-/* Hiệu ứng khi nhấn xuống (Thụt xuống) */
+/* Hiệu ứng khi nhấn xuống (Thụt xuống) cho nút chung */
 .btn:active {
     top: 3px;
     box-shadow: 0 1px 0 rgba(0, 0, 0, 0.4), 0 0 5px rgba(143, 255, 224, 0.4);
@@ -73,7 +64,7 @@ canvas {
     background: rgba(143, 255, 224, 0.4);
 }
 
-/* Cụm Zoom */
+/* Cụm Zoom (Góc trên phải) */
 .zoom-group {
     position: absolute;
     top: 20px;
@@ -90,27 +81,40 @@ canvas {
     font-weight: bold;
 }
 
-/* Cụm Tấn công */
+/* Cụm Action (Góc dưới phải) */
 .attack-group {
     position: absolute;
     bottom: 40px;
     right: 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
 }
 
+/* Nút Change Form (Nhỏ hơn nút Attack) */
+.btn-form {
+    width: 50px;
+    height: 50px;
+    background: rgba(143, 255, 224, 0.1);
+}
+
+/* Nút Tấn công (To nhất) */
 .btn-attack {
-    width: 80px;
-    height: 80px;
+    width: 85px;
+    height: 85px;
     border: 2px solid #8fffe0;
     box-shadow: 0 6px 0 rgba(0, 0, 0, 0.5), 0 0 20px rgba(143, 255, 224, 0.2);
-    touch-action: none;
 }
 
+/* Hiệu ứng thụt sâu riêng cho nút Attack */
 .btn-attack:active {
-    top: 5px; /* Thụt sâu hơn cho nút lớn */
+    top: 5px;
     box-shadow: 0 1px 0 rgba(0, 0, 0, 0.5), 0 0 30px rgba(143, 255, 224, 0.5);
     transform: scale(0.95);
 }
 
+/* Icon thiết lập chung */
 .sword-icon {
     width: 50%;
     height: 50%;
@@ -118,4 +122,12 @@ canvas {
     pointer-events: none;
     user-select: none;
     -webkit-user-drag: none;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Tinh chỉnh riêng cho icon Gooey của nút Form */
+.icon-form {
+    width: 55%;
+    height: 55%;
+    transform: rotate(-15deg); /* Nghiêng nhẹ cho nghệ thuật */
 }
