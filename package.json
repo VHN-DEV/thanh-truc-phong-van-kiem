@@ -1,21 +1,17 @@
 {
   "name": "thanh-truc-phong-van-kiem",
-  "version": "1.0.0",
-  "description": "Một demo HTML5 Canvas mô phỏng **72 thanh kiếm hộ thể** xoay quanh nhân vật, lấy cảm hứng từ thế giới *Phàm Nhân Tu Tiên*. Dự án tập trung vào hiệu ứng thị giác, chuyển động vật lý nhẹ và cơ chế điều khiển bằng chuột / touch (pointer events).",
-  "main": "index.js",
+  "version": "1.0.2",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "gulp",
+    "watch": "gulp watch"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "devDependencies": {
-    "gulp": "^5.0.1",
+    "gulp": "^5.0.0",
     "gulp-clean-css": "^4.3.0",
     "gulp-concat": "^2.6.1",
-    "gulp-rename": "^2.1.0",
-    "gulp-sass": "^6.0.1",
+    "gulp-rename": "^2.0.0",
+    "gulp-sass": "^5.1.0",
     "gulp-terser": "^2.1.0",
-    "sass": "^1.97.2"
+    "sass": "^1.77.0"
   }
 }
