@@ -2,7 +2,7 @@ const CONFIG = {
     CORE: { BASE_WIDTH: 1920 },
     ZOOM: {
         MIN: 0.5,           // Thu nhỏ tối đa
-        MAX: 3.0,           // Phóng to tối đa
+        MAX: 5.0,           // Phóng to tối đa
         SENSITIVITY: 0.001, // Độ nhạy khi lăn chuột
         STEP: 0.2,          // Độ nhảy zoom mỗi lần bấm nút
         SMOOTH: 0.1,        // Độ mượt (0.1 = chậm, 1 = tức thì)
@@ -15,7 +15,7 @@ const CONFIG = {
         ATTACK_DELAY_MS: 180,
         TRAIL_LENGTH: 6,
         SIZE: 70,
-        STUN_DURATION_MS: 3000,  // 3 giây bị văng
+        STUN_DURATION_MS: 1000,  // 1 giây bị văng
     },
     INPUT: { DOUBLE_TAP_DELAY: 300 },
     COLORS: {
