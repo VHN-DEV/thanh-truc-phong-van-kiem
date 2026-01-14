@@ -120,7 +120,7 @@ const Input = {
         if (bar && text) {
             const percentage = (this.mana / this.maxMana) * 100;
             bar.style.width = percentage + '%';
-            text.innerText = `Linh lực: ${Math.floor(this.mana)}/${this.maxMana}`;
+            text.innerText = `Linh lực: ${Math.round(this.mana)}/${this.maxMana}`;
 
             // Logic đổi màu khi mana thấp (đã khai báo trong SCSS)
             if (percentage < 20) {

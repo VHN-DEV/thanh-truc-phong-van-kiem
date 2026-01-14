@@ -89,7 +89,7 @@ const CONFIG = {
         MAX: 100,
         START: 100,
         REGEN_PER_MIN: 1,           // 1 phút hồi 1 mana
-        REGEN_INTERVAL_MS: 5000,   // 10 giây hồi 1 mana
+        REGEN_INTERVAL_MS: 3000,   // 10 giây hồi 1 mana
         COST_RESPAWN: -1,           // Tốn 1 mana khi tái sinh
         GAIN_KILL: 1,                // Nhận 1 mana khi diệt địch
         COST_MOVE_PER_SEC: 1,   // Trừ 1 mana/giây khi di chuyển
