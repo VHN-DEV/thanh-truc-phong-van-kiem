@@ -25,7 +25,7 @@ const CONFIG = {
         DURABILITY: 10,
         RESPAWN_DELAY_MS: 1000,
         DEATH_WAIT_MS: 2000, // Thời gian kiếm nằm chờ trước khi biến mất
-        SPEED_MULT: 50, // Hệ số điều chỉnh tốc độ quay chung
+        SPEED_MULT: 100, // Hệ số điều chỉnh tốc độ quay chung
         
         // Các thông số hành vi mới được tách ra
         BREATH_SPEED: { MIN: 0.015, MAX: 0.025 },

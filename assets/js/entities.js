@@ -320,7 +320,7 @@ class Sword {
     }
 
     updateGuardMode(guardCenter, r, Input, scaleFactor) {
-        const globalRotation = (performance.now() / 1000) * this.spinSpeed * (CONFIG.SWORD.SPEED_MULT || 50);
+        const globalRotation = (performance.now() / 1000) * this.spinSpeed * (CONFIG.SWORD.SPEED_MULT || 100);
         const a = this.baseAngle + globalRotation; 
         
         const tx = guardCenter.x + Math.cos(a) * r;
