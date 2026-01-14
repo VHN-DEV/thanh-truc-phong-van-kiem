@@ -91,7 +91,11 @@ const CONFIG = {
         REGEN_PER_MIN: 1,           // 1 phút hồi 1 mana
         REGEN_INTERVAL_MS: 10000,   // 10 giây hồi 1 mana
         COST_RESPAWN: -1,           // Tốn 1 mana khi tái sinh
-        GAIN_KILL: 1                // Nhận 1 mana khi diệt địch
+        GAIN_KILL: 1,                // Nhận 1 mana khi diệt địch
+        COST_MOVE_PER_SEC: 1,   // Trừ 1 mana/giây khi di chuyển
+        COST_ATTACK_PER_SEC: 1, // Trừ 1 mana/giây khi giữ tấn công
+        COST_CHANGE_FORM: 1     // Trừ 1 mana mỗi lần đổi dạng
+
     },
 };
 // <!-- Create By: Vũ Hoài Nam -->

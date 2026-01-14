@@ -9,6 +9,7 @@ const ctx = canvas.getContext("2d", { alpha: false });
 let scaleFactor = 1;
 let width, height;
 let frameCount = 0;
+let lastTime = performance.now();
 
 const Camera = {
     currentZoom: 1,
@@ -51,6 +52,43 @@ const Input = {
     maxMana: CONFIG.MANA.MAX || 100,
     lastManaRegenTick: performance.now(),
     initialPinchDist: 0,
+    lastFrameTime: performance.now(),
+
+    processActiveConsumption(dt) {
+        // dt là thời gian trôi qua tính bằng giây (seconds)
+        
+        let costTick = 0;
+
+        // 1. TÍNH TOÁN CHI PHÍ DI CHUYỂN
+        // Nếu tốc độ > 1 (tránh nhiễu khi chuột rung nhẹ)
+        if (this.speed > 1) {
+            costTick += CONFIG.MANA.COST_MOVE_PER_SEC * dt;
+        }
+
+        // 2. TÍNH TOÁN CHI PHÍ TẤN CÔNG
+        if (this.isAttacking) {
+            costTick += CONFIG.MANA.COST_ATTACK_PER_SEC * dt;
+        }
+
+        // 3. THỰC HIỆN TRỪ MANA
+        if (costTick > 0) {
+            if (this.mana > 0) {
+                // Trừ mana (dùng số thực để mượt, nhưng UI sẽ làm tròn)
+                this.updateMana(-costTick);
+            } else {
+                // HẾT MANA:
+                // Ngắt trạng thái tấn công ngay lập tức
+                if (this.isAttacking) {
+                    this.isAttacking = false;
+                    this.triggerManaShake();
+                }
+                
+                // (Tùy chọn) Ngắt di chuyển? 
+                // Thường game sẽ cho di chuyển chậm lại hoặc không cho dash, 
+                // nhưng ở đây ta chỉ cần báo hiệu hết mana.
+            }
+        }
+    },
 
     updateMana(amount) {
         this.mana = Math.max(0, Math.min(this.maxMana, this.mana + amount));
@@ -105,12 +143,17 @@ const Input = {
         }, 500);
     },
 
-    update() {
+    update(dt) { // Nhận thêm tham số dt
         const worldPos = Camera.screenToWorld(this.screenX, this.screenY);
         this.x = worldPos.x;
         this.y = worldPos.y;
+        
+        // Tính tốc độ di chuyển của con trỏ/ngón tay
         this.speed = Math.hypot(this.x - this.px, this.y - this.py);
         this.px = this.x; this.py = this.y;
+
+        // Gọi hàm xử lý tiêu hao mana
+        this.processActiveConsumption(dt);
     },
 
     handleMove(e) {
@@ -207,13 +250,22 @@ document.getElementById('btn-form').addEventListener('pointerdown', (e) => {
     e.stopPropagation();
     e.preventDefault();
     
-    // Đổi trạng thái Form
-    Input.guardForm = (Input.guardForm === 1) ? 2 : 1;
-    
-    // Hiệu ứng xoay icon cho mượt mà
-    const icon = e.currentTarget.querySelector('.icon-form');
-    if (icon) {
-        icon.style.transform = `rotate(${Input.guardForm === 1 ? -15 : 165}deg)`;
+    // --- LOGIC MỚI: KIỂM TRA MANA ---
+    const cost = CONFIG.MANA.COST_CHANGE_FORM;
+
+    if (Input.mana >= cost) {
+        // Đủ Mana: Trừ mana và đổi dạng
+        Input.updateMana(-cost);
+
+        Input.guardForm = (Input.guardForm === 1) ? 2 : 1;
+        
+        const icon = e.currentTarget.querySelector('.icon-form');
+        if (icon) {
+            icon.style.transform = `rotate(${Input.guardForm === 1 ? -15 : 165}deg)`;
+        }
+    } else {
+        // Không đủ Mana: Rung UI cảnh báo
+        Input.triggerManaShake();
     }
 });
 
@@ -283,9 +335,9 @@ function updateSwordCounter(swords) {
     }
 }
 
-function updatePhysics() {
+function updatePhysics(dt) {
     Camera.update();
-    Input.update();
+    Input.update(dt); 
     Input.regenMana();
     let dx = Input.x - guardCenter.x;
     let dy = Input.y - guardCenter.y;
@@ -308,14 +360,19 @@ function renderCursor() {
 }
 
 function animate() {
+   // 1. Tính Delta Time (dt) tính bằng giây
+    const now = performance.now();
+    const dt = (now - lastTime) / 1000; // Chia 1000 để ra giây
+    lastTime = now;
+
     frameCount++;
 
     ctx.fillStyle = CONFIG.COLORS.BG_FADE;
     ctx.fillRect(0, 0, width, height);
 
-    updatePhysics();
+    // 2. Truyền dt vào updatePhysics
+    updatePhysics(dt);
 
-    // Cập nhật số lượng kiếm mỗi frame (hoặc mỗi 10 frame để tối ưu)
     if (frameCount % 10 === 0) {
         updateSwordCounter(swords);
     }
