@@ -8,7 +8,7 @@ const CONFIG = {
         SMOOTH: 0.1,
     },
     BG: {
-        STAR_COUNT: 100,      // Số lượng sao (nếu muốn chỉnh từ config)
+        STAR_COUNT: 1000,      // Số lượng sao (nếu muốn chỉnh từ config)
         STAR_SIZE: { MIN: 0.5, MAX: 2 },
         STAR_ALPHA: { MIN: 0.2, MAX: 1 },
         STAR_TWINKLE_SPEED: 0.01
