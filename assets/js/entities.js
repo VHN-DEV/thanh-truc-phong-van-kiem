@@ -1,5 +1,22 @@
 const random = (min, max) => Math.random() * (max - min) + min;
 
+// Đối tượng lưu trữ các Image đã tải xong
+const enemyIcons = {};
+
+// Hàm tải toàn bộ icon từ danh sách trong CONFIG
+function preloadEnemyIcons() {
+    CONFIG.ENEMY.ANIMALS.forEach(path => {
+        const img = new Image();
+        img.src = path;
+        // Lấy tên file làm key (ví dụ: 'bat')
+        const key = path.split('/').pop().split('.')[0];
+        enemyIcons[key] = img;
+    });
+}
+
+// Gọi nạp ảnh ngay lập tức
+preloadEnemyIcons();
+
 class Enemy {
     constructor() {
         this.particles = [];
@@ -20,9 +37,17 @@ class Enemy {
         this.cracks = [];
         this.shieldLevel = 0;
 
+        // --- MỚI: CHỌN ICON SVG NGẪU NHIÊN ---
+        const animalIcons = CONFIG.ENEMY.ANIMALS;
+        const randomIconPath = animalIcons[Math.floor(Math.random() * animalIcons.length)];
+        
+        // Khởi tạo đối tượng Image để vẽ SVG
+        this.icon = new Image();
+        this.icon.src = randomIconPath;
+        // Thêm góc xoay ngẫu nhiên cho quái vật trông tự nhiên hơn
+        this.rotation = Math.random() * Math.PI * 2; 
+
         // --- KẾT NỐI HỆ THỐNG CẢNH GIỚI ---
-        // 1. Xác định Cảnh giới của quái (ngẫu nhiên quanh mức của người chơi)
-        // Cấp của quái = Cấp người chơi + (ngẫu nhiên từ -1 đến +1)
         const playerRank = Input.rankIndex || 0;
         const enemyRankIndex = Math.max(0, Math.min(
             CONFIG.CULTIVATION.RANKS.length - 1, 
@@ -32,25 +57,22 @@ class Enemy {
         this.rankData = CONFIG.CULTIVATION.RANKS[enemyRankIndex];
         this.rankName = this.rankData.name;
 
-        // 2. Màu sắc: Đồng bộ với màu Cảnh giới trong CONFIG
-        // lightColor làm tâm phát sáng, color làm viền
+        // 2. Màu sắc (Dùng để làm hiệu ứng hào quang quanh Icon)
         this.colors = [this.rankData.lightColor, this.rankData.color];
 
-        // 3. Kích thước: Quái cấp cao (Index cao) sẽ có cơ sở to hơn
+        // 3. Kích thước (Bán kính r dùng để xác định vùng va chạm và kích cỡ vẽ SVG)
         const sizeBase = CONFIG.ENEMY.BASE_SIZE.MIN + (enemyRankIndex * 1.5);
         const sizeVar = CONFIG.ENEMY.BASE_SIZE.VAR;
         this.r = (sizeBase + Math.pow(Math.random(), 1.5) * sizeVar) * (window.innerWidth / CONFIG.CORE.BASE_WIDTH);
 
-        // 4. Máu quái: Tỉ lệ thuận với MaxMana của Cảnh giới đó
-        // Giúp máu quái tăng tiến đồng bộ với sức mạnh người chơi
-        const hpMultiplier = 2.5; // Hệ số điều chỉnh độ trâu của quái
+        // 4. Máu quái
+        const hpMultiplier = 2.5; 
         this.maxHp = Math.floor(this.rankData.maxMana * hpMultiplier * (0.9 + Math.random() * 0.2));
         this.hp = this.maxHp;
 
-        // 5. Khiên: Cảnh giới càng cao, tỉ lệ có khiên càng lớn
+        // 5. Khiên
         this.hasShield = Math.random() < (CONFIG.ENEMY.SHIELD_CHANCE + (enemyRankIndex * 0.005));
         if (this.hasShield) {
-            // Máu khiên bằng 40% máu quái
             this.shieldHp = Math.floor(this.hp * 0.4);
             this.maxShieldHp = this.shieldHp;
         } else {
@@ -235,27 +257,26 @@ class Enemy {
         }
     }
 
-    // Thay thế đoạn code trong drawBody
     drawBody(ctx, scaleFactor) {
         ctx.save();
-        // Thay vì dùng shadowBlur, ta vẽ một vòng tròn gradient mờ ở dưới
-        const glowGrad = ctx.createRadialGradient(0, 0, this.r, 0, 0, this.r * 1.5);
-        glowGrad.addColorStop(0, this.hasShield ? "rgba(140, 245, 255, 0.3)" : `${this.colors[1]}44`);
-        glowGrad.addColorStop(1, "rgba(0,0,0,0)");
+        
+        // Vẽ hào quang (glow) dưới chân icon dựa theo màu cảnh giới
+        const glowGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, this.r * 1.2);
+        glowGrad.addColorStop(0, this.colors[1] + "66"); // Màu cảnh giới (trong suốt 40%)
+        glowGrad.addColorStop(1, "transparent");
         
         ctx.beginPath();
-        ctx.arc(0, 0, this.r * 1.5, 0, Math.PI * 2);
+        ctx.arc(0, 0, this.r * 1.2, 0, Math.PI * 2);
         ctx.fillStyle = glowGrad;
         ctx.fill();
 
-        // Vẽ thân quái (giữ nguyên gradient nhưng BỎ shadowBlur)
-        const g = ctx.createRadialGradient(0, 0, this.r * 0.2, 0, 0, this.r);
-        g.addColorStop(0, this.colors[0]);
-        g.addColorStop(1, this.colors[1]);
-        ctx.beginPath();
-        ctx.arc(0, 0, this.r, 0, Math.PI * 2);
-        ctx.fillStyle = g;
-        ctx.fill();
+        // Vẽ Icon SVG
+        if (this.icon && this.icon.complete) {
+            const drawSize = this.r * 2 * scaleFactor;
+            // Vẽ icon căn giữa
+            ctx.drawImage(this.icon, -drawSize/2, -drawSize/2, drawSize, drawSize);
+        }
+        
         ctx.restore();
     }
 }
