@@ -84,6 +84,7 @@ const Input = {
     exp: 0,
     rankIndex: 0, // Vị trí hiện tại trong mảng RANKS
     pillCount: 0, // Số đan dược đang có
+    isReadyToBreak: false, // Thêm biến trạng thái này
 
     processActiveConsumption(dt) {
         // dt là thời gian trôi qua tính bằng giây (seconds)
@@ -174,8 +175,12 @@ const Input = {
     },
 
     updateExp(amount) {
-        this.exp += amount;
-        this.checkLevelUp();
+        // Nếu đang chờ đột phá, exp không tăng nữa (hoặc tăng chậm lại tùy đạo hữu)
+        // Ở đây ta cho dừng tăng để ép người chơi phải đột phá
+        if (!this.isReadyToBreak) {
+            this.exp += amount;
+            this.checkLevelUp();
+        }
         this.renderExpUI();
     },
 
@@ -183,91 +188,103 @@ const Input = {
         const currentRank = CONFIG.CULTIVATION.RANKS[this.rankIndex];
         if (!currentRank) return;
 
-        if (this.exp >= currentRank.exp) {
-            let totalChance = currentRank.chance + (this.pillCount * CONFIG.ITEMS.PILL_BOOST);
-            totalChance = Math.min(0.95, totalChance);
-
-            if (Math.random() <= totalChance) {
-                // THÀNH CÔNG
-                this.exp -= currentRank.exp;
-                this.rankIndex++;
-                
-                // CẬP NHẬT GIỚI HẠN MANA MỚI TỪ RANK MỚI
-                const nextRank = CONFIG.CULTIVATION.RANKS[this.rankIndex];
-                if (nextRank && nextRank.maxMana) {
-                    this.maxMana = nextRank.maxMana;
-                }
-
-                this.pillCount = 0;
-                showNotify("ĐỘT PHÁ THÀNH CÔNG!", "#ffcc00");
-                this.createLevelUpExplosion(this.x, this.y, currentRank.color);
-                this.mana = this.maxMana; // Hồi đầy mana khi lên cấp
-            } else {
-                // THẤT BẠI
-                const penalty = Math.floor(this.exp * 0.5);
-                this.exp -= penalty;
-                this.pillCount = Math.floor(this.pillCount / 2); // Thất bại mất nửa số đan
-                showNotify("TÂM MA PHẢN PHỆ! (-50% tu vi)", "#ff4444");
-                this.triggerExpError();
-            }
-            this.renderExpUI();
+        if (this.exp >= currentRank.exp && !this.isReadyToBreak) {
+            this.isReadyToBreak = true;
+            showNotify("Linh khí tràn đầy, sẵn sàng đột phá!", "#00ffcc");
+            // Không tự động đột phá nữa, chỉ bật cờ isReadyToBreak
         }
+    },
+
+    executeBreakthrough() {
+        const currentRank = CONFIG.CULTIVATION.RANKS[this.rankIndex];
+        if (!currentRank) return;
+
+        // Tính tỉ lệ: Tỉ lệ cơ bản + (số đan * % mỗi viên)
+        let totalChance = currentRank.chance + (this.pillCount * CONFIG.ITEMS.PILL_BOOST);
+        totalChance = Math.min(0.95, totalChance); // Tối đa 95%
+
+        if (Math.random() <= totalChance) {
+            // --- THÀNH CÔNG ---
+            this.exp = 0;
+            this.rankIndex++;
+            this.isReadyToBreak = false;
+            this.pillCount = 0; // Đột phá xong dược lực tan biến
+            
+            const nextRank = CONFIG.CULTIVATION.RANKS[this.rankIndex];
+            if (nextRank) {
+                if (nextRank.maxMana) this.maxMana = nextRank.maxMana;
+                this.mana = this.maxMana; // Hồi đầy mana khi vượt cấp
+                showNotify(`ĐỘT PHÁ THÀNH CÔNG: ${nextRank.name.toUpperCase()}`, "#ffcc00");
+            }
+            this.createLevelUpExplosion(this.x, this.y, currentRank.color);
+        } else {
+            // --- THẤT BẠI (PHẢN PHỆ) ---
+            const penalty = Math.floor(this.exp * 0.4); // Mất 40% tu vi
+            this.exp -= penalty;
+            this.isReadyToBreak = false; // Tắt trạng thái chờ để cày lại
+            this.pillCount = Math.floor(this.pillCount / 2); // Mất nửa số đan dược
+            
+            showNotify("ĐỘT PHÁ THẤT BẠI! Tâm ma phản phệ (-40% tu vi)", "#ff4444");
+            this.triggerExpError();
+        }
+        
+        this.renderExpUI();
+        this.renderManaUI();
     },
 
     renderExpUI() {
         const rank = CONFIG.CULTIVATION.RANKS[this.rankIndex];
         if (!rank) return;
 
-        // Đảm bảo maxMana luôn đồng bộ với Rank hiện tại nếu chưa được gán
         if (rank.maxMana) this.maxMana = rank.maxMana;
 
-        // Lấy các phần tử UI
         const barExp = document.getElementById('exp-bar');
-        const textExp = document.getElementById('exp-text'); // Cần cái này để hiện số
-        const barMana = document.getElementById('mana-bar');
-        const manaBg = document.getElementById('mana-bar-bg');
+        const textExp = document.getElementById('exp-text');
         const rankText = document.getElementById('cultivation-rank');
+        const breakthroughGroup = document.querySelector('.breakthrough-group');
 
-        // 1. Cập nhật nội dung chữ (Phần đạo hữu bị thiếu)
+        // 1. Tính toán tỉ lệ hiển thị
+        const chance = (rank.chance * 100).toFixed(0);
+        const boost = (this.pillCount * CONFIG.ITEMS.PILL_BOOST * 100).toFixed(0);
+        const total = Math.min(95, parseFloat(chance) + parseFloat(boost));
+
+        // 2. Cập nhật văn bản
         if (textExp) {
-            const chance = (rank.chance * 100).toFixed(0);
-            const boost = (this.pillCount * CONFIG.ITEMS.PILL_BOOST * 100).toFixed(0);
-            const total = Math.min(95, parseFloat(chance) + parseFloat(boost));
-            
-            textExp.innerHTML = `Tu vi: ${Math.floor(this.exp)}/${rank.exp} | ` + 
-                                `<span style="color:#00ffcc">Linh Đan: ${this.pillCount}</span> ` +
-                                `(<span style="color:#ffcc00">TL: ${total}%</span>)`;
-        }
-        if (rankText) {
-            rankText.innerText = `Cảnh giới: ${rank.name}`;
+            if (this.isReadyToBreak) {
+                textExp.innerHTML = `<span style="color:#ffcc00; font-weight:bold;">SẴN SÀNG ĐỘT PHÁ</span> | ` +
+                                    `<span style="color:#00ffcc">Linh Đan: ${this.pillCount}</span> ` +
+                                    `(<span style="color:#ffcc00">TL: ${total}%</span>)`;
+            } else {
+                textExp.innerHTML = `Tu vi: ${Math.floor(this.exp)}/${rank.exp} | ` + 
+                                    `<span style="color:#00ffcc">Linh Đan: ${this.pillCount}</span> ` +
+                                    `(<span style="color:#ffcc00">TL: ${total}%</span>)`;
+            }
         }
 
-        // 2. Cập nhật độ dài thanh EXP
+        // 3. Ẩn/Hiện nút dựa trên class của đạo hữu
+        if (breakthroughGroup) {
+            if (this.isReadyToBreak) breakthroughGroup.classList.add('is-active');
+            else breakthroughGroup.classList.remove('is-active');
+        }
+
+        // 4. Thanh EXP
         const percentage = (this.exp / rank.exp) * 100;
         if (barExp) {
             barExp.style.width = Math.min(100, percentage) + '%';
-            
-            // Cập nhật màu sắc cho thanh EXP (Màu nhạt chuyển sang màu đậm)
             barExp.style.background = `linear-gradient(90deg, ${rank.lightColor}, ${rank.color})`;
-            barExp.style.boxShadow = `0 0 10px ${rank.lightColor}`;
+            
+            if (this.isReadyToBreak) {
+                barExp.style.boxShadow = `0 0 15px #fff, 0 0 5px ${rank.color}`;
+                barExp.classList.add('exp-full-glow'); // Cần thêm CSS này để nó rung rinh
+            } else {
+                barExp.style.boxShadow = `0 0 10px ${rank.lightColor}`;
+                barExp.classList.remove('exp-full-glow');
+            }
         }
 
-        // 3. Cập nhật màu sắc chủ đạo cho hệ thống (Mana & Rank Name)
-        if (barMana) {
-            barMana.style.backgroundColor = rank.color;
-            barMana.style.boxShadow = `0 0 15px ${rank.color}`;
-        }
-        if (manaBg) {
-            manaBg.style.borderColor = rank.color;
-        }
         if (rankText) {
+            rankText.innerText = `Cảnh giới: ${rank.name}`;
             rankText.style.color = rank.color;
-            rankText.style.textShadow = `0 0 8px ${rank.color}80`;
-        }
-        if (textExp) {
-            const chance = (CONFIG.CULTIVATION.RANKS[this.rankIndex].chance * 100).toFixed(0);
-            const boost = (this.pillCount * CONFIG.ITEMS.PILL_BOOST * 100).toFixed(0);
-            textExp.innerHTML = `Tu vi: ${Math.floor(this.exp)}/${rank.exp} | Đan dược: ${this.pillCount} (TL: ${chance}% + ${boost}%)`;
         }
     },
 
@@ -416,6 +433,12 @@ document.getElementById('btn-form').addEventListener('pointerdown', (e) => {
         // Không đủ Mana: Rung UI cảnh báo
         Input.triggerManaShake();
     }
+});
+
+document.getElementById('btn-breakthrough').addEventListener('pointerdown', (e) => {
+    e.stopPropagation();
+    // Gọi hàm thực hiện đột phá mà chúng ta đã viết ở bước trước
+    Input.executeBreakthrough(); 
 });
 
 const attackBtn = document.getElementById('btn-attack');

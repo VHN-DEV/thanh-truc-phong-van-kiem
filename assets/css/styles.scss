@@ -197,13 +197,44 @@ canvas {
     flex-direction: column;
     align-items: center;
     gap: 20px;
-    display: none;
+    
+    // Thay vì display: none trực tiếp, ta điều khiển qua độ mờ và pointer-events
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.5s ease;
+    transform: translateY(-10px);
+
+    // Khi có class này thì nút mới hiện ra
+    &.is-active {
+        opacity: 1;
+        pointer-events: auto;
+        transform: translateY(0);
+    }
 
     .btn-breakthrough {
-        width: 30px;
+        width: 30px; // Đạo hữu có thể cân nhắc tăng lên 45px để dễ bấm trên mobile
         height: 30px;
-        background: rgba($primary-color, 0.1);
+        background: rgba($primary-color, 0.2);
+        border: 1px solid $primary-color;
+        box-shadow: 0 0 15px rgba($primary-color, 0.5);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: breakthrough-pulse 1.5s infinite alternate;
+        cursor: pointer;
+
+        &:hover {
+            background: rgba($primary-color, 0.5);
+            box-shadow: 0 0 25px $primary-color;
+        }
     }
+}
+
+// Hiệu ứng hào quang tỏa ra khi sẵn sàng đột phá
+@keyframes breakthrough-pulse {
+    from { box-shadow: 0 0 10px rgba($primary-color, 0.4); transform: scale(1); }
+    to { box-shadow: 0 0 30px rgba($primary-color, 0.9); transform: scale(1.15); }
 }
 
 .attack-group {
