@@ -117,19 +117,30 @@ canvas {
     &.mana-shake {
         animation: shake 0.2s ease-in-out;
     }
-}
 
-@keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-5px); }
-    50% { transform: translateX(5px); }
-    75% { transform: translateX(-3px); }
-}
+    /* Hiệu ứng lóe sáng khi đầy mana */
+    .mana-full-flash {
+        animation: flash-white 0.8s ease-out;
+    }
 
-#instructions {
-    @include abs-pos($bottom: 20px, $left: 20px);
-    color: rgba(255, 255, 255, 0.3);
-    font-size: 12px;
+    @keyframes flash-white {
+        0% { filter: brightness(1) white-shadow; }
+        50% { filter: brightness(3); box-shadow: 0 0 20px #fff; }
+        100% { filter: brightness(1); }
+    }
+    
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-5px); }
+        50% { transform: translateX(5px); }
+        75% { transform: translateX(-3px); }
+    }
+    
+    #instructions {
+        @include abs-pos($bottom: 20px, $left: 20px);
+        color: rgba(255, 255, 255, 0.3);
+        font-size: 12px;
+    }
 }
 
 // ====================================================================
@@ -286,4 +297,52 @@ canvas {
     }
 }
 
+// ====================================================================
+// 8. NOTIFICATION SYSTEM UI 
+// ====================================================================
+/* Hệ thống thông báo giữa màn hình */
+#game-notification {
+    position: fixed;
+    top: 35%; /* Dịch xuống một chút cho đỡ vướng mắt */
+    left: 50%;
+    transform: translateX(-50%);
+    pointer-events: none;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.notify-item {
+    font-family: $ui-font;
+    font-size: 14px; /* Chữ nhỏ gọn như log hệ thống */
+    font-weight: 600;
+    letter-spacing: 1px;
+    padding: 4px 12px;
+    background: rgba(0, 0, 0, 0.4); /* Thêm nền tối mờ để dễ đọc chữ */
+    border-radius: 4px;
+    white-space: nowrap;
+    
+    /* Hiệu ứng mờ dần và bay nhẹ lên */
+    animation: notify-fade-up 2.5s ease-out forwards;
+}
+
+@keyframes notify-fade-up {
+    0% { 
+        opacity: 0; 
+        transform: translateY(10px); 
+    }
+    15% { 
+        opacity: 1; 
+        transform: translateY(0); 
+    }
+    70% { 
+        opacity: 1; 
+    }
+    100% { 
+        opacity: 0; 
+        transform: translateY(-20px); 
+    }
+}
 // <!-- Create By: Vũ Hoài Nam -->

@@ -90,15 +90,26 @@ class Enemy {
             return "shielded";
         }
 
-        this.hp -= damage; // Áp dụng sát thương cảnh giới
-         if (this.hp <= 0) {
+        this.hp -= damage;
+        if (this.hp <= 0) {
+            // --- LOGIC THƯỞNG THEO KÍCH THƯỚC ---
+            
+            // 1. Tính toán tỉ lệ kích thước (sizeRatio)
+            // Dựa trên công thức ở respawn(), r min khoảng 10, max khoảng 60.
+            // Ta tính tỉ lệ từ 1.0 đến ~3.0 tùy độ lớn.
+            const sizeRatio = Math.max(1, this.r / (15 * (window.innerWidth / CONFIG.CORE.BASE_WIDTH)));
+            
+            // 2. Tính Mana nhận được: Base (GAIN_KILL) * sizeRatio
+            const manaGain = Math.ceil(CONFIG.MANA.GAIN_KILL * sizeRatio);
+            Input.updateMana(manaGain);
+            
+            // 3. Tính EXP nhận được: 
+            // Nếu có khiên: (Base 2 * sizeRatio), Không khiên: (Base 1 * sizeRatio)
+            const baseExp = this.maxShieldHp > 0 ? 2 : 1;
+            const expGain = Math.ceil(baseExp * sizeRatio);
+            Input.updateExp(expGain);
+
             this.respawn();
-            Input.updateMana(CONFIG.MANA.GAIN_KILL);
-            
-            // CỘNG EXP: Khiên +2, Thường +1
-            const expGain = this.maxShieldHp > 0 ? 2 : 1;
-            Input.updateExp(expGain); 
-            
             return "killed";
         }
         return "hit";

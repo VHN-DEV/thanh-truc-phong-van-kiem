@@ -10,6 +10,34 @@ let scaleFactor = 1;
 let width, height;
 let frameCount = 0;
 let lastTime = performance.now();
+let visualParticles = [];
+
+function showNotify(text, color) {
+    let container = document.getElementById('game-notification');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'game-notification';
+        document.body.appendChild(container);
+    }
+
+    // Giới hạn tối đa 3 thông báo cùng lúc để màn hình gọn gàng
+    if (container.children.length > 2) {
+        container.removeChild(container.firstChild);
+    }
+
+    const item = document.createElement('div');
+    item.className = 'notify-item';
+    item.innerText = text;
+    item.style.color = color;
+    item.style.borderLeft = `3px solid ${color}`; // Thêm vạch màu nhỏ bên trái cho tinh tế
+
+    container.appendChild(item);
+
+    // Xóa sau 2.5 giây (khớp với thời gian animation)
+    setTimeout(() => {
+        item.remove();
+    }, 2500);
+}
 
 const Camera = {
     currentZoom: 1,
@@ -156,19 +184,35 @@ const Input = {
         if (!currentRank) return;
 
         if (this.exp >= currentRank.exp) {
-            // Thử đột phá
             const roll = Math.random();
+            
             if (roll <= currentRank.chance) {
-                // Đột phá thành công
+                // THÀNH CÔNG
                 this.exp -= currentRank.exp;
-                if (currentRank.bonus) this.exp += currentRank.bonus; // Thưởng exp khi qua đại cảnh giới
                 this.rankIndex++;
-                console.log("Đột phá thành công: " + CONFIG.CULTIVATION.RANKS[this.rankIndex].name);
+                
+                // Hồi Mana + Hiệu ứng lóe sáng
+                this.mana = this.maxMana;
+                const manaBar = document.getElementById('mana-bar');
+                manaBar.classList.add('mana-full-flash');
+                setTimeout(() => manaBar.classList.remove('mana-full-flash'), 800);
+
+                showNotify("ĐỘT PHÁ THÀNH CÔNG!", "#ffcc00");
+                Input.createLevelUpExplosion(this.x, this.y, currentRank.color);
+                this.updateMana(0); 
             } else {
-                // Đột phá thất bại: Trừ 10% exp hiện tại làm hình phạt
-                this.exp = Math.max(0, this.exp - Math.floor(currentRank.exp * 0.1));
-                this.triggerExpError(); // Hiệu ứng rung thanh EXP
+                // THẤT BẠI
+                // Nếu có protect: true thì không bị trừ EXP
+                if (currentRank.protect) {
+                    showNotify("Đột phá thất bại (Đã bảo vệ)", "#aaa");
+                } else {
+                    const penalty = Math.floor(this.exp * 0.5);
+                    this.exp -= penalty;
+                    showNotify("ĐỘT PHÁ THẤT BẠI! (-50% tu vi)", "#ff4444");
+                    this.triggerExpError();
+                }
             }
+            this.renderExpUI();
         }
     },
 
@@ -267,7 +311,22 @@ const Input = {
     handleWheel(e) {
         const delta = -e.deltaY * CONFIG.ZOOM.SENSITIVITY;
         Camera.adjustZoom(delta);
-    }
+    },
+
+    // Hàm tạo hiệu ứng hạt bùng nổ
+    createLevelUpExplosion(x, y, color) {
+        for (let i = 0; i < 30; i++) { // Giảm số lượng hạt
+            visualParticles.push({
+                x: x, 
+                y: y,
+                vx: (Math.random() - 0.5) * 8, // Giảm tốc độ bay
+                vy: (Math.random() - 0.5) * 8,
+                size: Math.random() * 3 + 1,   // Hạt nhỏ li ti như bụi ánh sáng
+                life: 1.0,
+                color: color || "#fff"
+            });
+        }
+    },
 };
 
 // Đăng ký sự kiện Hệ thống (Gộp Pointer Events để tối ưu)
@@ -479,6 +538,20 @@ function animate() {
         s.draw(ctx, scaleFactor);
     });
     renderCursor();
+
+    // Vẽ và cập nhật hạt hiệu ứng
+    visualParticles.forEach((p, i) => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life -= 0.02;
+        ctx.globalAlpha = p.life;
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+        if (p.life <= 0) visualParticles.splice(i, 1);
+    });
+    ctx.globalAlpha = 1;
 
     ctx.restore();
     requestAnimationFrame(animate);

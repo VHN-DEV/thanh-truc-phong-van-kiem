@@ -101,69 +101,69 @@ const CONFIG = {
         RANKS: [
             // --- NHÂN GIỚI ---
             // Luyện Khí Kỳ (Xanh lá)
-            { name: "Luyện Khí sơ kỳ (Tầng 1)", exp: 5, chance: 1, damage: 1, color: "#4CAF50", lightColor: "#A5D6A7" },
-            { name: "Luyện Khí sơ kỳ (Tầng 2)", exp: 6, chance: 0.95, damage: 1, color: "#4CAF50", lightColor: "#A5D6A7" },
-            { name: "Luyện Khí sơ kỳ (Tầng 3)", exp: 7, chance: 0.95, damage: 1, color: "#4CAF50", lightColor: "#A5D6A7" },
-            { name: "Luyện Khí sơ kỳ (Tầng 4)", exp: 9, chance: 0.95, damage: 1, color: "#4CAF50", lightColor: "#A5D6A7" },
-            { name: "Luyện Khí trung kỳ (Tầng 5)", exp: 12, chance: 0.9, damage: 1, color: "#43A047", lightColor: "#C8E6C9" },
-            { name: "Luyện Khí trung kỳ (Tầng 6)", exp: 16, chance: 0.9, damage: 1, color: "#43A047", lightColor: "#C8E6C9" },
-            { name: "Luyện Khí trung kỳ (Tầng 7)", exp: 21, chance: 0.9, damage: 1, color: "#43A047", lightColor: "#C8E6C9" },
-            { name: "Luyện Khí trung kỳ (Tầng 8)", exp: 27, chance: 0.9, damage: 1, color: "#43A047", lightColor: "#C8E6C9" },
-            { name: "Luyện Khí hậu kỳ (Tầng 9)", exp: 35, chance: 0.85, damage: 1, color: "#2E7D32", lightColor: "#E8F5E9" },
-            { name: "Luyện Khí hậu kỳ (Tầng 10)", exp: 45, chance: 0.85, damage: 1, color: "#2E7D32", lightColor: "#E8F5E9" },
-            { name: "Luyện Khí hậu kỳ (Tầng 11)", exp: 58, chance: 0.85, damage: 1, color: "#2E7D32", lightColor: "#E8F5E9" },
-            { name: "Luyện Khí hậu kỳ (Tầng 12)", exp: 75, chance: 0.8, damage: 1, color: "#2E7D32", lightColor: "#E8F5E9" },
-            { name: "Luyện Khí đại viên mãn (Tầng 13)", exp: 100, chance: 0.75, damage: 1, bonus: 100, color: "#1B5E20", lightColor: "#FFFFFF" },
+            { name: "Luyện khí sơ kỳ (Tầng 1)", exp: 5, chance: 1, damage: 1, color: "#4CAF50", lightColor: "#A5D6A7" },
+            { name: "Luyện khí sơ kỳ (Tầng 2)", exp: 6, chance: 0.95, damage: 2, color: "#4CAF50", lightColor: "#A5D6A7" },
+            { name: "Luyện khí sơ kỳ (Tầng 3)", exp: 7, chance: 0.95, damage: 3, color: "#4CAF50", lightColor: "#A5D6A7" },
+            { name: "Luyện khí sơ kỳ (Tầng 4)", exp: 9, chance: 0.95, damage: 4, color: "#4CAF50", lightColor: "#A5D6A7" },
+            { name: "Luyện khí trung kỳ (Tầng 5)", exp: 12, chance: 0.9, damage: 5, color: "#43A047", lightColor: "#C8E6C9" },
+            { name: "Luyện khí trung kỳ (Tầng 6)", exp: 16, chance: 0.9, damage: 6, color: "#43A047", lightColor: "#C8E6C9" },
+            { name: "Luyện khí trung kỳ (Tầng 7)", exp: 21, chance: 0.9, damage: 7, color: "#43A047", lightColor: "#C8E6C9" },
+            { name: "Luyện khí trung kỳ (Tầng 8)", exp: 27, chance: 0.9, damage: 8, color: "#43A047", lightColor: "#C8E6C9" },
+            { name: "Luyện khí hậu kỳ (Tầng 9)", exp: 35, chance: 0.85, damage: 9, color: "#2E7D32", lightColor: "#E8F5E9" },
+            { name: "Luyện khí hậu kỳ (Tầng 10)", exp: 45, chance: 0.85, damage: 10, color: "#2E7D32", lightColor: "#E8F5E9" },
+            { name: "Luyện khí hậu kỳ (Tầng 11)", exp: 58, chance: 0.85, damage: 11, color: "#2E7D32", lightColor: "#E8F5E9" },
+            { name: "Luyện khí hậu kỳ (Tầng 12)", exp: 75, chance: 0.8, damage: 12, color: "#2E7D32", lightColor: "#E8F5E9" },
+            { name: "Luyện khí đại viên mãn (Tầng 13)", exp: 100, chance: 0.75, damage: 13, bonus: 100, color: "#1B5E20", lightColor: "#FFFFFF" },
 
             // Trúc Cơ Kỳ (Xanh dương)
-            { name: "Trúc Cơ sơ kỳ", exp: 120, chance: 0.7, damage: 2, color: "#2196F3", lightColor: "#90CAF9" },
-            { name: "Trúc Cơ trung kỳ", exp: 180, chance: 0.65, damage: 2, color: "#1E88E5", lightColor: "#BBDEFB" },
-            { name: "Trúc Cơ hậu kỳ", exp: 270, chance: 0.6, damage: 2, color: "#1565C0", lightColor: "#E3F2FD" },
-            { name: "Trúc Cơ đại viên mãn", exp: 400, chance: 0.55, damage: 2, bonus: 300, color: "#0D47A1", lightColor: "#FFFFFF" },
+            { name: "Trúc cơ sơ kỳ", exp: 120, chance: 0.7, damage: 14, color: "#2196F3", lightColor: "#90CAF9" },
+            { name: "Trúc cơ trung kỳ", exp: 180, chance: 0.65, damage: 15, color: "#1E88E5", lightColor: "#BBDEFB" },
+            { name: "Trúc cơ hậu kỳ", exp: 270, chance: 0.6, damage: 16, color: "#1565C0", lightColor: "#E3F2FD" },
+            { name: "Trúc cơ đại viên mãn", exp: 400, chance: 0.55, damage: 17, bonus: 300, color: "#0D47A1", lightColor: "#FFFFFF" },
 
             // Kết Đan Kỳ (Cam)
-            { name: "Kết Đan sơ kỳ", exp: 600, chance: 0.5, damage: 3, color: "#FF9800", lightColor: "#FFCC80" },
-            { name: "Kết Đan trung kỳ", exp: 900, chance: 0.45, damage: 3, color: "#FB8C00", lightColor: "#FFE0B2" },
-            { name: "Kết Đan hậu kỳ", exp: 1400, chance: 0.4, damage: 3, color: "#EF6C00", lightColor: "#FFF3E0" },
-            { name: "Kết Đan đại viên mãn", exp: 2000, chance: 0.35, damage: 3, bonus: 1500, color: "#E65100", lightColor: "#FFFFFF" },
+            { name: "Kết đan sơ kỳ", exp: 600, chance: 0.5, damage: 18, color: "#FF9800", lightColor: "#FFCC80" },
+            { name: "Kết đan trung kỳ", exp: 900, chance: 0.45, damage: 19, color: "#FB8C00", lightColor: "#FFE0B2" },
+            { name: "Kết đan hậu kỳ", exp: 1400, chance: 0.4, damage: 20, color: "#EF6C00", lightColor: "#FFF3E0" },
+            { name: "Kết đan đại viên mãn", exp: 2000, chance: 0.35, damage: 21, bonus: 1500, color: "#E65100", lightColor: "#FFFFFF" },
 
             // Nguyên Anh Kỳ (Hồng)
-            { name: "Nguyên Anh sơ kỳ", exp: 3000, chance: 0.35, damage: 4, color: "#E91E63", lightColor: "#F48FB1" },
-            { name: "Nguyên Anh trung kỳ", exp: 5000, chance: 0.3, damage: 4, color: "#D81B60", lightColor: "#F8BBD0" },
-            { name: "Nguyên Anh hậu kỳ", exp: 8000, chance: 0.25, damage: 4, color: "#C2185B", lightColor: "#FCE4EC" },
-            { name: "Nguyên Anh đại viên mãn", exp: 12000, chance: 0.2, damage: 4, bonus: 8000, color: "#880E4F", lightColor: "#FFFFFF" },
+            { name: "Nguyên anh sơ kỳ", exp: 3000, chance: 0.35, damage: 22, color: "#E91E63", lightColor: "#F48FB1" },
+            { name: "Nguyên anh trung kỳ", exp: 5000, chance: 0.3, damage: 23, color: "#D81B60", lightColor: "#F8BBD0" },
+            { name: "Nguyên anh hậu kỳ", exp: 8000, chance: 0.25, damage: 24, color: "#C2185B", lightColor: "#FCE4EC" },
+            { name: "Nguyên anh đại viên mãn", exp: 12000, chance: 0.2, damage: 25, bonus: 8000, color: "#880E4F", lightColor: "#FFFFFF" },
 
             // Hóa Thần Kỳ (Tím)
-            { name: "Hóa Thần sơ kỳ", exp: 18000, chance: 0.2, damage: 5, color: "#9C27B0", lightColor: "#CE93D8" },
-            { name: "Hóa Thần trung kỳ", exp: 25000, chance: 0.18, damage: 5, color: "#8E24AA", lightColor: "#E1BEE7" },
-            { name: "Hóa Thần hậu kỳ", exp: 35000, chance: 0.15, damage: 5, color: "#7B1FA2", lightColor: "#F3E5F5" },
-            { name: "Hóa Thần đại viên mãn", exp: 50000, chance: 0.12, damage: 5, bonus: 25000, color: "#4A148C", lightColor: "#FFFFFF" },
+            { name: "Hóa thần sơ kỳ", exp: 18000, chance: 0.2, damage: 26, color: "#9C27B0", lightColor: "#CE93D8" },
+            { name: "Hóa thần trung kỳ", exp: 25000, chance: 0.18, damage: 27, color: "#8E24AA", lightColor: "#E1BEE7" },
+            { name: "Hóa thần hậu kỳ", exp: 35000, chance: 0.15, damage: 28, color: "#7B1FA2", lightColor: "#F3E5F5" },
+            { name: "Hóa thần đại viên mãn", exp: 50000, chance: 0.12, damage: 29, bonus: 25000, color: "#4A148C", lightColor: "#FFFFFF" },
 
             // --- LINH GIỚI ---
             // Luyện Hư Kỳ (Chàm)
-            { name: "Luyện Hư sơ kỳ", exp: 60000, chance: 0.12, damage: 6, color: "#3F51B5", lightColor: "#9FA8DA" },
-            { name: "Luyện Hư trung kỳ", exp: 80000, chance: 0.1, damage: 6, color: "#3949AB", lightColor: "#C5CAE9" },
-            { name: "Luyện Hư hậu kỳ", exp: 110000, chance: 0.09, damage: 6, color: "#303F9F", lightColor: "#E8EAF6" },
-            { name: "Luyện Hư đại viên mãn", exp: 150000, chance: 0.08, damage: 6, bonus: 30000, color: "#1A237E", lightColor: "#FFFFFF" },
+            { name: "Luyện hư sơ kỳ", exp: 60000, chance: 0.12, damage: 30, color: "#3F51B5", lightColor: "#9FA8DA" },
+            { name: "Luyện hư trung kỳ", exp: 80000, chance: 0.1, damage: 31, color: "#3949AB", lightColor: "#C5CAE9" },
+            { name: "Luyện hư hậu kỳ", exp: 110000, chance: 0.09, damage: 32, color: "#303F9F", lightColor: "#E8EAF6" },
+            { name: "Luyện hư đại viên mãn", exp: 150000, chance: 0.08, damage: 33, bonus: 30000, color: "#1A237E", lightColor: "#FFFFFF" },
 
             // Hợp Thể Kỳ (Xanh ngọc)
-            { name: "Hợp Thể sơ kỳ", exp: 140000, chance: 0.08, damage: 7, color: "#00BCD4", lightColor: "#80DEEA" },
-            { name: "Hợp Thể trung kỳ", exp: 180000, chance: 0.07, damage: 7, color: "#00ACC1", lightColor: "#B2EBF2" },
-            { name: "Hợp Thể hậu kỳ", exp: 230000, chance: 0.06, damage: 7, color: "#0097A7", lightColor: "#E0F7FA" },
-            { name: "Hợp Thể đại viên mãn", exp: 300000, chance: 0.05, damage: 7, bonus: 50000, color: "#006064", lightColor: "#FFFFFF" },
+            { name: "Hợp thể sơ kỳ", exp: 140000, chance: 0.08, damage: 34, color: "#00BCD4", lightColor: "#80DEEA" },
+            { name: "Hợp thể trung kỳ", exp: 180000, chance: 0.07, damage: 35, color: "#00ACC1", lightColor: "#B2EBF2" },
+            { name: "Hợp thể hậu kỳ", exp: 230000, chance: 0.06, damage: 36, color: "#0097A7", lightColor: "#E0F7FA" },
+            { name: "Hợp thể đại viên mãn", exp: 300000, chance: 0.05, damage: 37, bonus: 50000, color: "#006064", lightColor: "#FFFFFF" },
 
             // Đại Thừa Kỳ (Đỏ)
-            { name: "Đại Thừa sơ kỳ", exp: 300000, chance: 0.05, damage: 8, color: "#F44336", lightColor: "#EF9A9A" },
-            { name: "Đại Thừa trung kỳ", exp: 380000, chance: 0.04, damage: 8, color: "#E53935", lightColor: "#FFCDD2" },
-            { name: "Đại Thừa hậu kỳ", exp: 480000, chance: 0.03, damage: 8, color: "#D32F2F", lightColor: "#FFEBEE" },
-            { name: "Đại Thừa đại viên mãn", exp: 600000, chance: 0.02, damage: 8, bonus: 80000, color: "#B71C1C", lightColor: "#FFFFFF" },
+            { name: "Đại thừa sơ kỳ", exp: 300000, chance: 0.05, damage: 38, color: "#F44336", lightColor: "#EF9A9A" },
+            { name: "Đại thừa trung kỳ", exp: 380000, chance: 0.04, damage: 39, color: "#E53935", lightColor: "#FFCDD2" },
+            { name: "Đại thừa hậu kỳ", exp: 480000, chance: 0.03, damage: 40, color: "#D32F2F", lightColor: "#FFEBEE" },
+            { name: "Đại thừa đại viên mãn", exp: 600000, chance: 0.02, damage: 41, bonus: 80000, color: "#B71C1C", lightColor: "#FFFFFF" },
 
             // --- TIÊN GIỚI ---
             // Chân Tiên (Vàng kim)
-            { name: "Chân Tiên sơ kỳ", exp: 600000, chance: 0.02, damage: 9, color: "#FFD700", lightColor: "#FFF59D" },
-            { name: "Chân Tiên trung kỳ", exp: 750000, chance: 0.015, damage: 9, color: "#FFC107", lightColor: "#FFF9C4" },
-            { name: "Chân Tiên hậu kỳ", exp: 950000, chance: 0.01, damage: 9, color: "#FFA000", lightColor: "#FFFDE7" },
-            { name: "Chân Tiên đại viên mãn", exp: 999999999, chance: 0, damage: 10, color: "#FF8F00", lightColor: "#FFFFFF" }
+            { name: "Chân tiên sơ kỳ", exp: 600000, chance: 0.02, damage: 42, color: "#FFD700", lightColor: "#FFF59D" },
+            { name: "Chân tiên trung kỳ", exp: 750000, chance: 0.015, damage: 43, color: "#FFC107", lightColor: "#FFF9C4" },
+            { name: "Chân tiên hậu kỳ", exp: 950000, chance: 0.01, damage: 44, color: "#FFA000", lightColor: "#FFFDE7" },
+            { name: "Chân tiên đại viên mãn", exp: 999999999, chance: 0, damage: 45, color: "#FF8F00", lightColor: "#FFFFFF" }
         ]
     }
 };
