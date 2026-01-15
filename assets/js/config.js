@@ -103,7 +103,7 @@ const CONFIG = {
             "./assets/images/animals/dragon.svg",
             "./assets/images/animals/elephant.svg",
             "./assets/images/animals/fish-seafood.svg",
-            "./assets/images/animals/flying-dragons.svg",
+            "./assets/images/animals/flying-dragon.svg",
             "./assets/images/animals/fox.svg",
             "./assets/images/animals/gorilla.svg",
             "./assets/images/animals/hydra.svg",

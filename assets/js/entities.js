@@ -1,22 +1,5 @@
 const random = (min, max) => Math.random() * (max - min) + min;
 
-// Đối tượng lưu trữ các Image đã tải xong
-const enemyIcons = {};
-
-// Hàm tải toàn bộ icon từ danh sách trong CONFIG
-function preloadEnemyIcons() {
-    CONFIG.ENEMY.ANIMALS.forEach(path => {
-        const img = new Image();
-        img.src = path;
-        // Lấy tên file làm key (ví dụ: 'bat')
-        const key = path.split('/').pop().split('.')[0];
-        enemyIcons[key] = img;
-    });
-}
-
-// Gọi nạp ảnh ngay lập tức
-preloadEnemyIcons();
-
 class Enemy {
     constructor() {
         this.particles = [];
@@ -37,17 +20,15 @@ class Enemy {
         this.cracks = [];
         this.shieldLevel = 0;
 
-        // --- MỚI: CHỌN ICON SVG NGẪU NHIÊN ---
-        const animalIcons = CONFIG.ENEMY.ANIMALS;
-        const randomIconPath = animalIcons[Math.floor(Math.random() * animalIcons.length)];
+        // --- CHỌN ICON SVG TỪ BỘ ĐỆM ---
+        const animalPaths = CONFIG.ENEMY.ANIMALS;
+        const randomPath = animalPaths[Math.floor(Math.random() * animalPaths.length)];
+        const iconKey = randomPath.split('/').pop().split('.')[0];
         
-        // Khởi tạo đối tượng Image để vẽ SVG
-        this.icon = new Image();
-        this.icon.src = randomIconPath;
-        // Thêm góc xoay ngẫu nhiên cho quái vật trông tự nhiên hơn
-        this.rotation = Math.random() * Math.PI * 2; 
+        // Lấy đối tượng Image đã tải sẵn từ preload
+        this.icon = enemyIcons[iconKey];
 
-        // --- KẾT NỐI HỆ THỐNG CẢNH GIỚI ---
+        // --- HỆ THỐNG CẢNH GIỚI (GIỮ NGUYÊN LOGIC CỦA BẠN) ---
         const playerRank = Input.rankIndex || 0;
         const enemyRankIndex = Math.max(0, Math.min(
             CONFIG.CULTIVATION.RANKS.length - 1, 
@@ -56,29 +37,18 @@ class Enemy {
         
         this.rankData = CONFIG.CULTIVATION.RANKS[enemyRankIndex];
         this.rankName = this.rankData.name;
-
-        // 2. Màu sắc (Dùng để làm hiệu ứng hào quang quanh Icon)
         this.colors = [this.rankData.lightColor, this.rankData.color];
 
-        // 3. Kích thước (Bán kính r dùng để xác định vùng va chạm và kích cỡ vẽ SVG)
         const sizeBase = CONFIG.ENEMY.BASE_SIZE.MIN + (enemyRankIndex * 1.5);
         const sizeVar = CONFIG.ENEMY.BASE_SIZE.VAR;
         this.r = (sizeBase + Math.pow(Math.random(), 1.5) * sizeVar) * (window.innerWidth / CONFIG.CORE.BASE_WIDTH);
 
-        // 4. Máu quái
-        const hpMultiplier = 2.5; 
-        this.maxHp = Math.floor(this.rankData.maxMana * hpMultiplier * (0.9 + Math.random() * 0.2));
+        this.maxHp = Math.floor(this.rankData.maxMana * 2.5 * (0.9 + Math.random() * 0.2));
         this.hp = this.maxHp;
 
-        // 5. Khiên
         this.hasShield = Math.random() < (CONFIG.ENEMY.SHIELD_CHANCE + (enemyRankIndex * 0.005));
-        if (this.hasShield) {
-            this.shieldHp = Math.floor(this.hp * 0.4);
-            this.maxShieldHp = this.shieldHp;
-        } else {
-            this.shieldHp = 0;
-            this.maxShieldHp = 0;
-        }
+        this.shieldHp = this.hasShield ? Math.floor(this.hp * 0.4) : 0;
+        this.maxShieldHp = this.shieldHp;
     }
 
     generateCracks(level) {
@@ -221,19 +191,14 @@ class Enemy {
         ctx.save();
         ctx.translate(this.x, this.y);
         
-        // 1. Vẽ các hiệu ứng hạt và thân quái như cũ
         this.drawParticles(ctx, scaleFactor);
         if (this.hasShield) this.drawShield(ctx, scaleFactor);
         this.drawBody(ctx, scaleFactor);
 
-        // 2. VẼ TÊN CẢNH GIỚI PHÍA TRÊN ĐẦU QUÁI
+        // Vẽ tên cảnh giới
         ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
         ctx.font = `bold ${11 * scaleFactor}px "Segoe UI", Arial`;
         ctx.textAlign = "center";
-        ctx.shadowColor = "black";
-        ctx.shadowBlur = 4 * scaleFactor;
-        
-        // Vị trí text cách quái một khoảng dựa trên bán kính r
         const textY = -this.r - (this.hasShield ? 15 : 10) * scaleFactor;
         ctx.fillText(this.rankName, 0, textY);
         
@@ -260,21 +225,38 @@ class Enemy {
     drawBody(ctx, scaleFactor) {
         ctx.save();
         
-        // Vẽ hào quang (glow) dưới chân icon dựa theo màu cảnh giới
-        const glowGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, this.r * 1.2);
-        glowGrad.addColorStop(0, this.colors[1] + "66"); // Màu cảnh giới (trong suốt 40%)
+        // 1. Vẽ hào quang (glow) quanh quái vật (Dùng màu Cảnh giới)
+        const glowGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, this.r * 1.3);
+        glowGrad.addColorStop(0, this.colors[1] + "55"); // Màu rank mờ
         glowGrad.addColorStop(1, "transparent");
         
-        ctx.beginPath();
-        ctx.arc(0, 0, this.r * 1.2, 0, Math.PI * 2);
         ctx.fillStyle = glowGrad;
+        ctx.beginPath();
+        ctx.arc(0, 0, this.r * 1.3, 0, Math.PI * 2);
         ctx.fill();
 
-        // Vẽ Icon SVG
-        if (this.icon && this.icon.complete) {
+        // 2. Vẽ Icon SVG
+        // Kiểm tra an toàn: icon tồn tại, đã tải xong (complete) và không lỗi (naturalWidth > 0)
+        if (this.icon && this.icon.complete && this.icon.naturalWidth > 0) {
             const drawSize = this.r * 2 * scaleFactor;
-            // Vẽ icon căn giữa
-            ctx.drawImage(this.icon, -drawSize/2, -drawSize/2, drawSize, drawSize);
+            
+            // Thêm hiệu ứng phát sáng nhẹ cho icon trắng
+            ctx.shadowColor = this.colors[1];
+            ctx.shadowBlur = 10 * scaleFactor;
+            
+            ctx.drawImage(
+                this.icon, 
+                -drawSize / 2, 
+                -drawSize / 2, 
+                drawSize, 
+                drawSize
+            );
+        } else {
+            // Backup: Nếu ảnh hỏng/chưa load kịp thì vẽ hình tròn đặc để không lỗi game
+            ctx.beginPath();
+            ctx.arc(0, 0, this.r * scaleFactor, 0, Math.PI * 2);
+            ctx.fillStyle = this.colors[1];
+            ctx.fill();
         }
         
         ctx.restore();

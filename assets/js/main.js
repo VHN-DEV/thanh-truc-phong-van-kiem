@@ -4,6 +4,7 @@
  * ====================================================================
  */
 const canvas = document.getElementById("c");
+const enemyIcons = {};
 const ctx = canvas.getContext("2d", { alpha: false });
 
 let scaleFactor = 1;
@@ -11,6 +12,28 @@ let width, height;
 let frameCount = 0;
 let lastTime = performance.now();
 let visualParticles = [];
+
+function preloadEnemyIcons() {
+    return Promise.all(
+        CONFIG.ENEMY.ANIMALS.map(path => {
+            return new Promise(resolve => {
+                const img = new Image();
+                img.src = path;
+                const key = path.split('/').pop().split('.')[0];
+
+                img.onload = () => {
+                    enemyIcons[key] = img;
+                    resolve();
+                };
+
+                img.onerror = () => {
+                    console.error("Failed to load icon:", path);
+                    resolve(); // Không chặn game
+                };
+            });
+        })
+    );
+}
 
 function showNotify(text, color) {
     let container = document.getElementById('game-notification');
@@ -597,6 +620,9 @@ function animate() {
     requestAnimationFrame(animate);
 }
 
-init();
-animate();
+(async function boot() {
+    await preloadEnemyIcons();
+    init();
+    animate();
+})();
 // <!-- Create By: Vũ Hoài Nam -->
