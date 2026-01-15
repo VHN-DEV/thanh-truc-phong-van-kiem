@@ -22,7 +22,7 @@ class Enemy {
 
         // 1. XÁC ĐỊNH TINH ANH & CẢNH GIỚI (Sử dụng CONFIG.CULTIVATION.RANKS)
         const playerRank = Input.rankIndex || 0;
-        this.isElite = Math.random() < 0.05; // Tỉ lệ 5%
+        this.isElite = Math.random() < CONFIG.ENEMY.ELITE_CHANCE;
 
         let enemyRankIndex;
         if (this.isElite) {

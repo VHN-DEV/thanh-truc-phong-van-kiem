@@ -60,7 +60,7 @@ const CONFIG = {
     ENEMY: {
         SPAWN_COUNT: 8,         // Số lượng quái xuất hiện cùng lúc
         SPAWN_PADDING: 50,      // Khoảng cách an toàn từ mép màn hình khi quái xuất hiện
-        
+        ELITE_CHANCE: 0.05,      // Tỉ lệ quái tinh anh xuất hiện (5%)
         BASE_SIZE: { MIN: 10, VAR: 50 }, // Công thức kích thước: r = MIN + random^1.5 * VAR
         HP: { BASE: 1, VAR: 100 },       // Máu cơ bản ban đầu
         
