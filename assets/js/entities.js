@@ -32,11 +32,27 @@ class Enemy {
                 playerRank + 2 // Tinh anh mặc định mạnh hơn 2 bậc
             );
         } else {
-            // Quái thường xoay quanh người chơi
-            enemyRankIndex = Math.max(0, Math.min(
-                CONFIG.CULTIVATION.RANKS.length - 1, 
-                playerRank + Math.floor(Math.random() * 3) - 1
-            ));
+            if (CONFIG.ENEMY.USE_PLAYER_RANK_SCALING) {
+                // 🟢 Mode 1: Quái xoay quanh cấp độ người chơi
+                enemyRankIndex = Math.max(0, Math.min(
+                    CONFIG.CULTIVATION.RANKS.length - 1, 
+                    playerRank + Math.floor(Math.random() * 3) - 1
+                ));
+            } else {
+                // 🔵 Mode 2: Quái spawn theo khoảng ID cấu hình
+                const { MIN_ID, MAX_ID } = CONFIG.ENEMY.SPAWN_RANK_RANGE;
+                const rank = this.getRandomRankById(MIN_ID, MAX_ID);
+
+                if (rank) {
+                    this.rankData = rank;
+                    this.rankName = rank.name;
+
+                    // Map id → index để dùng cho scaling HP
+                    enemyRankIndex = CONFIG.CULTIVATION.RANKS.findIndex(
+                        r => r.id === rank.id
+                    );
+                }
+            }
         }
         
         this.rankData = CONFIG.CULTIVATION.RANKS[enemyRankIndex];
@@ -68,6 +84,23 @@ class Enemy {
         const randomPath = animalPaths[Math.floor(Math.random() * animalPaths.length)];
         const iconKey = randomPath.split('/').pop().split('.')[0];
         this.icon = enemyIcons[iconKey];
+    }
+
+    getRandomRankById(minId, maxId) {
+        const ranks = CONFIG.CULTIVATION.RANKS;
+
+        // Lọc các rank nằm trong khoảng id
+        const candidates = ranks.filter(
+            r => r.id >= minId && r.id <= maxId
+        );
+
+        if (candidates.length === 0) {
+            console.warn("Không tìm thấy cảnh giới trong khoảng id:", minId, maxId);
+            return null;
+        }
+
+        // Random 1 rank trong danh sách hợp lệ
+        return candidates[Math.floor(Math.random() * candidates.length)];
     }
 
     generateCracks(level) {
