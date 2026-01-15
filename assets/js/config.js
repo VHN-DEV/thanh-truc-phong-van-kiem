@@ -1,106 +1,105 @@
 const CONFIG = {
-    CORE: { BASE_WIDTH: 1920 },
+    CORE: { 
+        BASE_WIDTH: 1920        // Chiều rộng cơ sở để tính toán tỉ lệ scale trên các màn hình khác nhau
+    },
     ZOOM: {
-        MIN: 0.5,
-        MAX: 5.0,
-        SENSITIVITY: 0.001,
-        STEP: 0.2,
-        SMOOTH: 0.1,
+        MIN: 0.5,               // Mức thu nhỏ tối đa
+        MAX: 5.0,               // Mức phóng to tối đa
+        SENSITIVITY: 0.001,     // Độ nhạy của con lăn chuột
+        STEP: 0.2,              // Khoảng cách zoom mỗi lần nhấn phím +/-
+        SMOOTH: 0.1             // Độ mượt khi chuyển đổi zoom (càng nhỏ càng chậm)
     },
     BG: {
-        STAR_COUNT: 1000,      // Số lượng sao (nếu muốn chỉnh từ config)
-        STAR_SIZE: { MIN: 0.5, MAX: 2 },
-        STAR_ALPHA: { MIN: 0.2, MAX: 1 },
-        STAR_TWINKLE_SPEED: 0.01
+        STAR_COUNT: 1000,       // Tổng số lượng sao trên nền trời
+        STAR_SIZE: { MIN: 0.5, MAX: 2 },        // Kích thước ngẫu nhiên của hạt sao
+        STAR_ALPHA: { MIN: 0.2, MAX: 1 },       // Độ trong suốt ngẫu nhiên của sao
+        STAR_TWINKLE_SPEED: 0.01                // Tốc độ nhấp nháy của sao
     },
     SWORD: {
-        COUNT: 72,
-        BASE_RADIUS: 130,
-        LAYER_SPACING: 70,
-        SPIN_SPEED_BASE: 0.07,
-        ATTACK_DELAY_MS: 180,
-        TRAIL_LENGTH: 6,
-        SIZE: 70,
-        STUN_DURATION_MS: 1000,
-        DURABILITY: 10,
-        RESPAWN_DELAY_MS: 1000,
-        DEATH_WAIT_MS: 2000, // Thời gian kiếm nằm chờ trước khi biến mất
-        SPEED_MULT: 100, // Hệ số điều chỉnh tốc độ quay chung
+        COUNT: 72,              // Tổng số lượng kiếm tối đa
+        BASE_RADIUS: 130,       // Khoảng cách từ tâm đến lớp kiếm đầu tiên
+        LAYER_SPACING: 70,      // Khoảng cách giữa các lớp kiếm (vòng trong - vòng ngoài)
+        SPIN_SPEED_BASE: 0.07,  // Tốc độ quay cơ bản của vòng kiếm
+        ATTACK_DELAY_MS: 180,   // Thời gian chờ để kích hoạt trạng thái tấn công khi nhấn giữ
+        TRAIL_LENGTH: 6,        // Độ dài bóng ma (trail) của thanh kiếm
+        SIZE: 70,               // Kích thước (chiều dài) hiển thị của thanh kiếm
+        STUN_DURATION_MS: 1000, // Thời gian mục tiêu bị khựng khi trúng kiếm
+        DURABILITY: 10,         // Độ bền (máu) của mỗi thanh kiếm
+        RESPAWN_DELAY_MS: 1000, // Thời gian hồi phục sau khi kiếm bị vỡ
+        DEATH_WAIT_MS: 2000,    // Thời gian thanh kiếm nằm lại hiện trường trước khi biến mất hẳn
+        SPEED_MULT: 100,        // Hệ số nhân tốc độ quay chung toàn hệ thống
         
-        // Các thông số hành vi mới được tách ra
-        BREATH_SPEED: { MIN: 0.015, MAX: 0.025 },
-        FLOW_OFFSET: { MIN: 40, MAX: 100 }, // Radius dao động
-        ATTACK_DELAY_VAR: { BASE: 6, RAND: 10 }, // Công thức delay
-        
-        // Phân mảnh khi vỡ
-        FRAGMENTS: {
-            LIFE_TIME: 1500,
-            FADE_TIME: 500
+        BREATH_SPEED: { MIN: 0.015, MAX: 0.025 }, // Tốc độ hiệu ứng "nhịp thở" (co giãn vòng kiếm)
+        FLOW_OFFSET: { MIN: 40, MAX: 100 },       // Biên độ dao động xa gần của kiếm khi bay
+        ATTACK_DELAY_VAR: { BASE: 6, RAND: 10 },  // Độ trễ ngẫu nhiên giữa các lần phóng kiếm
+
+        FRAGMENTS: {            // Hiệu ứng mảnh vỡ khi kiếm gãy
+            LIFE_TIME: 1500,    // Thời gian tồn tại của mảnh vỡ
+            FADE_TIME: 500      // Thời gian mờ dần trước khi mất tích
         }
     },
-    INPUT: { DOUBLE_TAP_DELAY: 300 },
+    INPUT: { 
+        DOUBLE_TAP_DELAY: 300   // Khoảng cách tối đa giữa 2 lần chạm để tính là double tap
+    },
     COLORS: {
-        BG_FADE: "rgba(0, 0, 8, 0.25)",
-        SWORD_BLADE: ["#d0fff5", "#7fdcc0", "#3fa78a"],
-        SWORD_TRAIL: "rgba(120, 255, 210, 0.3)",
+        BG_FADE: "rgba(0, 0, 8, 0.25)",         // Màu nền phủ (tạo hiệu ứng lưu ảnh/motion blur)
+        SWORD_BLADE: ["#d0fff5", "#7fdcc0", "#3fa78a"], // Gradient màu lưỡi kiếm
+        SWORD_TRAIL: "rgba(120, 255, 210, 0.3)",// Màu vệt sáng phía sau kiếm
         
-        // Màu mới tách ra
-        SWORD_HANDLE: "#2f7f68",
-        SWORD_GLOW_OUTER: "#8fffe0",
-        SWORD_GLOW_INNER: "#9fffe6",
-        SWORD_FRAGMENT: "#2a5a4d",
-        SWORD_AURA_SHADOW: "#fffaa0",
+        SWORD_HANDLE: "#2f7f68",        // Màu chuôi kiếm
+        SWORD_GLOW_OUTER: "#8fffe0",    // Màu hào quang vòng ngoài
+        SWORD_GLOW_INNER: "#9fffe6",    // Màu hào quang lõi kiếm
+        SWORD_FRAGMENT: "#2a5a4d",      // Màu các mảnh vỡ
+        SWORD_AURA_SHADOW: "#fffaa0",   // Màu bóng đổ của linh khí
         
-        ENEMY_PARTICLE: "#8cf0ff",
-        ENEMY_SHADOW_SHIELD: "#00ffff",
-        SHIELD_GLOW: "rgba(0, 255, 255, 0.8)",
-        SHIELD_RING_PULSE: "rgba(140, 245, 255, 1)", // Alpha sẽ được tính toán
-        SHIELD_RING_OUTER: "rgba(140, 245, 255, 0.2)",
+        ENEMY_PARTICLE: "#8cf0ff",      // Màu hạt hiệu ứng từ quái vật
+        ENEMY_SHADOW_SHIELD: "#00ffff", // Màu bóng của khiên bảo vệ quái
+        SHIELD_GLOW: "rgba(0, 255, 255, 0.8)",  // Độ rực sáng của khiên
+        SHIELD_RING_PULSE: "rgba(140, 245, 255, 1)", // Màu vòng xung lực khi khiên bị đánh
+        SHIELD_RING_OUTER: "rgba(140, 245, 255, 0.2)", // Màu viền ngoài của khiên
     },
     ENEMY: {
-        SPAWN_COUNT: 6,
-        SPAWN_PADDING: 50,
+        SPAWN_COUNT: 6,         // Số lượng quái xuất hiện cùng lúc
+        SPAWN_PADDING: 50,      // Khoảng cách an toàn từ mép màn hình khi quái xuất hiện
         
-        // Chỉ số quái
-        BASE_SIZE: { MIN: 10, VAR: 50 }, // r = 10 + random^1.5 * 50
-        HP: { BASE: 1, VAR: 100 },
+        BASE_SIZE: { MIN: 10, VAR: 50 }, // Công thức kích thước: r = MIN + random^1.5 * VAR
+        HP: { BASE: 1, VAR: 100 },       // Máu cơ bản ban đầu
         
-        // Khiên
-        SHIELD_CHANCE: 0.3,
-        SHIELD_MAX_HP: 80,
-        SHIELD_COLOR: "rgba(100, 200, 255, 0.4)",
-        SHIELD_LINE: "#80dfff",
+        SHIELD_CHANCE: 0.3,     // Tỉ lệ quái sinh ra có khiên (0.3 = 30%)
+        SHIELD_MAX_HP: 80,      // Máu tối đa của khiên
+        SHIELD_COLOR: "rgba(100, 200, 255, 0.4)", // Màu lõi khiên
+        SHIELD_LINE: "#80dfff", // Màu nét vẽ vết nứt khiên
         
-        // Mảnh vỡ khiên (Debris)
-        DEBRIS: {
-            COUNT: 50,
-            SPEED: { MIN: 4, MAX: 12 },
-            SIZE: { MIN: 2, MAX: 5 },
-            LIFE_DECAY: 0.025
+        DEBRIS: {               // Mảnh vỡ khi quái chết
+            COUNT: 50,          // Số lượng mảnh bắn ra
+            SPEED: { MIN: 4, MAX: 12 }, // Tốc độ bắn mảnh vỡ
+            SIZE: { MIN: 2, MAX: 5 },   // Kích thước mảnh vỡ
+            LIFE_DECAY: 0.025   // Tốc độ biến mất của mảnh vỡ mỗi frame
         },
 
-        PALETTES: [
+        PALETTES: [             // Danh sách các bộ màu ngẫu nhiên cho quái
             ["#ff9999", "#cc3333"], ["#99ccff", "#3366cc"],
             ["#99ff99", "#33cc33"], ["#ffcc99", "#cc6600"],
             ["#ff99ff", "#cc33cc"], ["#ffff99", "#cccc33"]
         ],
         HP: { BASE: 20, VAR: 30 },
-        SCALING_FACTOR: 0.4,        // Mỗi cấp tăng 40% máu quái
-        PILL_CHANCE: 0.15,          // 15% rớt đan dược
+        SCALING_FACTOR: 0.4,    // Hệ số tăng chỉ số theo cấp độ người chơi (40% mỗi cấp)
+        PILL_CHANCE: 0.15,      // Tỉ lệ rơi ra Đan dược khi quái chết
     },
     ITEMS: {
-        PILL_BOOST: 0.05            // Mỗi viên đan dược tăng 5% tỉ lệ đột phá
+        PILL_BOOST: 0.05        // Mỗi viên Đan dược cộng thêm 5% tỉ lệ đột phá thành công
     },
     MANA: {
-        MAX: 100,
-        START: 100,
-        REGEN_PER_SEC: 1,           // Đổi từ Per Min sang Per Sec
-        REGEN_INTERVAL_MS: 1000, 
-        COST_RESPAWN: -0.2,         // Giảm chi phí để tránh "sốc" mana khi 72 kiếm vỡ
-        GAIN_KILL: 1, 
-        COST_MOVE_PER_SEC: 0.5, 
-        COST_ATTACK_PER_SEC: 1,
-        COST_CHANGE_FORM: 1
+        // Lưu ý: MAX giờ đây sẽ được ghi đè bởi giá trị trong CULTIVATION.RANKS
+        MAX: 100,               // Giới hạn Linh lực mặc định
+        START: 100,             // Linh lực khi bắt đầu game
+        REGEN_PER_SEC: 1,       // Tốc độ hồi phục Linh lực mỗi giây
+        REGEN_INTERVAL_MS: 1000,// Chu kỳ hồi phục (1000ms = 1 giây một lần)
+        COST_RESPAWN: -0.2,     // Chi phí Mana để hồi phục một thanh kiếm bị vỡ
+        GAIN_KILL: 1,           // Lượng Mana nhận lại khi tiêu diệt một quái vật
+        COST_MOVE_PER_SEC: 0.5, // Tiêu hao Mana mỗi giây khi di chuyển
+        COST_ATTACK_PER_SEC: 1, // Tiêu hao Mana mỗi giây khi đang ở trạng thái tấn công
+        COST_CHANGE_FORM: 1     // Chi phí Mana mỗi lần chuyển đổi hình thái (vòng bảo vệ)
     },
     CULTIVATION: {
         RANKS: [
