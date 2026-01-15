@@ -84,6 +84,7 @@ class Enemy {
             let currentLevel = Math.floor((this.maxShieldHp - this.shieldHp) / 20);
             if (currentLevel > this.shieldLevel) {
                 this.shieldLevel = currentLevel;
+                this.cracks = []; // RESET mảng trước khi tạo vết nứt mới để tránh tràn bộ nhớ
                 this.generateCracks(this.shieldLevel);
             }
             if (this.shieldHp <= 0) {
@@ -123,65 +124,30 @@ class Enemy {
 
     drawShield(ctx, scaleFactor) {
         const shieldR = (this.r + 10) * scaleFactor;
-
-        const pulse = Math.sin(Date.now() * 0.006) * 0.15 + 0.85;
+        const pulse = Math.sin(Date.now() * 0.006) * 0.1 + 0.9; // Giảm biên độ pulse
 
         ctx.save();
-
+        // Vẽ vòng ngoài khiên (Bỏ shadowBlur, thay bằng lineWidth dày hơn)
         ctx.beginPath();
         ctx.arc(0, 0, shieldR, 0, Math.PI * 2);
-        ctx.clip();
+        ctx.strokeStyle = `rgba(140, 245, 255, ${0.5 * pulse})`; 
+        ctx.lineWidth = 2 * scaleFactor;
+        ctx.stroke();
 
-        const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, shieldR);
-        grad.addColorStop(0, "rgba(255, 255, 255, 0)");
-        grad.addColorStop(0.7, "rgba(100, 210, 255, 0.15)");
-        grad.addColorStop(1, `rgba(150, 240, 255, ${0.3 * pulse})`);
-
-        ctx.fillStyle = grad;
-        ctx.fill();
-
+        // Chỉ vẽ cracks nếu có
         if (this.cracks.length > 0) {
             ctx.beginPath();
-            ctx.strokeStyle = `rgba(255, 255, 255, ${0.6 + (this.shieldLevel * 0.1)})`;
-            ctx.lineWidth = (1.2 + this.shieldLevel * 0.4) * scaleFactor;
-            ctx.lineCap = "round";
-            ctx.lineJoin = "round";
-
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.5)";
+            ctx.lineWidth = 1 * scaleFactor;
             this.cracks.forEach(pts => {
+                if (pts.length < 2) return;
                 ctx.moveTo(pts[0].x * scaleFactor, pts[0].y * scaleFactor);
                 for (let i = 1; i < pts.length; i++) {
                     ctx.lineTo(pts[i].x * scaleFactor, pts[i].y * scaleFactor);
                 }
             });
             ctx.stroke();
-
-            if (this.shieldLevel >= 2) {
-                ctx.globalAlpha = 0.4;
-                ctx.shadowBlur = 10 * scaleFactor;
-                ctx.shadowColor = "#ffffff";
-                ctx.lineWidth = 2.5 * scaleFactor;
-                ctx.stroke();
-            }
         }
-        ctx.restore();
-
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(0, 0, shieldR, 0, Math.PI * 2);
-
-        ctx.shadowBlur = 15 * scaleFactor;
-        ctx.shadowColor = CONFIG.COLORS.SHIELD_GLOW;
-
-        ctx.strokeStyle = `rgba(140, 245, 255, ${pulse})`; 
-        
-        ctx.lineWidth = 3.5 * scaleFactor;
-        ctx.stroke();
-
-        ctx.beginPath();
-        ctx.arc(0, 0, shieldR + 3 * scaleFactor, 0, Math.PI * 2);
-        ctx.strokeStyle = CONFIG.COLORS.SHIELD_RING_OUTER;
-        ctx.lineWidth = 1 * scaleFactor;
-        ctx.stroke();
         ctx.restore();
     }
 
@@ -190,12 +156,17 @@ class Enemy {
         for (let i = 0; i < conf.COUNT; i++) {
             const angle = Math.random() * Math.PI * 2;
             const speed = random(conf.SPEED.MIN, conf.SPEED.MAX);
-            this.particles.push({
-                x: 0, y: 0,
-                vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
-                size: random(conf.SIZE.MIN, conf.SIZE.MAX), 
+            
+            // Đẩy thẳng vào mảng global để class Enemy không phải xử lý drawParticles nữa
+            visualParticles.push({
+                x: this.x, 
+                y: this.y,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                size: random(conf.SIZE.MIN, conf.SIZE.MAX),
                 life: 1.0,
-                rotation: Math.random() * Math.PI * 2, spin: random(-0.5, 0.5)
+                color: CONFIG.COLORS.ENEMY_PARTICLE,
+                type: 'square' // Thêm flag để hàm animate biết cách vẽ hình vuông
             });
         }
     }
@@ -226,30 +197,28 @@ class Enemy {
         }
     }
 
+    // Thay thế đoạn code trong drawBody
     drawBody(ctx, scaleFactor) {
-        ctx.globalAlpha = 1.0;
+        ctx.save();
+        // Thay vì dùng shadowBlur, ta vẽ một vòng tròn gradient mờ ở dưới
+        const glowGrad = ctx.createRadialGradient(0, 0, this.r, 0, 0, this.r * 1.5);
+        glowGrad.addColorStop(0, this.hasShield ? "rgba(140, 245, 255, 0.3)" : `${this.colors[1]}44`);
+        glowGrad.addColorStop(1, "rgba(0,0,0,0)");
+        
+        ctx.beginPath();
+        ctx.arc(0, 0, this.r * 1.5, 0, Math.PI * 2);
+        ctx.fillStyle = glowGrad;
+        ctx.fill();
+
+        // Vẽ thân quái (giữ nguyên gradient nhưng BỎ shadowBlur)
         const g = ctx.createRadialGradient(0, 0, this.r * 0.2, 0, 0, this.r);
         g.addColorStop(0, this.colors[0]);
         g.addColorStop(1, this.colors[1]);
-
         ctx.beginPath();
         ctx.arc(0, 0, this.r, 0, Math.PI * 2);
         ctx.fillStyle = g;
-
-        if (this.hasShield) {
-            ctx.shadowColor = CONFIG.COLORS.ENEMY_SHADOW_SHIELD;
-            ctx.shadowBlur = 30 * scaleFactor;
-
-            ctx.strokeStyle = "rgba(255, 255, 255, 0.8)";
-            ctx.lineWidth = 3 * scaleFactor;
-            ctx.stroke();
-        } else {
-            ctx.shadowColor = this.colors[1];
-            ctx.shadowBlur = 15 * scaleFactor;
-        }
-
         ctx.fill();
-        ctx.shadowBlur = 0;
+        ctx.restore();
     }
 }
 
