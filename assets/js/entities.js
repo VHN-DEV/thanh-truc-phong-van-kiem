@@ -112,7 +112,10 @@ class Enemy {
     // Tìm hàm hit(sword) trong entities.js và thay thế đoạn cuối (phần xử lý khi hp <= 0)
     hit(sword) {
         const currentRank = CONFIG.CULTIVATION.RANKS[Input.rankIndex];
-        const damage = currentRank ? currentRank.damage : 1;
+        const baseDamage = currentRank ? currentRank.damage : 1;
+
+        // Áp dụng hệ số độ bền của kiếm
+        const damage = Math.ceil(baseDamage * (sword?.powerPenalty || 1));
 
         if (this.hasShield && this.shieldHp > 0) {
             this.shieldHp -= damage;
@@ -351,12 +354,14 @@ class Sword {
         this.flowOffsetRadius = (CONFIG.SWORD.FLOW_OFFSET.MIN + Math.random() * (CONFIG.SWORD.FLOW_OFFSET.MAX - CONFIG.SWORD.FLOW_OFFSET.MIN)) * scaleFactor;
         this.isStunned = false;
         this.stunTimer = 0;
-        this.maxHp = CONFIG.SWORD.DURABILITY || 3;
+        const rankData = CONFIG.CULTIVATION.RANKS[Input.rankIndex] || CONFIG.CULTIVATION.RANKS[0];
+        this.maxHp = rankData.swordDurability;
         this.hp = this.maxHp;
         this.isDead = false;
         this.respawnTimer = 0;
         this.fragments = [];
         this.deathTime = 0;
+        this.powerPenalty = 1; // hệ số sát thương theo độ bền
     }
 
     update(guardCenter, enemies, Input, scaleFactor) {
@@ -409,11 +414,14 @@ class Sword {
     }
 
     respawn(Input) {
-        this.isDead = false;
+        const rankData = CONFIG.CULTIVATION.RANKS[Input.rankIndex] || CONFIG.CULTIVATION.RANKS[0];
+        this.maxHp = rankData.swordDurability;
         this.hp = this.maxHp;
+        this.isDead = false;
         this.x = Input.x;
         this.y = Input.y;
-        this.vx = 0; this.vy = 0;
+        this.vx = 0; 
+        this.vy = 0;
         this.isStunned = false;
         this.trail = [];
         this.fragments = [];
@@ -497,6 +505,11 @@ class Sword {
         this.attackFrame++;
         if (this.attackFrame < this.attackDelay) return;
 
+        // --- GIẢM SÁT THƯƠNG KHI KIẾM GẦN VỠ ---
+        const durabilityRate = this.hp / this.maxHp; // 1 → mới, 0 → sắp gãy
+        this.powerPenalty = 0.6 + durabilityRate * 0.4;
+        // 100% HP → 1.0 | 0 HP → 0.6
+
         let target = null, minStartDist = Infinity;
         for (const e of enemies) {
             const d = Math.hypot(e.x - Input.x, e.y - Input.y);
@@ -516,7 +529,7 @@ class Sword {
                 const result = target.hit(this);
 
                 if (result === "shielded") {
-                    this.hp--;
+                    this.hp -= target.isElite ? 3 : 1;
 
                     if (this.hp <= 0) {
                         this.breakSword(scaleFactor);
