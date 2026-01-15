@@ -269,30 +269,50 @@ class Enemy {
         ctx.save();
         ctx.translate(this.x, this.y);
         
+        // Lấy màu từ RankData (màu chính của cảnh giới)
+        const rankColor = this.rankData.color;
+
         this.drawParticles(ctx, scaleFactor);
         if (this.hasShield) this.drawShield(ctx, scaleFactor);
         this.drawBody(ctx, scaleFactor);
 
-        // Vẽ tên cảnh giới
-        ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+        // 1. VẼ TÊN CẢNH GIỚI: Sử dụng màu của Rank
+        // Nếu là Tinh Anh thì cho phát sáng chữ, nếu không thì vẽ chữ thường
+        ctx.fillStyle = rankColor; 
         ctx.font = `bold ${11 * scaleFactor}px "Segoe UI", Arial`;
         ctx.textAlign = "center";
+        
+        // Thêm hiệu ứng phát sáng cho chữ nếu là Tinh Anh để dễ phân biệt
+        if (this.isElite) {
+            ctx.shadowColor = rankColor;
+            ctx.shadowBlur = 8 * scaleFactor;
+        }
+
         const textY = -this.r - (this.hasShield ? 15 : 10) * scaleFactor;
         ctx.fillText(this.rankName, 0, textY);
+        ctx.shadowBlur = 0; // Reset shadow sau khi vẽ chữ
 
-        // VẼ THANH MÁU NHỎ PHÍA DƯỚI TÊN
+        // 2. VẼ THANH MÁU: Chuyển màu theo Cảnh giới
         const barWidth = this.r * 1.5 * scaleFactor;
         const barHeight = 4 * scaleFactor;
         const barY = textY + 5 * scaleFactor;
 
-        // Nền thanh máu (màu đen mờ)
+        // Nền thanh máu
         ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
         ctx.fillRect(-barWidth/2, barY, barWidth, barHeight);
 
-        // Máu còn lại (màu xanh lá chuyển dần sang đỏ)
+        // Máu còn lại: 
+        // Mix màu cảnh giới với một chút sắc trắng để thanh máu nổi bật hơn
         const hpRatio = Math.max(0, this.hp / this.maxHp);
-        ctx.fillStyle = hpRatio > 0.5 ? "#2ecc71" : (hpRatio > 0.2 ? "#f1c40f" : "#e74c3c");
+        ctx.fillStyle = rankColor; 
+        
+        // Vẽ thanh máu chính
         ctx.fillRect(-barWidth/2, barY, barWidth * hpRatio, barHeight);
+        
+        // Thêm một viền sáng mỏng cho thanh máu để trông chuyên nghiệp hơn
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
+        ctx.lineWidth = 0.5 * scaleFactor;
+        ctx.strokeRect(-barWidth/2, barY, barWidth, barHeight);
         
         ctx.restore();
     }
