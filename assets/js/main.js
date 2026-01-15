@@ -239,7 +239,7 @@ const Input = {
         // 1. Tính tổng tỉ lệ: Cơ bản của Rank + Boost từ 3 loại đan
         const pillBoost = this.calculateTotalPillBoost();
         let totalChance = currentRank.chance + pillBoost;
-        totalChance = Math.min(CONFIG.MANA.MAX_BREAKTHROUGH_CHANCE, totalChance); // Tỉ lệ đột phá tối đa tôi đang để là 99% (luôn có 1% rủi ro để tăng độ kịch tính)
+        totalChance = Math.min(CONFIG.CULTIVATION.MAX_BREAKTHROUGH_CHANCE, totalChance); // Tỉ lệ đột phá tối đa tôi đang để là 99% (luôn có 1% rủi ro để tăng độ kịch tính)
 
         if (Math.random() <= totalChance) {
             // --- THÀNH CÔNG ---
@@ -289,7 +289,7 @@ const Input = {
 
         // 1. Tính toán tỉ lệ hiển thị dựa trên 3 loại đan
         const pillBoost = this.calculateTotalPillBoost();
-        const totalChance = Math.min(0.95, rank.chance + pillBoost);
+        const totalChance = Math.min(CONFIG.CULTIVATION.RANKS[this.rankIndex].chance, rank.chance + pillBoost);
         const totalPercent = (totalChance * 100).toFixed(0);
         
         // Tổng số lượng đan dược để hiển thị
