@@ -184,19 +184,24 @@ const Input = {
         if (!currentRank) return;
 
         if (this.exp >= currentRank.exp) {
-            // TÍNH TOÁN TỈ LỆ: Tỉ lệ gốc + (số đan * % mỗi viên)
             let totalChance = currentRank.chance + (this.pillCount * CONFIG.ITEMS.PILL_BOOST);
-            totalChance = Math.min(0.95, totalChance); // Không quá 95% để giữ độ kịch tính
+            totalChance = Math.min(0.95, totalChance);
 
-            const roll = Math.random();
-            if (roll <= totalChance) {
+            if (Math.random() <= totalChance) {
                 // THÀNH CÔNG
                 this.exp -= currentRank.exp;
                 this.rankIndex++;
-                this.pillCount = 0; // Đột phá xong thì dùng hết đan
+                
+                // CẬP NHẬT GIỚI HẠN MANA MỚI TỪ RANK MỚI
+                const nextRank = CONFIG.CULTIVATION.RANKS[this.rankIndex];
+                if (nextRank && nextRank.maxMana) {
+                    this.maxMana = nextRank.maxMana;
+                }
+
+                this.pillCount = 0;
                 showNotify("ĐỘT PHÁ THÀNH CÔNG!", "#ffcc00");
                 this.createLevelUpExplosion(this.x, this.y, currentRank.color);
-                this.mana = this.maxMana;
+                this.mana = this.maxMana; // Hồi đầy mana khi lên cấp
             } else {
                 // THẤT BẠI
                 const penalty = Math.floor(this.exp * 0.5);
@@ -212,6 +217,9 @@ const Input = {
     renderExpUI() {
         const rank = CONFIG.CULTIVATION.RANKS[this.rankIndex];
         if (!rank) return;
+
+        // Đảm bảo maxMana luôn đồng bộ với Rank hiện tại nếu chưa được gán
+        if (rank.maxMana) this.maxMana = rank.maxMana;
 
         // Lấy các phần tử UI
         const barExp = document.getElementById('exp-bar');
@@ -453,6 +461,11 @@ let starField;
 const guardCenter = { x: width / 2, y: height / 2, vx: 0, vy: 0 };
 
 function init() {
+    // Khởi tạo thông số theo rank đầu tiên
+    const startingRank = CONFIG.CULTIVATION.RANKS[Input.rankIndex];
+    Input.maxMana = startingRank.maxMana || CONFIG.MANA.MAX;
+    Input.mana = Input.maxMana; 
+
     Input.renderManaUI();
     Input.renderExpUI();
     starField = new StarField(250, width, height);
