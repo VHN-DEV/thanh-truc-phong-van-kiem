@@ -229,10 +229,10 @@ const Input = {
 
         // 1. Cập nhật nội dung chữ (Phần đạo hữu bị thiếu)
         if (textExp) {
-            textExp.innerText = `Kinh nghiệm: ${Math.floor(this.exp)}/${rank.exp}`;
+            textExp.innerText = `Tu vi: ${Math.floor(this.exp)}/${rank.exp}`;
         }
         if (rankText) {
-            rankText.innerText = rank.name;
+            rankText.innerText = `Cảnh giới: ${rank.name}`;
         }
 
         // 2. Cập nhật độ dài thanh EXP
