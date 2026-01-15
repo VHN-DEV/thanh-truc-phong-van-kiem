@@ -13,26 +13,50 @@ class Enemy {
         const startX = (window.innerWidth / 2) - (visibleWidth / 2);
         const startY = (window.innerHeight / 2) - (visibleHeight / 2);
         const padding = CONFIG.ENEMY.SPAWN_PADDING;
+        
         this.x = random(startX + padding, startX + visibleWidth - padding);
         this.y = random(startY + padding, startY + visibleHeight - padding);
         this.particles = [];
         this.cracks = [];
         this.shieldLevel = 0;
-        // 1. Tính hệ số mạnh dần theo cấp độ người chơi
-        const scaling = 1 + (Input.rankIndex * CONFIG.ENEMY.SCALING_FACTOR);
-        // 2. Tính kích thước quái (giữ nguyên công thức cũ nhưng gán lại biến r)
-        const sizeBase = CONFIG.ENEMY.BASE_SIZE.MIN;
+
+        // --- KẾT NỐI HỆ THỐNG CẢNH GIỚI ---
+        // 1. Xác định Cảnh giới của quái (ngẫu nhiên quanh mức của người chơi)
+        // Cấp của quái = Cấp người chơi + (ngẫu nhiên từ -1 đến +1)
+        const playerRank = Input.rankIndex || 0;
+        const enemyRankIndex = Math.max(0, Math.min(
+            CONFIG.CULTIVATION.RANKS.length - 1, 
+            playerRank + Math.floor(Math.random() * 3) - 1 
+        ));
+        
+        this.rankData = CONFIG.CULTIVATION.RANKS[enemyRankIndex];
+        this.rankName = this.rankData.name;
+
+        // 2. Màu sắc: Đồng bộ với màu Cảnh giới trong CONFIG
+        // lightColor làm tâm phát sáng, color làm viền
+        this.colors = [this.rankData.lightColor, this.rankData.color];
+
+        // 3. Kích thước: Quái cấp cao (Index cao) sẽ có cơ sở to hơn
+        const sizeBase = CONFIG.ENEMY.BASE_SIZE.MIN + (enemyRankIndex * 1.5);
         const sizeVar = CONFIG.ENEMY.BASE_SIZE.VAR;
         this.r = (sizeBase + Math.pow(Math.random(), 1.5) * sizeVar) * (window.innerWidth / CONFIG.CORE.BASE_WIDTH);
-        // 3. Máu quái: Nhân thêm với hệ số scaling
-        this.maxHp = Math.floor((CONFIG.ENEMY.HP.BASE + Math.random() * CONFIG.ENEMY.HP.VAR) * scaling);
+
+        // 4. Máu quái: Tỉ lệ thuận với MaxMana của Cảnh giới đó
+        // Giúp máu quái tăng tiến đồng bộ với sức mạnh người chơi
+        const hpMultiplier = 2.5; // Hệ số điều chỉnh độ trâu của quái
+        this.maxHp = Math.floor(this.rankData.maxMana * hpMultiplier * (0.9 + Math.random() * 0.2));
         this.hp = this.maxHp;
-        // 4. Khiên: Cũng nhân thêm với hệ số scaling nếu có khiên
-        this.hasShield = Math.random() < CONFIG.ENEMY.SHIELD_CHANCE;
-        this.shieldHp = this.hasShield ? Math.floor(CONFIG.ENEMY.SHIELD_MAX_HP * scaling) : 0;
-        this.maxShieldHp = this.shieldHp; // Cập nhật lại maxShieldHp để tính toán vết nứt
-        // 5. Màu sắc (Giữ nguyên)
-        this.colors = CONFIG.ENEMY.PALETTES[Math.floor(Math.random() * CONFIG.ENEMY.PALETTES.length)];
+
+        // 5. Khiên: Cảnh giới càng cao, tỉ lệ có khiên càng lớn
+        this.hasShield = Math.random() < (CONFIG.ENEMY.SHIELD_CHANCE + (enemyRankIndex * 0.005));
+        if (this.hasShield) {
+            // Máu khiên bằng 40% máu quái
+            this.shieldHp = Math.floor(this.hp * 0.4);
+            this.maxShieldHp = this.shieldHp;
+        } else {
+            this.shieldHp = 0;
+            this.maxShieldHp = 0;
+        }
     }
 
     generateCracks(level) {
@@ -174,9 +198,23 @@ class Enemy {
     draw(ctx, scaleFactor) {
         ctx.save();
         ctx.translate(this.x, this.y);
+        
+        // 1. Vẽ các hiệu ứng hạt và thân quái như cũ
         this.drawParticles(ctx, scaleFactor);
         if (this.hasShield) this.drawShield(ctx, scaleFactor);
         this.drawBody(ctx, scaleFactor);
+
+        // 2. VẼ TÊN CẢNH GIỚI PHÍA TRÊN ĐẦU QUÁI
+        ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+        ctx.font = `bold ${11 * scaleFactor}px "Segoe UI", Arial`;
+        ctx.textAlign = "center";
+        ctx.shadowColor = "black";
+        ctx.shadowBlur = 4 * scaleFactor;
+        
+        // Vị trí text cách quái một khoảng dựa trên bán kính r
+        const textY = -this.r - (this.hasShield ? 15 : 10) * scaleFactor;
+        ctx.fillText(this.rankName, 0, textY);
+        
         ctx.restore();
     }
 
