@@ -16,16 +16,22 @@ class Enemy {
         this.x = random(startX + padding, startX + visibleWidth - padding);
         this.y = random(startY + padding, startY + visibleHeight - padding);
         this.particles = [];
+        this.cracks = [];
+        this.shieldLevel = 0;
+        // 1. Tính hệ số mạnh dần theo cấp độ người chơi
+        const scaling = 1 + (Input.rankIndex * CONFIG.ENEMY.SCALING_FACTOR);
+        // 2. Tính kích thước quái (giữ nguyên công thức cũ nhưng gán lại biến r)
         const sizeBase = CONFIG.ENEMY.BASE_SIZE.MIN;
         const sizeVar = CONFIG.ENEMY.BASE_SIZE.VAR;
         this.r = (sizeBase + Math.pow(Math.random(), 1.5) * sizeVar) * (window.innerWidth / CONFIG.CORE.BASE_WIDTH);
-        this.maxHp = CONFIG.ENEMY.HP.BASE + Math.floor(Math.random() * CONFIG.ENEMY.HP.VAR);
+        // 3. Máu quái: Nhân thêm với hệ số scaling
+        this.maxHp = Math.floor((CONFIG.ENEMY.HP.BASE + Math.random() * CONFIG.ENEMY.HP.VAR) * scaling);
         this.hp = this.maxHp;
+        // 4. Khiên: Cũng nhân thêm với hệ số scaling nếu có khiên
         this.hasShield = Math.random() < CONFIG.ENEMY.SHIELD_CHANCE;
-        this.maxShieldHp = CONFIG.ENEMY.SHIELD_MAX_HP;
-        this.shieldHp = this.hasShield ? this.maxShieldHp : 0;
-        this.cracks = [];
-        this.shieldLevel = 0;
+        this.shieldHp = this.hasShield ? Math.floor(CONFIG.ENEMY.SHIELD_MAX_HP * scaling) : 0;
+        this.maxShieldHp = this.shieldHp; // Cập nhật lại maxShieldHp để tính toán vết nứt
+        // 5. Màu sắc (Giữ nguyên)
         this.colors = CONFIG.ENEMY.PALETTES[Math.floor(Math.random() * CONFIG.ENEMY.PALETTES.length)];
     }
 
@@ -68,21 +74,18 @@ class Enemy {
         }
     }
 
+    // Tìm hàm hit(sword) trong entities.js và thay thế đoạn cuối (phần xử lý khi hp <= 0)
     hit(sword) {
-        // Lấy sát thương từ cảnh giới hiện tại
         const currentRank = CONFIG.CULTIVATION.RANKS[Input.rankIndex];
         const damage = currentRank ? currentRank.damage : 1;
 
         if (this.hasShield && this.shieldHp > 0) {
-            this.shieldHp -= damage; // Áp dụng sát thương cảnh giới
-
+            this.shieldHp -= damage;
             let currentLevel = Math.floor((this.maxShieldHp - this.shieldHp) / 20);
-
             if (currentLevel > this.shieldLevel) {
                 this.shieldLevel = currentLevel;
                 this.generateCracks(this.shieldLevel);
             }
-
             if (this.shieldHp <= 0) {
                 this.hasShield = false;
                 this.createShieldDebris();
@@ -91,23 +94,26 @@ class Enemy {
         }
 
         this.hp -= damage;
+        
+        // --- ĐOẠN CẦN THAY THẾ/BỔ SUNG TỪ ĐÂY ---
         if (this.hp <= 0) {
-            // --- LOGIC THƯỞNG THEO KÍCH THƯỚC ---
-            
-            // 1. Tính toán tỉ lệ kích thước (sizeRatio)
-            // Dựa trên công thức ở respawn(), r min khoảng 10, max khoảng 60.
-            // Ta tính tỉ lệ từ 1.0 đến ~3.0 tùy độ lớn.
             const sizeRatio = Math.max(1, this.r / (15 * (window.innerWidth / CONFIG.CORE.BASE_WIDTH)));
             
-            // 2. Tính Mana nhận được: Base (GAIN_KILL) * sizeRatio
-            const manaGain = Math.ceil(CONFIG.MANA.GAIN_KILL * sizeRatio);
-            Input.updateMana(manaGain);
-            
-            // 3. Tính EXP nhận được: 
-            // Nếu có khiên: (Base 2 * sizeRatio), Không khiên: (Base 1 * sizeRatio)
-            const baseExp = this.maxShieldHp > 0 ? 2 : 1;
-            const expGain = Math.ceil(baseExp * sizeRatio);
+            // 1. Tăng EXP tỷ lệ thuận với Cảnh giới (RankIndex)
+            const rankBonus = 1 + (Input.rankIndex * 2); 
+            const expGain = Math.ceil(2 * sizeRatio * rankBonus);
             Input.updateExp(expGain);
+
+            // 2. Hồi Mana khi tiêu diệt quái
+            Input.updateMana(Math.ceil(CONFIG.MANA.GAIN_KILL * sizeRatio));
+
+            // 3. Logic rơi Đan dược (Mới)
+            if (Math.random() < CONFIG.ENEMY.PILL_CHANCE) {
+                Input.pillCount++;
+                showNotify("+1 Linh Đan (Tăng tỉ lệ đột phá)", "#00ffcc");
+                // Tạo hiệu ứng hạt màu lục đặc biệt tại vị trí quái chết
+                Input.createLevelUpExplosion(this.x, this.y, "#00ffcc"); 
+            }
 
             this.respawn();
             return "killed";

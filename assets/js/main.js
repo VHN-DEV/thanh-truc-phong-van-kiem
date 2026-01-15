@@ -83,6 +83,7 @@ const Input = {
     lastFrameTime: performance.now(),
     exp: 0,
     rankIndex: 0, // Vị trí hiện tại trong mảng RANKS
+    pillCount: 0, // Số đan dược đang có
 
     processActiveConsumption(dt) {
         // dt là thời gian trôi qua tính bằng giây (seconds)
@@ -129,14 +130,13 @@ const Input = {
         const now = performance.now();
         const elapsed = now - this.lastManaRegenTick;
 
-        // Kiểm tra nếu đã trôi qua ít nhất 1 khoảng REGEN_INTERVAL_MS
         if (elapsed >= CONFIG.MANA.REGEN_INTERVAL_MS) {
-            // Tính xem đã trôi qua bao nhiêu lần "1 phút"
-            const manaToAdd = Math.floor(elapsed / CONFIG.MANA.REGEN_INTERVAL_MS);
+            // Tính toán số mana hồi dựa trên giây (hoặc chu kỳ MS)
+            const ticks = Math.floor(elapsed / CONFIG.MANA.REGEN_INTERVAL_MS);
 
-            if (manaToAdd > 0) {
-                this.updateMana(manaToAdd * CONFIG.MANA.REGEN_PER_MIN);
-                // Cập nhật lại mốc thời gian, giữ lại phần dư (ms) để không bị mất giây
+            if (ticks > 0) {
+                // Sử dụng REGEN_PER_SEC thay vì REGEN_PER_MIN
+                this.updateMana(ticks * CONFIG.MANA.REGEN_PER_SEC);
                 this.lastManaRegenTick = now - (elapsed % CONFIG.MANA.REGEN_INTERVAL_MS);
             }
         }
@@ -184,33 +184,26 @@ const Input = {
         if (!currentRank) return;
 
         if (this.exp >= currentRank.exp) {
+            // TÍNH TOÁN TỈ LỆ: Tỉ lệ gốc + (số đan * % mỗi viên)
+            let totalChance = currentRank.chance + (this.pillCount * CONFIG.ITEMS.PILL_BOOST);
+            totalChance = Math.min(0.95, totalChance); // Không quá 95% để giữ độ kịch tính
+
             const roll = Math.random();
-            
-            if (roll <= currentRank.chance) {
+            if (roll <= totalChance) {
                 // THÀNH CÔNG
                 this.exp -= currentRank.exp;
                 this.rankIndex++;
-                
-                // Hồi Mana + Hiệu ứng lóe sáng
-                this.mana = this.maxMana;
-                const manaBar = document.getElementById('mana-bar');
-                manaBar.classList.add('mana-full-flash');
-                setTimeout(() => manaBar.classList.remove('mana-full-flash'), 800);
-
+                this.pillCount = 0; // Đột phá xong thì dùng hết đan
                 showNotify("ĐỘT PHÁ THÀNH CÔNG!", "#ffcc00");
-                Input.createLevelUpExplosion(this.x, this.y, currentRank.color);
-                this.updateMana(0); 
+                this.createLevelUpExplosion(this.x, this.y, currentRank.color);
+                this.mana = this.maxMana;
             } else {
                 // THẤT BẠI
-                // Nếu có protect: true thì không bị trừ EXP
-                if (currentRank.protect) {
-                    showNotify("Đột phá thất bại (Đã bảo vệ)", "#aaa");
-                } else {
-                    const penalty = Math.floor(this.exp * 0.5);
-                    this.exp -= penalty;
-                    showNotify("ĐỘT PHÁ THẤT BẠI! (-50% tu vi)", "#ff4444");
-                    this.triggerExpError();
-                }
+                const penalty = Math.floor(this.exp * 0.5);
+                this.exp -= penalty;
+                this.pillCount = Math.floor(this.pillCount / 2); // Thất bại mất nửa số đan
+                showNotify("TÂM MA PHẢN PHỆ! (-50% tu vi)", "#ff4444");
+                this.triggerExpError();
             }
             this.renderExpUI();
         }
@@ -229,7 +222,13 @@ const Input = {
 
         // 1. Cập nhật nội dung chữ (Phần đạo hữu bị thiếu)
         if (textExp) {
-            textExp.innerText = `Tu vi: ${Math.floor(this.exp)}/${rank.exp}`;
+            const chance = (rank.chance * 100).toFixed(0);
+            const boost = (this.pillCount * CONFIG.ITEMS.PILL_BOOST * 100).toFixed(0);
+            const total = Math.min(95, parseFloat(chance) + parseFloat(boost));
+            
+            textExp.innerHTML = `Tu vi: ${Math.floor(this.exp)}/${rank.exp} | ` + 
+                                `<span style="color:#00ffcc">Linh Đan: ${this.pillCount}</span> ` +
+                                `(<span style="color:#ffcc00">TL: ${total}%</span>)`;
         }
         if (rankText) {
             rankText.innerText = `Cảnh giới: ${rank.name}`;
@@ -256,6 +255,11 @@ const Input = {
         if (rankText) {
             rankText.style.color = rank.color;
             rankText.style.textShadow = `0 0 8px ${rank.color}80`;
+        }
+        if (textExp) {
+            const chance = (CONFIG.CULTIVATION.RANKS[this.rankIndex].chance * 100).toFixed(0);
+            const boost = (this.pillCount * CONFIG.ITEMS.PILL_BOOST * 100).toFixed(0);
+            textExp.innerHTML = `Tu vi: ${Math.floor(this.exp)}/${rank.exp} | Đan dược: ${this.pillCount} (TL: ${chance}% + ${boost}%)`;
         }
     },
 

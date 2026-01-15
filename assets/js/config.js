@@ -83,19 +83,24 @@ const CONFIG = {
             ["#ff9999", "#cc3333"], ["#99ccff", "#3366cc"],
             ["#99ff99", "#33cc33"], ["#ffcc99", "#cc6600"],
             ["#ff99ff", "#cc33cc"], ["#ffff99", "#cccc33"]
-        ]
+        ],
+        HP: { BASE: 20, VAR: 30 },
+        SCALING_FACTOR: 0.4,        // Mỗi cấp tăng 40% máu quái
+        PILL_CHANCE: 0.15,          // 15% rớt đan dược
+    },
+    ITEMS: {
+        PILL_BOOST: 0.05            // Mỗi viên đan dược tăng 5% tỉ lệ đột phá
     },
     MANA: {
         MAX: 100,
         START: 100,
-        REGEN_PER_MIN: 1,           // 1 phút hồi 1 mana
-        REGEN_INTERVAL_MS: 3000,   // 10 giây hồi 1 mana
-        COST_RESPAWN: -1,           // Tốn 1 mana khi tái sinh
-        GAIN_KILL: 1,                // Nhận 1 mana khi diệt địch
-        COST_MOVE_PER_SEC: 1,   // Trừ 1 mana/giây khi di chuyển
-        COST_ATTACK_PER_SEC: 1, // Trừ 1 mana/giây khi giữ tấn công
-        COST_CHANGE_FORM: 1     // Trừ 1 mana mỗi lần đổi dạng
-
+        REGEN_PER_SEC: 1,           // Đổi từ Per Min sang Per Sec
+        REGEN_INTERVAL_MS: 1000, 
+        COST_RESPAWN: -0.2,         // Giảm chi phí để tránh "sốc" mana khi 72 kiếm vỡ
+        GAIN_KILL: 1, 
+        COST_MOVE_PER_SEC: 0.5, 
+        COST_ATTACK_PER_SEC: 1,
+        COST_CHANGE_FORM: 1
     },
     CULTIVATION: {
         RANKS: [
