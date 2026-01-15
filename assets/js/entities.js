@@ -20,35 +20,54 @@ class Enemy {
         this.cracks = [];
         this.shieldLevel = 0;
 
-        // --- CHỌN ICON SVG TỪ BỘ ĐỆM ---
+        // 1. XÁC ĐỊNH TINH ANH & CẢNH GIỚI (Sử dụng CONFIG.CULTIVATION.RANKS)
+        const playerRank = Input.rankIndex || 0;
+        this.isElite = Math.random() < 0.05; // Tỉ lệ 5%
+
+        let enemyRankIndex;
+        if (this.isElite) {
+            // Tinh anh vượt cấp: dựa trên bảng Rank
+            enemyRankIndex = Math.min(
+                CONFIG.CULTIVATION.RANKS.length - 1, 
+                playerRank + 2 // Tinh anh mặc định mạnh hơn 2 bậc
+            );
+        } else {
+            // Quái thường xoay quanh người chơi
+            enemyRankIndex = Math.max(0, Math.min(
+                CONFIG.CULTIVATION.RANKS.length - 1, 
+                playerRank + Math.floor(Math.random() * 3) - 1
+            ));
+        }
+        
+        this.rankData = CONFIG.CULTIVATION.RANKS[enemyRankIndex];
+        this.rankName = (this.isElite ? "★ TINH ANH ★ " : "") + this.rankData.name;
+        
+        // Màu sắc từ bảng CONFIG COLORS hoặc RankData
+        this.colors = this.isElite ? ["#ffffff", "#ff3300"] : [this.rankData.lightColor, this.rankData.color];
+
+        // 2. TÍNH HP (Sử dụng CONFIG.ENEMY.HP và CONFIG.ENEMY.SCALING_FACTOR)
+        // Công thức: HP = (Gốc + Random) * (1 + Hệ số tăng trưởng * Cấp độ)
+        const baseHP = CONFIG.ENEMY.HP.BASE + Math.random() * CONFIG.ENEMY.HP.VAR;
+        const growth = 1 + (enemyRankIndex * CONFIG.ENEMY.SCALING_FACTOR);
+        const eliteMult = this.isElite ? 4.0 : 1.0; // Tinh anh trâu gấp 4 lần
+        
+        this.maxHp = Math.floor(baseHP * growth * eliteMult);
+        this.hp = this.maxHp;
+
+        // 3. TÍNH KÍCH THƯỚC (Sử dụng CONFIG.ENEMY.BASE_SIZE)
+        const eliteSizeMult = this.isElite ? 1.8 : 1.0;
+        this.r = (CONFIG.ENEMY.BASE_SIZE.MIN + Math.random() * CONFIG.ENEMY.BASE_SIZE.VAR) * eliteSizeMult;
+
+        // 4. KHIÊN (Sử dụng CONFIG.ENEMY.SHIELD_CHANCE)
+        this.hasShield = Math.random() < (CONFIG.ENEMY.SHIELD_CHANCE + (this.isElite ? 0.4 : 0));
+        this.shieldHp = this.hasShield ? Math.floor(this.hp * 0.5) : 0;
+        this.maxShieldHp = this.shieldHp;
+
+        // 5. ICON (Sử dụng CONFIG.ENEMY.ANIMALS)
         const animalPaths = CONFIG.ENEMY.ANIMALS;
         const randomPath = animalPaths[Math.floor(Math.random() * animalPaths.length)];
         const iconKey = randomPath.split('/').pop().split('.')[0];
-        
-        // Lấy đối tượng Image đã tải sẵn từ preload
         this.icon = enemyIcons[iconKey];
-
-        // --- HỆ THỐNG CẢNH GIỚI (GIỮ NGUYÊN LOGIC CỦA BẠN) ---
-        const playerRank = Input.rankIndex || 0;
-        const enemyRankIndex = Math.max(0, Math.min(
-            CONFIG.CULTIVATION.RANKS.length - 1, 
-            playerRank + Math.floor(Math.random() * 3) - 1 
-        ));
-        
-        this.rankData = CONFIG.CULTIVATION.RANKS[enemyRankIndex];
-        this.rankName = this.rankData.name;
-        this.colors = [this.rankData.lightColor, this.rankData.color];
-
-        const sizeBase = CONFIG.ENEMY.BASE_SIZE.MIN + (enemyRankIndex * 1.5);
-        const sizeVar = CONFIG.ENEMY.BASE_SIZE.VAR;
-        this.r = (sizeBase + Math.pow(Math.random(), 1.5) * sizeVar) * (window.innerWidth / CONFIG.CORE.BASE_WIDTH);
-
-        this.maxHp = Math.floor(this.rankData.maxMana * 2.5 * (0.9 + Math.random() * 0.2));
-        this.hp = this.maxHp;
-
-        this.hasShield = Math.random() < (CONFIG.ENEMY.SHIELD_CHANCE + (enemyRankIndex * 0.005));
-        this.shieldHp = this.hasShield ? Math.floor(this.hp * 0.4) : 0;
-        this.maxShieldHp = this.shieldHp;
     }
 
     generateCracks(level) {
@@ -111,25 +130,48 @@ class Enemy {
         }
 
         this.hp -= damage;
-        
-        // --- ĐOẠN CẦN THAY THẾ/BỔ SUNG TỪ ĐÂY ---
+
         if (this.hp <= 0) {
-            const sizeRatio = Math.max(1, this.r / (15 * (window.innerWidth / CONFIG.CORE.BASE_WIDTH)));
-            
-            // 1. Tăng EXP tỷ lệ thuận với Cảnh giới (RankIndex)
-            const rankBonus = 1 + (Input.rankIndex * 2); 
-            const expGain = Math.ceil(2 * sizeRatio * rankBonus);
+            // 1. Tính toán phần thưởng EXP và Mana
+            let expGain = Math.ceil(5 * (1 + Input.rankIndex * 1.5));
+            let manaGain = CONFIG.MANA.GAIN_KILL;
+            const pillCfg = CONFIG.PILL;
+            const chance = this.isElite ? pillCfg.ELITE_CHANCE : pillCfg.CHANCE;
+
+            if (this.isElite) {
+                expGain *= 10;
+                manaGain *= 5;
+                showNotify("DIỆT TINH ANH: THU HOẠCH LỚN!", "#ffcc00");
+            }
+
+            // 2. Cộng EXP và Mana ngay lập tức
             Input.updateExp(expGain);
+            Input.updateMana(manaGain);
 
-            // 2. Hồi Mana khi tiêu diệt quái
-            Input.updateMana(Math.ceil(CONFIG.MANA.GAIN_KILL * sizeRatio));
+            // 3. XỬ LÝ RƠI LINH ĐAN THEO PHẨM CẤP
+            if (Math.random() < chance) {
+                // Lấy cấu hình rơi dựa trên loại quái
+                const rates = this.isElite ? pillCfg.DROP_RATES.ELITE : pillCfg.DROP_RATES.NORMAL;
+                const count = this.isElite ? pillCfg.DROP_COUNT.ELITE : pillCfg.DROP_COUNT.NORMAL;
 
-            // 3. Logic rơi Đan dược (Mới)
-            if (Math.random() < CONFIG.ENEMY.PILL_CHANCE) {
-                Input.pillCount++;
-                showNotify("+1 Linh Đan (Tăng tỉ lệ đột phá)", "#00ffcc");
-                // Tạo hiệu ứng hạt màu lục đặc biệt tại vị trí quái chết
-                Input.createLevelUpExplosion(this.x, this.y, "#00ffcc"); 
+                for (let i = 0; i < count; i++) {
+                    let typeKey = 'LOW';
+                    const rand = Math.random();
+
+                    // Logic chọn loại đan dựa trên DROP_RATES trong Config
+                    if (rand < rates.HIGH) {
+                        typeKey = 'HIGH';
+                    } else if (rand < rates.HIGH + rates.MEDIUM) {
+                        typeKey = 'MEDIUM';
+                    } else {
+                        typeKey = 'LOW';
+                    }
+
+                    pills.push(new Pill(this.x, this.y, typeKey));
+                }
+                
+                showNotify(this.isElite ? "Đại cơ duyên! Linh Đan xuất thế!" : "Thu hoạch Linh Đan", 
+                        this.isElite ? "#ffcc00" : "#00ffcc");
             }
 
             this.respawn();
@@ -201,6 +243,20 @@ class Enemy {
         ctx.textAlign = "center";
         const textY = -this.r - (this.hasShield ? 15 : 10) * scaleFactor;
         ctx.fillText(this.rankName, 0, textY);
+
+        // VẼ THANH MÁU NHỎ PHÍA DƯỚI TÊN
+        const barWidth = this.r * 1.5 * scaleFactor;
+        const barHeight = 4 * scaleFactor;
+        const barY = textY + 5 * scaleFactor;
+
+        // Nền thanh máu (màu đen mờ)
+        ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+        ctx.fillRect(-barWidth/2, barY, barWidth, barHeight);
+
+        // Máu còn lại (màu xanh lá chuyển dần sang đỏ)
+        const hpRatio = Math.max(0, this.hp / this.maxHp);
+        ctx.fillStyle = hpRatio > 0.5 ? "#2ecc71" : (hpRatio > 0.2 ? "#f1c40f" : "#e74c3c");
+        ctx.fillRect(-barWidth/2, barY, barWidth * hpRatio, barHeight);
         
         ctx.restore();
     }
@@ -223,7 +279,17 @@ class Enemy {
     }
 
     drawBody(ctx, scaleFactor) {
+        if (!this.r || isNaN(this.r)) return; // Dòng bảo vệ: Nếu r lỗi thì không vẽ để tránh crash
+        
         ctx.save();
+
+        // --- HIỆU ỨNG PHÁT SÁNG CHO TINH ANH ---
+        if (this.isElite) {
+            ctx.shadowColor = "#ff3300";
+            ctx.shadowBlur = 20 * scaleFactor;
+            // Làm quái hơi rung rinh một chút
+            ctx.translate((Math.random()-0.5)*2, (Math.random()-0.5)*2);
+        }
         
         // 1. Vẽ hào quang (glow) quanh quái vật (Dùng màu Cảnh giới)
         const glowGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, this.r * 1.3);
@@ -668,6 +734,83 @@ class StarField {
             ctx.fillStyle = `rgba(255,255,255,${s.alpha})`;
             ctx.fill();
         }
+    }
+}
+
+class Pill {
+    constructor(x, y, typeKey = 'LOW') {
+        this.x = x;
+        this.y = y;
+        this.typeKey = typeKey; // Lưu lại để khi thu thập biết là loại nào
+        
+        const typeData = CONFIG.PILL.TYPES[typeKey];
+        this.r = typeData.radius;
+        this.color = typeData.color;
+        
+        this.state = 0; 
+        this.velocity = { x: (Math.random() - 0.5) * 12, y: (Math.random() - 0.5) * 12 };
+        this.friction = 0.96;
+        this.spawnTime = Date.now();
+        this.history = []; 
+        this.maxHistory = CONFIG.PILL.TRAIL_LENGTH;
+    }
+
+    update(playerX, playerY) {
+        const cfg = CONFIG.PILL;
+        this.history.push({x: this.x, y: this.y});
+        if (this.history.length > this.maxHistory) this.history.shift();
+
+        if (this.state === 0) {
+            this.x += this.velocity.x;
+            this.y += this.velocity.y;
+            this.velocity.x *= this.friction;
+            this.velocity.y *= this.friction;
+            
+            if (Date.now() - this.spawnTime > cfg.COLLECT_DELAY_MS) this.state = 1;
+        } else {
+            const dx = playerX - this.x;
+            const dy = playerY - this.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            
+            // Dùng tốc độ từ CONFIG
+            this.x += (dx / dist) * cfg.MAGNET_SPEED;
+            this.y += (dy / dist) * cfg.MAGNET_SPEED;
+            
+            if (dist < 20) return true; 
+        }
+        return false;
+    }
+
+    draw(ctx) {
+        ctx.save();
+        
+        // 1. VẼ VỆT SÁNG (TRAIL)
+        if (this.history.length > 1) {
+            ctx.beginPath();
+            ctx.moveTo(this.history[0].x, this.history[0].y);
+            for (let i = 1; i < this.history.length; i++) {
+                ctx.lineTo(this.history[i].x, this.history[i].y);
+            }
+            ctx.strokeStyle = this.color;
+            ctx.lineWidth = this.r * 0.8;
+            ctx.lineCap = "round";
+            ctx.globalAlpha = 0.3; // Đuôi mờ dần
+            ctx.stroke();
+        }
+
+        // 2. VẼ VIÊN LINH ĐAN
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+        
+        const grad = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.r);
+        grad.addColorStop(0, "#fff");
+        grad.addColorStop(1, this.color);
+        
+        ctx.fillStyle = grad;
+        ctx.fill();
+        ctx.restore();
     }
 }
 // <!-- Create By: Vũ Hoài Nam -->

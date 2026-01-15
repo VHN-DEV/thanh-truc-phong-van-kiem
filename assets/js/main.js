@@ -106,8 +106,22 @@ const Input = {
     lastFrameTime: performance.now(),
     exp: 0,
     rankIndex: 0, // Vị trí hiện tại trong mảng RANKS
-    pillCount: 0, // Số đan dược đang có
+    pills: {
+        LOW: 0,
+        MEDIUM: 0,
+        HIGH: 0
+    },
     isReadyToBreak: false, // Thêm biến trạng thái này
+
+    // Hàm mới để tính tổng % tỉ lệ đột phá từ đan dược
+    calculateTotalPillBoost() {
+        const cfg = CONFIG.PILL.TYPES;
+        // Tính tổng: (Số lượng x % cộng thêm) của từng loại
+        const boost = (this.pills.LOW * cfg.LOW.boost) + 
+                    (this.pills.MEDIUM * cfg.MEDIUM.boost) + 
+                    (this.pills.HIGH * cfg.HIGH.boost);
+        return boost;
+    },
 
     processActiveConsumption(dt) {
         // dt là thời gian trôi qua tính bằng giây (seconds)
@@ -222,16 +236,19 @@ const Input = {
         const currentRank = CONFIG.CULTIVATION.RANKS[this.rankIndex];
         if (!currentRank) return;
 
-        // Tính tỉ lệ: Tỉ lệ cơ bản + (số đan * % mỗi viên)
-        let totalChance = currentRank.chance + (this.pillCount * CONFIG.ITEMS.PILL_BOOST);
-        totalChance = Math.min(0.95, totalChance); // Tối đa 95%
+        // 1. Tính tổng tỉ lệ: Cơ bản của Rank + Boost từ 3 loại đan
+        const pillBoost = this.calculateTotalPillBoost();
+        let totalChance = currentRank.chance + pillBoost;
+        totalChance = Math.min(CONFIG.MANA.MAX_BREAKTHROUGH_CHANCE, totalChance); // Tỉ lệ đột phá tối đa tôi đang để là 99% (luôn có 1% rủi ro để tăng độ kịch tính)
 
         if (Math.random() <= totalChance) {
             // --- THÀNH CÔNG ---
             this.exp = 0;
             this.rankIndex++;
             this.isReadyToBreak = false;
-            this.pillCount = 0; // Đột phá xong dược lực tan biến
+            
+            // Reset toàn bộ đan dược sau khi đột phá thành công
+            this.pills = { LOW: 0, MEDIUM: 0, HIGH: 0 }; 
             
             const nextRank = CONFIG.CULTIVATION.RANKS[this.rankIndex];
             if (nextRank) {
@@ -242,10 +259,14 @@ const Input = {
             this.createLevelUpExplosion(this.x, this.y, currentRank.color);
         } else {
             // --- THẤT BẠI (PHẢN PHỆ) ---
-            const penalty = Math.floor(this.exp * 0.4); // Mất 40% tu vi
+            const penalty = Math.floor(this.exp * CONFIG.CULTIVATION.BREAKTHROUGH_PENALTY_FACTOR); // Mất 40% tu vi
             this.exp -= penalty;
             this.isReadyToBreak = false; // Tắt trạng thái chờ để cày lại
-            this.pillCount = Math.floor(this.pillCount / 2); // Mất nửa số đan dược
+            
+            // Thất bại: Mất một nửa số đan dược của mỗi loại
+            this.pills.LOW = Math.floor(this.pills.LOW / 2);
+            this.pills.MEDIUM = Math.floor(this.pills.MEDIUM / 2);
+            this.pills.HIGH = Math.floor(this.pills.HIGH / 2);
             
             showNotify("ĐỘT PHÁ THẤT BẠI! Tâm ma phản phệ (-40% tu vi)", "#ff4444");
             this.triggerExpError();
@@ -266,31 +287,32 @@ const Input = {
         const rankText = document.getElementById('cultivation-rank');
         const breakthroughGroup = document.querySelector('.breakthrough-group');
 
-        // 1. Tính toán tỉ lệ hiển thị
-        const chance = (rank.chance * 100).toFixed(0);
-        const boost = (this.pillCount * CONFIG.ITEMS.PILL_BOOST * 100).toFixed(0);
-        const total = Math.min(95, parseFloat(chance) + parseFloat(boost));
+        // 1. Tính toán tỉ lệ hiển thị dựa trên 3 loại đan
+        const pillBoost = this.calculateTotalPillBoost();
+        const totalChance = Math.min(0.95, rank.chance + pillBoost);
+        const totalPercent = (totalChance * 100).toFixed(0);
+        
+        // Tổng số lượng đan dược để hiển thị
+        const totalPills = this.pills.LOW + this.pills.MEDIUM + this.pills.HIGH;
 
-        // 2. Cập nhật văn bản
+        // 2. Cập nhật văn bản giao diện
         if (textExp) {
-            if (this.isReadyToBreak) {
-                textExp.innerHTML = `<span style="color:#ffcc00; font-weight:bold;">SẴN SÀNG ĐỘT PHÁ</span> | ` +
-                                    `<span style="color:#00ffcc">Linh Đan: ${this.pillCount}</span> ` +
-                                    `(<span style="color:#ffcc00">TL: ${total}%</span>)`;
-            } else {
-                textExp.innerHTML = `Tu vi: ${Math.floor(this.exp)}/${rank.exp} | ` + 
-                                    `<span style="color:#00ffcc">Linh Đan: ${this.pillCount}</span> ` +
-                                    `(<span style="color:#ffcc00">TL: ${total}%</span>)`;
-            }
+            let statusText = this.isReadyToBreak ? 
+                `<span style="color:#ffcc00; font-weight:bold;">SẴN SÀNG ĐỘT PHÁ</span>` : 
+                `Tu vi: ${Math.floor(this.exp)}/${rank.exp}`;
+
+            textExp.innerHTML = `${statusText} | ` +
+                                `<span style="color:#00ffcc">Linh Đan: ${totalPills}</span> ` +
+                                `(<span style="color:#ffcc00">TL: ${totalPercent}%</span>)`;
         }
 
-        // 3. Ẩn/Hiện nút dựa trên class của đạo hữu
+        // 3. Ẩn/Hiện nút đột phá
         if (breakthroughGroup) {
             if (this.isReadyToBreak) breakthroughGroup.classList.add('is-active');
             else breakthroughGroup.classList.remove('is-active');
         }
 
-        // 4. Thanh EXP
+        // 4. Cập nhật thanh EXP (màu sắc và hiệu ứng)
         const percentage = (this.exp / rank.exp) * 100;
         if (barExp) {
             barExp.style.width = Math.min(100, percentage) + '%';
@@ -298,7 +320,7 @@ const Input = {
             
             if (this.isReadyToBreak) {
                 barExp.style.boxShadow = `0 0 15px #fff, 0 0 5px ${rank.color}`;
-                barExp.classList.add('exp-full-glow'); // Cần thêm CSS này để nó rung rinh
+                barExp.classList.add('exp-full-glow');
             } else {
                 barExp.style.boxShadow = `0 0 10px ${rank.lightColor}`;
                 barExp.classList.remove('exp-full-glow');
@@ -502,6 +524,7 @@ attackBtn.addEventListener('pointerleave', stopAttack); // Khi kéo ngón tay ra
  * ====================================================================
  */
 const enemies = [];
+let pills = [];
 const swords = [];
 let starField;
 const guardCenter = { x: width / 2, y: height / 2, vx: 0, vy: 0 };
@@ -596,6 +619,23 @@ function animate() {
     ctx.restore();
 
     enemies.forEach(e => e.draw(ctx, scaleFactor));
+    pills = pills.filter(pill => {
+        const collected = pill.update(window.innerWidth / 2, window.innerHeight / 2);
+        
+        if (collected) {
+            // Cộng vào đúng loại đan trong Input
+            Input.pills[pill.typeKey]++; 
+            
+            const typeName = CONFIG.PILL.TYPES[pill.typeKey].name;
+            showNotify(`+1 ${typeName}`, pill.color);
+            
+            Input.renderExpUI(); // Cập nhật lại giao diện ngay khi nhặt được
+            return false;
+        }
+        
+        pill.draw(ctx);
+        return true;
+    });
     swords.forEach(s => {
         s.update(guardCenter, enemies, Input, scaleFactor);
         s.draw(ctx, scaleFactor);

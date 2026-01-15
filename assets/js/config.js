@@ -25,17 +25,17 @@ const CONFIG = {
         SIZE: 70,               // Kích thước (chiều dài) hiển thị của thanh kiếm
         STUN_DURATION_MS: 1000, // Thời gian mục tiêu bị khựng khi trúng kiếm
         DURABILITY: 10,         // Độ bền (máu) của mỗi thanh kiếm
-        RESPAWN_DELAY_MS: 1000, // Thời gian hồi phục sau khi kiếm bị vỡ
+        RESPAWN_DELAY_MS: 1500, // Thời gian hồi phục sau khi kiếm bị vỡ
         DEATH_WAIT_MS: 2000,    // Thời gian thanh kiếm nằm lại hiện trường trước khi biến mất hẳn
-        SPEED_MULT: 100,        // Hệ số nhân tốc độ quay chung toàn hệ thống
+        SPEED_MULT: 90,        // Hệ số nhân tốc độ quay chung toàn hệ thống
         
         BREATH_SPEED: { MIN: 0.015, MAX: 0.025 }, // Tốc độ hiệu ứng "nhịp thở" (co giãn vòng kiếm)
         FLOW_OFFSET: { MIN: 40, MAX: 100 },       // Biên độ dao động xa gần của kiếm khi bay
         ATTACK_DELAY_VAR: { BASE: 6, RAND: 10 },  // Độ trễ ngẫu nhiên giữa các lần phóng kiếm
 
         FRAGMENTS: {            // Hiệu ứng mảnh vỡ khi kiếm gãy
-            LIFE_TIME: 1500,    // Thời gian tồn tại của mảnh vỡ
-            FADE_TIME: 500      // Thời gian mờ dần trước khi mất tích
+            LIFE_TIME: 2000,    // Thời gian tồn tại của mảnh vỡ
+            FADE_TIME: 1000      // Thời gian mờ dần trước khi mất tích
         }
     },
     INPUT: { 
@@ -59,7 +59,7 @@ const CONFIG = {
         SHIELD_RING_OUTER: "rgba(140, 245, 255, 0.2)", // Màu viền ngoài của khiên
     },
     ENEMY: {
-        SPAWN_COUNT: 6,         // Số lượng quái xuất hiện cùng lúc
+        SPAWN_COUNT: 8,         // Số lượng quái xuất hiện cùng lúc
         SPAWN_PADDING: 50,      // Khoảng cách an toàn từ mép màn hình khi quái xuất hiện
         
         BASE_SIZE: { MIN: 10, VAR: 50 }, // Công thức kích thước: r = MIN + random^1.5 * VAR
@@ -71,9 +71,9 @@ const CONFIG = {
         SHIELD_LINE: "#80dfff", // Màu nét vẽ vết nứt khiên
         
         DEBRIS: {               // Mảnh vỡ khi quái chết
-            COUNT: 50,          // Số lượng mảnh bắn ra
+            COUNT: 10,          // Số lượng mảnh bắn ra
             SPEED: { MIN: 4, MAX: 12 }, // Tốc độ bắn mảnh vỡ
-            SIZE: { MIN: 2, MAX: 5 },   // Kích thước mảnh vỡ
+            SIZE: { MIN: 1, MAX: 3 },   // Kích thước mảnh vỡ
             LIFE_DECAY: 0.025   // Tốc độ biến mất của mảnh vỡ mỗi frame
         },
 
@@ -136,14 +136,16 @@ const CONFIG = {
         MAX: 100,               // Giới hạn Linh lực mặc định
         START: 100,             // Linh lực khi bắt đầu game
         REGEN_PER_SEC: 1,       // Tốc độ hồi phục Linh lực mỗi giây
-        REGEN_INTERVAL_MS: 1000,// Chu kỳ hồi phục (1000ms = 1 giây một lần)
-        COST_RESPAWN: -0.2,     // Chi phí Mana để hồi phục một thanh kiếm bị vỡ
-        GAIN_KILL: 1,           // Lượng Mana nhận lại khi tiêu diệt một quái vật
+        REGEN_INTERVAL_MS: 10000, // Chu kỳ hồi phục (10000ms = 10 giây một lần)
+        COST_RESPAWN: -3,       // Chi phí Mana để hồi phục một thanh kiếm bị vỡ
+        GAIN_KILL: 0,           // Lượng Mana nhận lại khi tiêu diệt một quái vật
         COST_MOVE_PER_SEC: 0.5, // Tiêu hao Mana mỗi giây khi di chuyển
         COST_ATTACK_PER_SEC: 1, // Tiêu hao Mana mỗi giây khi đang ở trạng thái tấn công
         COST_CHANGE_FORM: 1     // Chi phí Mana mỗi lần chuyển đổi hình thái (vòng bảo vệ)
     },
     CULTIVATION: {
+        MAX_BREAKTHROUGH_CHANCE : 0.99, // Tỉ lệ đột phá tối đa tôi đang để là 99% (luôn có 1% rủi ro để tăng độ kịch tính)
+        BREAKTHROUGH_PENALTY_FACTOR: 0.4, // Hệ số mất tu vi khi đột phá thất bại (40%)
         RANKS: [
             // --- NHÂN GIỚI ---
             // Luyện Khí Kỳ (Xanh lá)
@@ -211,6 +213,27 @@ const CONFIG = {
             { name: "Chân tiên hậu kỳ", exp: 950000, chance: 0.01, damage: 44, maxMana: 225, color: "#FFA000", lightColor: "#FFFDE7" },
             { name: "Chân tiên đại viên mãn", exp: 999999999, chance: 0, damage: 45, maxMana: 230, color: "#FF8F00", lightColor: "#FFFFFF" }
         ]
-    }
+    },
+    PILL: {
+        CHANCE: 0.15,               // Tỉ lệ rơi mặc định (15%)
+        ELITE_CHANCE: 1.0,          // Tỉ lệ rơi của quái Tinh Anh (100%)
+        COLLECT_DELAY_MS: 600,      // Thời gian chờ trước khi bay về người chơi
+        MAGNET_SPEED: 14,           // Tốc độ bay về phía người chơi
+        TRAIL_LENGTH: 15,           // Độ dài vệt sáng (số lượng node)
+        DROP_RATES: {
+            NORMAL: { LOW: 0.85, MEDIUM: 0.10, HIGH: 0.05 },  // Quái thường: 85% Hạ, 10% Trung, 5% Thượng
+            ELITE:  { LOW: 0.10,  MEDIUM: 0.60, HIGH: 0.30 }   // Tinh Anh: 10% Hạ, 60% Trung, 30% Thượng
+        },
+        DROP_COUNT: {
+            NORMAL: 1,  // Quái thường rơi 1 viên
+            ELITE: 3    // Tinh Anh rơi 3 viên
+        },
+
+        TYPES: {
+            LOW:    { name: "Hạ phẩm", boost: 0.02, color: "#00ffcc", radius: 4 },   
+            MEDIUM: { name: "Trung phẩm", boost: 0.05, color: "#00aaff", radius: 5.5 }, 
+            HIGH:   { name: "Thượng phẩm", boost: 0.12, color: "#ffcc00", radius: 7.5 } 
+        },
+    },
 };
 // <!-- Create By: Vũ Hoài Nam -->
