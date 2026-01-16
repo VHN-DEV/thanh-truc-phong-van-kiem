@@ -298,15 +298,22 @@ const Input = {
             this.createLevelUpExplosion(this.x, this.y, currentRank.color);
         } else {
             // --- THẤT BẠI ---
-            const penalty = Math.floor(this.exp * CONFIG.CULTIVATION.BREAKTHROUGH_PENALTY_FACTOR);
+            const penaltyFactor = CONFIG.CULTIVATION.BREAKTHROUGH_PENALTY_FACTOR; // Ví dụ: 0.4
+            const penalty = Math.floor(this.exp * penaltyFactor);
+
             this.exp -= penalty;
             this.isReadyToBreak = false;
+
+            // 2. Tính toán con số hiển thị (0.4 -> 40)
+            const penaltyPercent = Math.round(penaltyFactor * 100);
 
             this.pills.LOW = Math.floor(this.pills.LOW / 2);
             this.pills.MEDIUM = Math.floor(this.pills.MEDIUM / 2);
             this.pills.HIGH = Math.floor(this.pills.HIGH / 2);
 
-            showNotify("ĐỘT PHÁ THẤT BẠI! Tâm ma phản phệ (-40% tu vi)", "#ff4444");
+            // 3. Sử dụng Template Literals (dấu huyền ` `) để đưa biến vào chuỗi
+            showNotify(`ĐỘT PHÁ THẤT BẠI! Tâm ma phản phệ (-${penaltyPercent}% tu vi)`, "#ff4444");
+
             this.triggerExpError();
         }
 
