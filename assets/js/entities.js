@@ -71,8 +71,18 @@ class Enemy {
 
         // 4. KHIÊN (Sử dụng CONFIG.ENEMY.SHIELD_CHANCE)
         this.hasShield = Math.random() < (CONFIG.ENEMY.SHIELD_CHANCE + (this.isElite ? 0.4 : 0));
-        this.shieldHp = this.hasShield ? Math.floor(this.hp * 0.5) : 0;
-        this.maxShieldHp = this.shieldHp;
+
+        if (this.hasShield) {
+            // Lấy hệ số từ CONFIG, nếu quên chưa đặt thì mặc định là 0.5 (50%)
+            const ratio = CONFIG.ENEMY.SHIELD_HP_RATIO || 0.5;
+            
+            // Độ bền khiên = Máu hiện tại x Hệ số
+            this.shieldHp = Math.floor(this.hp * ratio);
+            this.maxShieldHp = this.shieldHp;
+        } else {
+            this.shieldHp = 0;
+            this.maxShieldHp = 0;
+        }
 
         // 5. ICON (Sử dụng CONFIG.ENEMY.ANIMALS)
         const animalPaths = CONFIG.ENEMY.ANIMALS;
@@ -147,7 +157,7 @@ class Enemy {
 
         if (this.hasShield && this.shieldHp > 0) {
             this.shieldHp -= damage;
-            let currentLevel = Math.floor((this.maxShieldHp - this.shieldHp) / 20);
+            let currentLevel = Math.floor(((this.maxShieldHp - this.shieldHp) / this.maxShieldHp) * 5);
             if (currentLevel > this.shieldLevel) {
                 this.shieldLevel = currentLevel;
                 this.cracks = []; // RESET mảng trước khi tạo vết nứt mới để tránh tràn bộ nhớ

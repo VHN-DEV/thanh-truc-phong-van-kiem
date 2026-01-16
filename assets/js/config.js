@@ -58,11 +58,10 @@ const CONFIG = {
         SHIELD_RING_OUTER: "rgba(140, 245, 255, 0.2)", // Màu viền ngoài của khiên
     },
     ENEMY: {
-        SPAWN_COUNT: 8,         // Số lượng quái xuất hiện cùng lúc
+        SPAWN_COUNT: 10,         // Số lượng quái xuất hiện cùng lúc
         SPAWN_PADDING: 50,      // Khoảng cách an toàn từ mép màn hình khi quái xuất hiện
-        ELITE_CHANCE: 0.05,      // Tỉ lệ quái tinh anh xuất hiện (5%)
+        ELITE_CHANCE: 0.01,      // Tỉ lệ quái tinh anh xuất hiện (1%)
         BASE_SIZE: { MIN: 10, VAR: 50 }, // Công thức kích thước: r = MIN + random^1.5 * VAR
-        HP: { BASE: 1, VAR: 100 },       // Máu cơ bản ban đầu
         GUARANTEED_PLAYER_SCALE_COUNT: 1, // Số lượng quái luôn bám theo cấp người chơi
         SPAWN_RANK_RANGE: {
             MIN_ID: 1,
@@ -71,7 +70,7 @@ const CONFIG = {
         SHIELD_CHANCE: 0.3,     // Tỉ lệ quái sinh ra có khiên (0.3 = 30%)
         SHIELD_COLOR: "rgba(100, 200, 255, 0.4)", // Màu lõi khiên
         SHIELD_LINE: "#80dfff", // Màu nét vẽ vết nứt khiên
-        
+        SHIELD_HP_RATIO: 0.1,   // 0.1 tương đương 10% máu quái
         DEBRIS: {               // Mảnh vỡ khi quái chết
             COUNT: 10,          // Số lượng mảnh bắn ra
             SPEED: { MIN: 4, MAX: 12 }, // Tốc độ bắn mảnh vỡ
@@ -84,7 +83,6 @@ const CONFIG = {
             ["#99ff99", "#33cc33"], ["#ffcc99", "#cc6600"],
             ["#ff99ff", "#cc33cc"], ["#ffff99", "#cccc33"]
         ],
-        HP: { BASE: 20, VAR: 30 },      // Máu cơ bản của quái
         SCALING_FACTOR: 0.4,    // Hệ số tăng chỉ số theo cấp độ người chơi (40% mỗi cấp)
         PILL_CHANCE: 0.15,      // Tỉ lệ rơi ra Đan dược khi quái chết
         ANIMALS: [
