@@ -129,8 +129,8 @@ const CONFIG = {
         // Lưu ý: MAX giờ đây sẽ được ghi đè bởi giá trị trong CULTIVATION.RANKS
         MAX: 100,               // Giới hạn Linh lực mặc định
         START: 100,             // Linh lực khi bắt đầu game
-        REGEN_PER_SEC: 1,       // Tốc độ hồi phục Linh lực mỗi giây
-        REGEN_INTERVAL_MS: 1000, // Chu kỳ hồi phục (1000ms = 1 giây một lần)
+        REGEN_PER_SEC: 2,     // Tốc độ hồi phục Linh lực mỗi giây
+        REGEN_INTERVAL_MS: 1000,// Chu kỳ hồi phục (1000ms = 1 giây một lần)
         COST_RESPAWN: -3,       // Chi phí Mana để hồi phục một thanh kiếm bị vỡ
         GAIN_KILL: 0,           // Lượng Mana nhận lại khi tiêu diệt một quái vật
         COST_MOVE_PER_SEC: 0.5, // Tiêu hao Mana mỗi giây khi di chuyển

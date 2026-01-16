@@ -109,10 +109,15 @@ class Enemy {
     }
 
     generateCracks(level) {
-        const shieldR = this.r + 10;
+        // Đảm bảo bán kính vết nứt khớp với bán kính vòng tròn khiên sẽ vẽ
+        const shieldPadding = 12; // Tăng nhẹ padding để bao quát hơn
+        const shieldR = this.r + shieldPadding; 
+        
         const baseAngle = Math.random() * Math.PI * 2;
         const numRadial = 5 + level * 2;
         const radialPoints = [];
+
+        this.cracks = []; // Đảm bảo mảng sạch
 
         for (let i = 0; i < numRadial; i++) {
             const angle = baseAngle + (i * Math.PI * 2) / numRadial;
@@ -120,6 +125,7 @@ class Enemy {
             const steps = 4;
 
             for (let j = 0; j <= steps; j++) {
+                // Tính toán khoảng cách dựa trên shieldR đã định nghĩa
                 const dist = (shieldR * j) / steps;
                 const jitter = j === 0 ? 0 : (Math.random() - 0.5) * 0.2;
                 points.push({
@@ -220,27 +226,40 @@ class Enemy {
     }
 
     drawShield(ctx, scaleFactor) {
-        const shieldR = (this.r + 10) * scaleFactor;
-        const pulse = Math.sin(Date.now() * 0.006) * 0.1 + 0.9; // Giảm biên độ pulse
+        // Phải khớp hoàn toàn với số cộng thêm ở generateCracks (ví dụ +12)
+        const shieldPadding = 12; 
+        const shieldR = (this.r + shieldPadding) * scaleFactor;
+        const pulse = Math.sin(Date.now() * 0.006) * 0.05 + 1.0; // Pulse nhẹ nhàng hơn
 
         ctx.save();
-        // Vẽ vòng ngoài khiên (Bỏ shadowBlur, thay bằng lineWidth dày hơn)
+        
+        // Vẽ quầng sáng nền cho khiên (giúp quái không bị "lòi" ra ngoài mắt thường)
+        const shieldGlow = ctx.createRadialGradient(0, 0, this.r * scaleFactor, 0, 0, shieldR);
+        shieldGlow.addColorStop(0, "rgba(140, 245, 255, 0)");
+        shieldGlow.addColorStop(1, "rgba(140, 245, 255, 0.2)");
+        ctx.fillStyle = shieldGlow;
         ctx.beginPath();
-        ctx.arc(0, 0, shieldR, 0, Math.PI * 2);
-        ctx.strokeStyle = `rgba(140, 245, 255, ${0.5 * pulse})`;
+        ctx.arc(0, 0, shieldR * pulse, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Vẽ vòng ngoài
+        ctx.beginPath();
+        ctx.arc(0, 0, shieldR * pulse, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(140, 245, 255, ${0.6 * (2 - pulse)})`;
         ctx.lineWidth = 2 * scaleFactor;
         ctx.stroke();
 
-        // Chỉ vẽ cracks nếu có
+        // Vẽ cracks
         if (this.cracks.length > 0) {
             ctx.beginPath();
-            ctx.strokeStyle = "rgba(255, 255, 255, 0.5)";
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.6)";
             ctx.lineWidth = 1 * scaleFactor;
             this.cracks.forEach(pts => {
                 if (pts.length < 2) return;
-                ctx.moveTo(pts[0].x * scaleFactor, pts[0].y * scaleFactor);
+                // Tọa độ crack đã có sẵn r, chỉ cần nhân scaleFactor
+                ctx.moveTo(pts[0].x * scaleFactor * pulse, pts[0].y * scaleFactor * pulse);
                 for (let i = 1; i < pts.length; i++) {
-                    ctx.lineTo(pts[i].x * scaleFactor, pts[i].y * scaleFactor);
+                    ctx.lineTo(pts[i].x * scaleFactor * pulse, pts[i].y * scaleFactor * pulse);
                 }
             });
             ctx.stroke();
@@ -363,7 +382,7 @@ class Enemy {
         // 2. Vẽ Icon SVG
         // Kiểm tra an toàn: icon tồn tại, đã tải xong (complete) và không lỗi (naturalWidth > 0)
         if (this.icon && this.icon.complete && this.icon.naturalWidth > 0) {
-            const drawSize = this.r * 2 * scaleFactor;
+            const drawSize = (this.r * 2) * scaleFactor;
 
             // Thêm hiệu ứng phát sáng nhẹ cho icon trắng
             ctx.shadowColor = this.colors[1];
