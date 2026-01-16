@@ -25,49 +25,44 @@ class Enemy {
         this.isElite = Math.random() < CONFIG.ENEMY.ELITE_CHANCE;
 
         let enemyRankIndex;
+
+        // Xác định vị trí của con quái này trong mảng quản lý để áp dụng Mode 1
+        // enemies.indexOf(this) giúp kiểm tra xem nó có nằm trong nhóm N con đầu tiên không
+        const enemyIndexInArray = enemies.indexOf(this);
+        const isGuaranteedPlayerLevel = enemyIndexInArray !== -1 && enemyIndexInArray < (CONFIG.ENEMY.GUARANTEED_PLAYER_SCALE_COUNT || 1);
+
         if (this.isElite) {
-            // Tinh anh vượt cấp: dựa trên bảng Rank
-            enemyRankIndex = Math.min(
+            // Tinh anh mặc định mạnh hơn người chơi 2 bậc
+            enemyRankIndex = Math.min(CONFIG.CULTIVATION.RANKS.length - 1, playerRank + 2);
+        } else if (isGuaranteedPlayerLevel) {
+            // 🟢 Mode 1: Quái xoay quanh cấp độ người chơi (Cho các con quái "đảm bảo" hoặc khi bật global)
+            enemyRankIndex = Math.max(0, Math.min(
                 CONFIG.CULTIVATION.RANKS.length - 1, 
-                playerRank + 2 // Tinh anh mặc định mạnh hơn 2 bậc
-            );
+                playerRank + Math.floor(Math.random() * 3) - 1
+            ));
         } else {
-            if (CONFIG.ENEMY.USE_PLAYER_RANK_SCALING) {
-                // 🟢 Mode 1: Quái xoay quanh cấp độ người chơi
-                enemyRankIndex = Math.max(0, Math.min(
-                    CONFIG.CULTIVATION.RANKS.length - 1, 
-                    playerRank + Math.floor(Math.random() * 3) - 1
-                ));
-            } else {
-                // 🔵 Mode 2: Quái spawn theo khoảng ID cấu hình
-                const { MIN_ID, MAX_ID } = CONFIG.ENEMY.SPAWN_RANK_RANGE;
-                const rank = this.getRandomRankById(MIN_ID, MAX_ID);
-
-                if (rank) {
-                    this.rankData = rank;
-                    this.rankName = rank.name;
-
-                    // Map id → index để dùng cho scaling HP
-                    enemyRankIndex = CONFIG.CULTIVATION.RANKS.findIndex(
-                        r => r.id === rank.id
-                    );
-                }
-            }
+            // 🔵 Mode 2: Quái spawn theo khoảng ID cấu hình (Cho các con quái còn lại)
+            const { MIN_ID, MAX_ID } = CONFIG.ENEMY.SPAWN_RANK_RANGE;
+            const rank = this.getRandomRankById(MIN_ID, MAX_ID);
+            enemyRankIndex = CONFIG.CULTIVATION.RANKS.findIndex(r => r.id === (rank ? rank.id : 1));
+            
+            // Backup nếu không tìm thấy rank trong mảng
+            if (enemyRankIndex === -1) enemyRankIndex = 0;
         }
-        
+
+        // Gán dữ liệu cảnh giới dựa trên index đã tính toán
         this.rankData = CONFIG.CULTIVATION.RANKS[enemyRankIndex];
         this.rankName = (this.isElite ? "★ TINH ANH ★ " : "") + this.rankData.name;
         
-        // Màu sắc từ bảng CONFIG COLORS hoặc RankData
-        this.colors = this.isElite ? ["#ffffff", "#ff3300"] : [this.rankData.lightColor, this.rankData.color];
+        // ĐỒNG BỘ MÀU: Lấy màu chính xác từ RankData (màu cảnh giới)
+        this.colors = [this.rankData.lightColor, this.rankData.color];
 
-        // 2. TÍNH HP (Sử dụng CONFIG.ENEMY.HP và CONFIG.ENEMY.SCALING_FACTOR)
-        // Công thức: HP = (Gốc + Random) * (1 + Hệ số tăng trưởng * Cấp độ)
-        const baseHP = CONFIG.ENEMY.HP.BASE + Math.random() * CONFIG.ENEMY.HP.VAR;
-        const growth = 1 + (enemyRankIndex * CONFIG.ENEMY.SCALING_FACTOR);
-        const eliteMult = this.isElite ? 4.0 : 1.0; // Tinh anh trâu gấp 4 lần
+        // --- 2. TÍNH HP (Sử dụng trực tiếp biến hp đạo hữu mới thêm vào CONFIG) ---
+        const baseRankHp = this.rankData.hp || 1000; 
+        const variation = 1 + (Math.random() * 0.05); // Biến động 5% để chỉ số sinh động hơn
+        const eliteMult = this.isElite ? 4.0 : 1.0;   // Tinh anh trâu gấp 4 lần
         
-        this.maxHp = Math.floor(baseHP * growth * eliteMult);
+        this.maxHp = Math.floor(baseRankHp * variation * eliteMult);
         this.hp = this.maxHp;
 
         // 3. TÍNH KÍCH THƯỚC (Sử dụng CONFIG.ENEMY.BASE_SIZE)
