@@ -1,5 +1,5 @@
 const CONFIG = {
-    CORE: { 
+    CORE: {
         BASE_WIDTH: 1920        // Chiều rộng cơ sở để tính toán tỉ lệ scale trên các màn hình khác nhau
     },
     ZOOM: {
@@ -27,30 +27,26 @@ const CONFIG = {
         RESPAWN_DELAY_MS: 1500, // Thời gian hồi phục sau khi kiếm bị vỡ
         DEATH_WAIT_MS: 2000,    // Thời gian thanh kiếm nằm lại hiện trường trước khi biến mất hẳn
         SPEED_MULT: 90,        // Hệ số nhân tốc độ quay chung toàn hệ thống
-        
         BREATH_SPEED: { MIN: 0.015, MAX: 0.025 }, // Tốc độ hiệu ứng "nhịp thở" (co giãn vòng kiếm)
         FLOW_OFFSET: { MIN: 40, MAX: 100 },       // Biên độ dao động xa gần của kiếm khi bay
         ATTACK_DELAY_VAR: { BASE: 6, RAND: 10 },  // Độ trễ ngẫu nhiên giữa các lần phóng kiếm
-
         FRAGMENTS: {            // Hiệu ứng mảnh vỡ khi kiếm gãy
             LIFE_TIME: 2000,    // Thời gian tồn tại của mảnh vỡ
             FADE_TIME: 1000      // Thời gian mờ dần trước khi mất tích
         }
     },
-    INPUT: { 
+    INPUT: {
         DOUBLE_TAP_DELAY: 300   // Khoảng cách tối đa giữa 2 lần chạm để tính là double tap
     },
     COLORS: {
         BG_FADE: "rgba(0, 0, 8, 0.25)",         // Màu nền phủ (tạo hiệu ứng lưu ảnh/motion blur)
         SWORD_BLADE: ["#d0fff5", "#7fdcc0", "#3fa78a"], // Gradient màu lưỡi kiếm
         SWORD_TRAIL: "rgba(120, 255, 210, 0.3)",// Màu vệt sáng phía sau kiếm
-        
         SWORD_HANDLE: "#2f7f68",        // Màu chuôi kiếm
         SWORD_GLOW_OUTER: "#8fffe0",    // Màu hào quang vòng ngoài
         SWORD_GLOW_INNER: "#9fffe6",    // Màu hào quang lõi kiếm
         SWORD_FRAGMENT: "#2a5a4d",      // Màu các mảnh vỡ
         SWORD_AURA_SHADOW: "#fffaa0",   // Màu bóng đổ của linh khí
-        
         ENEMY_PARTICLE: "#8cf0ff",      // Màu hạt hiệu ứng từ quái vật
         ENEMY_SHADOW_SHIELD: "#00ffff", // Màu bóng của khiên bảo vệ quái
         SHIELD_GLOW: "rgba(0, 255, 255, 0.8)",  // Độ rực sáng của khiên
@@ -77,7 +73,6 @@ const CONFIG = {
             SIZE: { MIN: 1, MAX: 3 },   // Kích thước mảnh vỡ
             LIFE_DECAY: 0.025   // Tốc độ biến mất của mảnh vỡ mỗi frame
         },
-
         PALETTES: [             // Danh sách các bộ màu ngẫu nhiên cho quái
             ["#ff9999", "#cc3333"], ["#99ccff", "#3366cc"],
             ["#99ff99", "#33cc33"], ["#ffcc99", "#cc6600"],
@@ -144,7 +139,7 @@ const CONFIG = {
         COST_CHANGE_FORM: 1     // Chi phí Mana mỗi lần chuyển đổi hình thái (vòng bảo vệ)
     },
     CULTIVATION: {
-        MAX_BREAKTHROUGH_CHANCE : 0.99, // Tỉ lệ đột phá tối đa tôi đang để là 99% (luôn có 1% rủi ro để tăng độ kịch tính)
+        MAX_BREAKTHROUGH_CHANCE: 0.99, // Tỉ lệ đột phá tối đa tôi đang để là 99% (luôn có 1% rủi ro để tăng độ kịch tính)
         BREAKTHROUGH_PENALTY_FACTOR: 0.4, // Hệ số mất tu vi khi đột phá thất bại (40%)
         RANKS: [
             // --- NHÂN GIỚI ---
@@ -222,17 +217,16 @@ const CONFIG = {
         TRAIL_LENGTH: 15,           // Độ dài vệt sáng (số lượng node)
         DROP_RATES: {
             NORMAL: { LOW: 0.85, MEDIUM: 0.10, HIGH: 0.05 },  // Quái thường: 85% Hạ, 10% Trung, 5% Thượng
-            ELITE:  { LOW: 0.10,  MEDIUM: 0.60, HIGH: 0.30 }   // Tinh Anh: 10% Hạ, 60% Trung, 30% Thượng
+            ELITE: { LOW: 0.10, MEDIUM: 0.60, HIGH: 0.30 }   // Tinh Anh: 10% Hạ, 60% Trung, 30% Thượng
         },
         DROP_COUNT: {
             NORMAL: 1,  // Quái thường rơi 1 viên
             ELITE: 3    // Tinh Anh rơi 3 viên
         },
-
         TYPES: {
-            LOW:    { name: "Hạ phẩm", boost: 0.02, color: "#00ffcc", radius: 4 },   
-            MEDIUM: { name: "Trung phẩm", boost: 0.05, color: "#00aaff", radius: 5.5 }, 
-            HIGH:   { name: "Thượng phẩm", boost: 0.12, color: "#ffcc00", radius: 7.5 } 
+            LOW: { name: "Hạ phẩm", boost: 0.02, color: "#00ffcc", radius: 4 },
+            MEDIUM: { name: "Trung phẩm", boost: 0.05, color: "#00aaff", radius: 5.5 },
+            HIGH: { name: "Thượng phẩm", boost: 0.12, color: "#ffcc00", radius: 7.5 }
         },
     },
 };

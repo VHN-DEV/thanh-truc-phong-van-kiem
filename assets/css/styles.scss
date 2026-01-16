@@ -28,7 +28,8 @@ $ui-font: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 // ====================================================================
 // 3. BASE STYLES
 // ====================================================================
-html, body {
+html,
+body {
     margin: 0;
     padding: 0;
     background: $bg-gradient;
@@ -38,8 +39,8 @@ html, body {
     height: 100%;
 }
 
-canvas { 
-    display: block; 
+canvas {
+    display: block;
 }
 
 .game-ui {
@@ -64,10 +65,10 @@ canvas {
         font-weight: bold;
         color: #4CAF50;
         font-size: 10px;
-        margin-bottom: 6px; 
+        margin-bottom: 6px;
         letter-spacing: 0.5px;
-        text-shadow: 0 0 8px rgba(76, 175, 80, 0.6); 
-        transition: color 0.5s ease, text-shadow 0.5s ease; 
+        text-shadow: 0 0 8px rgba(76, 175, 80, 0.6);
+        transition: color 0.5s ease, text-shadow 0.5s ease;
     }
 
     #mana-bar-bg {
@@ -77,7 +78,7 @@ canvas {
         background: rgba(0, 0, 0, 0.6);
         border: 2px solid $mana-color;
         border-radius: 12px;
-        overflow: hidden; 
+        overflow: hidden;
         transition: border-color 0.3s, box-shadow 0.3s;
 
         #mana-bar {
@@ -109,6 +110,7 @@ canvas {
             border-color: $danger-color !important;
             box-shadow: 0 0 20px $danger-color;
         }
+
         #mana-bar {
             background-color: $danger-color;
         }
@@ -124,18 +126,40 @@ canvas {
     }
 
     @keyframes flash-white {
-        0% { filter: brightness(1) white-shadow; }
-        50% { filter: brightness(3); box-shadow: 0 0 20px #fff; }
-        100% { filter: brightness(1); }
+        0% {
+            filter: brightness(1) white-shadow;
+        }
+
+        50% {
+            filter: brightness(3);
+            box-shadow: 0 0 20px #fff;
+        }
+
+        100% {
+            filter: brightness(1);
+        }
     }
-    
+
     @keyframes shake {
-        0%, 100% { transform: translateX(0); }
-        25% { transform: translateX(-5px); }
-        50% { transform: translateX(5px); }
-        75% { transform: translateX(-3px); }
+
+        0%,
+        100% {
+            transform: translateX(0);
+        }
+
+        25% {
+            transform: translateX(-5px);
+        }
+
+        50% {
+            transform: translateX(5px);
+        }
+
+        75% {
+            transform: translateX(-3px);
+        }
     }
-    
+
     #instructions {
         @include abs-pos($bottom: 20px, $left: 20px);
         color: rgba(255, 255, 255, 0.3);
@@ -197,7 +221,7 @@ canvas {
     flex-direction: column;
     align-items: center;
     gap: 20px;
-    
+
     // Thay vì display: none trực tiếp, ta điều khiển qua độ mờ và pointer-events
     opacity: 0;
     pointer-events: none;
@@ -233,8 +257,15 @@ canvas {
 
 // Hiệu ứng hào quang tỏa ra khi sẵn sàng đột phá
 @keyframes breakthrough-pulse {
-    from { box-shadow: 0 0 10px rgba($primary-color, 0.4); transform: scale(1); }
-    to { box-shadow: 0 0 30px rgba($primary-color, 0.9); transform: scale(1.15); }
+    from {
+        box-shadow: 0 0 10px rgba($primary-color, 0.4);
+        transform: scale(1);
+    }
+
+    to {
+        box-shadow: 0 0 30px rgba($primary-color, 0.9);
+        transform: scale(1.15);
+    }
 }
 
 .attack-group {
@@ -300,7 +331,7 @@ canvas {
         margin-right: 8px;
         filter: drop-shadow(0 0 5px rgba(0, 255, 200, 0.5));
     }
-    
+
     #sword-count-text {
         color: #fff;
         font-family: Arial, sans-serif;
@@ -322,15 +353,16 @@ canvas {
     background: rgba(0, 0, 0, 0.5);
     border-top: 1px solid rgba(255, 255, 255, 0.2);
     z-index: 100;
-    
+
     #exp-bar {
         height: 100%;
         width: 0%;
-        background: linear-gradient(90deg, #ffeb3b, #f44336); /* Màu vàng cam thiên hướng tu luyện */
+        background: linear-gradient(90deg, #ffeb3b, #f44336);
+        /* Màu vàng cam thiên hướng tu luyện */
         transition: width 0.3s ease;
         box-shadow: 0 0 10px #ffeb3b;
     }
-    
+
     #exp-text {
         position: absolute;
         bottom: 15px;
@@ -351,7 +383,8 @@ canvas {
 /* Hệ thống thông báo giữa màn hình */
 #game-notification {
     position: fixed;
-    top: 35%; /* Dịch xuống một chút cho đỡ vướng mắt */
+    top: 35%;
+    /* Dịch xuống một chút cho đỡ vướng mắt */
     left: 50%;
     transform: translateX(-50%);
     pointer-events: none;
@@ -364,33 +397,39 @@ canvas {
 
 .notify-item {
     font-family: $ui-font;
-    font-size: 14px; /* Chữ nhỏ gọn như log hệ thống */
+    font-size: 14px;
+    /* Chữ nhỏ gọn như log hệ thống */
     font-weight: 600;
     letter-spacing: 1px;
     padding: 4px 12px;
-    background: rgba(0, 0, 0, 0.4); /* Thêm nền tối mờ để dễ đọc chữ */
+    background: rgba(0, 0, 0, 0.4);
+    /* Thêm nền tối mờ để dễ đọc chữ */
     border-radius: 4px;
     white-space: nowrap;
-    
+
     /* Hiệu ứng mờ dần và bay nhẹ lên */
     animation: notify-fade-up 2.5s ease-out forwards;
 }
 
 @keyframes notify-fade-up {
-    0% { 
-        opacity: 0; 
-        transform: translateY(10px); 
+    0% {
+        opacity: 0;
+        transform: translateY(10px);
     }
-    15% { 
-        opacity: 1; 
-        transform: translateY(0); 
+
+    15% {
+        opacity: 1;
+        transform: translateY(0);
     }
-    70% { 
-        opacity: 1; 
+
+    70% {
+        opacity: 1;
     }
-    100% { 
-        opacity: 0; 
-        transform: translateY(-20px); 
+
+    100% {
+        opacity: 0;
+        transform: translateY(-20px);
     }
 }
+
 // <!-- Create By: Vũ Hoài Nam -->

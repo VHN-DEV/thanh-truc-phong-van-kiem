@@ -117,9 +117,9 @@ const Input = {
     calculateTotalPillBoost() {
         const cfg = CONFIG.PILL.TYPES;
         // Tính tổng: (Số lượng x % cộng thêm) của từng loại
-        const boost = (this.pills.LOW * cfg.LOW.boost) + 
-                    (this.pills.MEDIUM * cfg.MEDIUM.boost) + 
-                    (this.pills.HIGH * cfg.HIGH.boost);
+        const boost = (this.pills.LOW * cfg.LOW.boost) +
+            (this.pills.MEDIUM * cfg.MEDIUM.boost) +
+            (this.pills.HIGH * cfg.HIGH.boost);
         return boost;
     },
 
@@ -239,7 +239,7 @@ const Input = {
         // 1. Tính tổng tỉ lệ: Cơ bản của Rank + Boost từ 3 loại đan
         const pillBoost = this.calculateTotalPillBoost();
         let totalChance = currentRank.chance + pillBoost;
-        
+
         // Sử dụng biến MAX đã định nghĩa trong Config
         const maxAllowed = CONFIG.CULTIVATION.MAX_BREAKTHROUGH_CHANCE || 0.95;
         totalChance = Math.min(maxAllowed, totalChance);
@@ -249,10 +249,10 @@ const Input = {
             this.exp = 0;
             this.rankIndex++;
             this.isReadyToBreak = false;
-            
+
             // Reset toàn bộ đan dược sau khi đột phá thành công
-            this.pills = { LOW: 0, MEDIUM: 0, HIGH: 0 }; 
-            
+            this.pills = { LOW: 0, MEDIUM: 0, HIGH: 0 };
+
             const nextRank = CONFIG.CULTIVATION.RANKS[this.rankIndex];
             if (nextRank) {
                 if (nextRank.maxMana) this.maxMana = nextRank.maxMana;
@@ -265,16 +265,16 @@ const Input = {
             const penalty = Math.floor(this.exp * CONFIG.CULTIVATION.BREAKTHROUGH_PENALTY_FACTOR); // Mất 40% tu vi
             this.exp -= penalty;
             this.isReadyToBreak = false; // Tắt trạng thái chờ để cày lại
-            
+
             // Thất bại: Mất một nửa số đan dược của mỗi loại
             this.pills.LOW = Math.floor(this.pills.LOW / 2);
             this.pills.MEDIUM = Math.floor(this.pills.MEDIUM / 2);
             this.pills.HIGH = Math.floor(this.pills.HIGH / 2);
-            
+
             showNotify("ĐỘT PHÁ THẤT BẠI! Tâm ma phản phệ (-40% tu vi)", "#ff4444");
             this.triggerExpError();
         }
-        
+
         this.renderExpUI();
         this.renderManaUI();
     },
@@ -292,23 +292,23 @@ const Input = {
 
         // 1. Tính toán tỉ lệ hiển thị dựa trên 3 loại đan
         const pillBoost = this.calculateTotalPillBoost();
-        const maxAllowed = CONFIG.CULTIVATION.MAX_BREAKTHROUGH_CHANCE || 0.99; 
+        const maxAllowed = CONFIG.CULTIVATION.MAX_BREAKTHROUGH_CHANCE || 0.99;
         const totalChance = Math.min(maxAllowed, rank.chance + pillBoost);
 
         const totalPercent = (totalChance * 100).toFixed(0);
-        
+
         // Tổng số lượng đan dược để hiển thị
         const totalPills = this.pills.LOW + this.pills.MEDIUM + this.pills.HIGH;
 
         // 2. Cập nhật văn bản giao diện
         if (textExp) {
-            let statusText = this.isReadyToBreak ? 
-                `<span style="color:#ffcc00; font-weight:bold;">SẴN SÀNG ĐỘT PHÁ</span>` : 
+            let statusText = this.isReadyToBreak ?
+                `<span style="color:#ffcc00; font-weight:bold;">SẴN SÀNG ĐỘT PHÁ</span>` :
                 `Tu vi: ${Math.floor(this.exp)}/${rank.exp}`;
 
             textExp.innerHTML = `${statusText} | ` +
-                                `<span style="color:#00ffcc">Linh Đan: ${totalPills}</span> ` +
-                                `(<span style="color:#ffcc00">TL: ${totalPercent}%</span>)`;
+                `<span style="color:#00ffcc">Linh Đan: ${totalPills}</span> ` +
+                `(<span style="color:#ffcc00">TL: ${totalPercent}%</span>)`;
         }
 
         // 3. Ẩn/Hiện nút đột phá
@@ -322,7 +322,7 @@ const Input = {
         if (barExp) {
             barExp.style.width = Math.min(100, percentage) + '%';
             barExp.style.background = `linear-gradient(90deg, ${rank.lightColor}, ${rank.color})`;
-            
+
             if (this.isReadyToBreak) {
                 barExp.style.boxShadow = `0 0 15px #fff, 0 0 5px ${rank.color}`;
                 barExp.classList.add('exp-full-glow');
@@ -396,7 +396,7 @@ const Input = {
     createLevelUpExplosion(x, y, color) {
         for (let i = 0; i < 30; i++) { // Giảm số lượng hạt
             visualParticles.push({
-                x: x, 
+                x: x,
                 y: y,
                 vx: (Math.random() - 0.5) * 8, // Giảm tốc độ bay
                 vy: (Math.random() - 0.5) * 8,
@@ -488,7 +488,7 @@ document.getElementById('btn-form').addEventListener('pointerdown', (e) => {
 document.getElementById('btn-breakthrough').addEventListener('pointerdown', (e) => {
     e.stopPropagation();
     // Gọi hàm thực hiện đột phá mà chúng ta đã viết ở bước trước
-    Input.executeBreakthrough(); 
+    Input.executeBreakthrough();
 });
 
 const attackBtn = document.getElementById('btn-attack');
@@ -538,7 +538,7 @@ function init() {
     // Khởi tạo thông số theo rank đầu tiên
     const startingRank = CONFIG.CULTIVATION.RANKS[Input.rankIndex];
     Input.maxMana = startingRank.maxMana || CONFIG.MANA.MAX;
-    Input.mana = Input.maxMana; 
+    Input.mana = Input.maxMana;
 
     Input.renderManaUI();
     Input.renderExpUI();
@@ -626,18 +626,18 @@ function animate() {
     enemies.forEach(e => e.draw(ctx, scaleFactor));
     pills = pills.filter(pill => {
         const collected = pill.update(window.innerWidth / 2, window.innerHeight / 2);
-        
+
         if (collected) {
             // Cộng vào đúng loại đan trong Input
-            Input.pills[pill.typeKey]++; 
-            
+            Input.pills[pill.typeKey]++;
+
             const typeName = CONFIG.PILL.TYPES[pill.typeKey].name;
             showNotify(`+1 ${typeName}`, pill.color);
-            
+
             Input.renderExpUI(); // Cập nhật lại giao diện ngay khi nhặt được
             return false;
         }
-        
+
         pill.draw(ctx);
         return true;
     });

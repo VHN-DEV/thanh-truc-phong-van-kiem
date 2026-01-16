@@ -13,7 +13,7 @@ class Enemy {
         const startX = (window.innerWidth / 2) - (visibleWidth / 2);
         const startY = (window.innerHeight / 2) - (visibleHeight / 2);
         const padding = CONFIG.ENEMY.SPAWN_PADDING;
-        
+
         this.x = random(startX + padding, startX + visibleWidth - padding);
         this.y = random(startY + padding, startY + visibleHeight - padding);
         this.particles = [];
@@ -37,7 +37,7 @@ class Enemy {
         } else if (isGuaranteedPlayerLevel) {
             // 🟢 Mode 1: Quái xoay quanh cấp độ người chơi (Cho các con quái "đảm bảo" hoặc khi bật global)
             enemyRankIndex = Math.max(0, Math.min(
-                CONFIG.CULTIVATION.RANKS.length - 1, 
+                CONFIG.CULTIVATION.RANKS.length - 1,
                 playerRank + Math.floor(Math.random() * 3) - 1
             ));
         } else {
@@ -45,7 +45,7 @@ class Enemy {
             const { MIN_ID, MAX_ID } = CONFIG.ENEMY.SPAWN_RANK_RANGE;
             const rank = this.getRandomRankById(MIN_ID, MAX_ID);
             enemyRankIndex = CONFIG.CULTIVATION.RANKS.findIndex(r => r.id === (rank ? rank.id : 1));
-            
+
             // Backup nếu không tìm thấy rank trong mảng
             if (enemyRankIndex === -1) enemyRankIndex = 0;
         }
@@ -53,15 +53,15 @@ class Enemy {
         // Gán dữ liệu cảnh giới dựa trên index đã tính toán
         this.rankData = CONFIG.CULTIVATION.RANKS[enemyRankIndex];
         this.rankName = (this.isElite ? "★ TINH ANH ★ " : "") + this.rankData.name;
-        
+
         // ĐỒNG BỘ MÀU: Lấy màu chính xác từ RankData (màu cảnh giới)
         this.colors = [this.rankData.lightColor, this.rankData.color];
 
         // --- 2. TÍNH HP (Sử dụng trực tiếp biến hp đạo hữu mới thêm vào CONFIG) ---
-        const baseRankHp = this.rankData.hp || 1000; 
+        const baseRankHp = this.rankData.hp || 1000;
         const variation = 1 + (Math.random() * 0.05); // Biến động 5% để chỉ số sinh động hơn
         const eliteMult = this.isElite ? 4.0 : 1.0;   // Tinh anh trâu gấp 4 lần
-        
+
         this.maxHp = Math.floor(baseRankHp * variation * eliteMult);
         this.hp = this.maxHp;
 
@@ -75,7 +75,7 @@ class Enemy {
         if (this.hasShield) {
             // Lấy hệ số từ CONFIG, nếu quên chưa đặt thì mặc định là 0.5 (50%)
             const ratio = CONFIG.ENEMY.SHIELD_HP_RATIO || 0.5;
-            
+
             // Độ bền khiên = Máu hiện tại x Hệ số
             this.shieldHp = Math.floor(this.hp * ratio);
             this.maxShieldHp = this.shieldHp;
@@ -210,9 +210,9 @@ class Enemy {
 
                     pills.push(new Pill(this.x, this.y, typeKey));
                 }
-                
-                showNotify(this.isElite ? "Đại cơ duyên! Linh Đan xuất thế!" : "Thu hoạch Linh Đan", 
-                        this.isElite ? "#ffcc00" : "#00ffcc");
+
+                showNotify(this.isElite ? "Đại cơ duyên! Linh Đan xuất thế!" : "Thu hoạch Linh Đan",
+                    this.isElite ? "#ffcc00" : "#00ffcc");
             }
 
             this.respawn();
@@ -229,7 +229,7 @@ class Enemy {
         // Vẽ vòng ngoài khiên (Bỏ shadowBlur, thay bằng lineWidth dày hơn)
         ctx.beginPath();
         ctx.arc(0, 0, shieldR, 0, Math.PI * 2);
-        ctx.strokeStyle = `rgba(140, 245, 255, ${0.5 * pulse})`; 
+        ctx.strokeStyle = `rgba(140, 245, 255, ${0.5 * pulse})`;
         ctx.lineWidth = 2 * scaleFactor;
         ctx.stroke();
 
@@ -255,10 +255,10 @@ class Enemy {
         for (let i = 0; i < conf.COUNT; i++) {
             const angle = Math.random() * Math.PI * 2;
             const speed = random(conf.SPEED.MIN, conf.SPEED.MAX);
-            
+
             // Đẩy thẳng vào mảng global để class Enemy không phải xử lý drawParticles nữa
             visualParticles.push({
-                x: this.x, 
+                x: this.x,
                 y: this.y,
                 vx: Math.cos(angle) * speed,
                 vy: Math.sin(angle) * speed,
@@ -273,7 +273,7 @@ class Enemy {
     draw(ctx, scaleFactor) {
         ctx.save();
         ctx.translate(this.x, this.y);
-        
+
         // Lấy màu từ RankData (màu chính của cảnh giới)
         const rankColor = this.rankData.color;
 
@@ -283,10 +283,10 @@ class Enemy {
 
         // 1. VẼ TÊN CẢNH GIỚI: Sử dụng màu của Rank
         // Nếu là Tinh Anh thì cho phát sáng chữ, nếu không thì vẽ chữ thường
-        ctx.fillStyle = rankColor; 
+        ctx.fillStyle = rankColor;
         ctx.font = `bold ${11 * scaleFactor}px "Segoe UI", Arial`;
         ctx.textAlign = "center";
-        
+
         // Thêm hiệu ứng phát sáng cho chữ nếu là Tinh Anh để dễ phân biệt
         if (this.isElite) {
             ctx.shadowColor = rankColor;
@@ -304,21 +304,21 @@ class Enemy {
 
         // Nền thanh máu
         ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
-        ctx.fillRect(-barWidth/2, barY, barWidth, barHeight);
+        ctx.fillRect(-barWidth / 2, barY, barWidth, barHeight);
 
         // Máu còn lại: 
         // Mix màu cảnh giới với một chút sắc trắng để thanh máu nổi bật hơn
         const hpRatio = Math.max(0, this.hp / this.maxHp);
-        ctx.fillStyle = rankColor; 
-        
+        ctx.fillStyle = rankColor;
+
         // Vẽ thanh máu chính
-        ctx.fillRect(-barWidth/2, barY, barWidth * hpRatio, barHeight);
-        
+        ctx.fillRect(-barWidth / 2, barY, barWidth * hpRatio, barHeight);
+
         // Thêm một viền sáng mỏng cho thanh máu để trông chuyên nghiệp hơn
         ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
         ctx.lineWidth = 0.5 * scaleFactor;
-        ctx.strokeRect(-barWidth/2, barY, barWidth, barHeight);
-        
+        ctx.strokeRect(-barWidth / 2, barY, barWidth, barHeight);
+
         ctx.restore();
     }
 
@@ -341,7 +341,7 @@ class Enemy {
 
     drawBody(ctx, scaleFactor) {
         if (!this.r || isNaN(this.r)) return; // Dòng bảo vệ: Nếu r lỗi thì không vẽ để tránh crash
-        
+
         ctx.save();
 
         // --- HIỆU ỨNG PHÁT SÁNG CHO TINH ANH ---
@@ -349,14 +349,14 @@ class Enemy {
             ctx.shadowColor = "#ff3300";
             ctx.shadowBlur = 20 * scaleFactor;
             // Làm quái hơi rung rinh một chút
-            ctx.translate((Math.random()-0.5)*2, (Math.random()-0.5)*2);
+            ctx.translate((Math.random() - 0.5) * 2, (Math.random() - 0.5) * 2);
         }
-        
+
         // 1. Vẽ hào quang (glow) quanh quái vật (Dùng màu Cảnh giới)
         const glowGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, this.r * 1.3);
         glowGrad.addColorStop(0, this.colors[1] + "55"); // Màu rank mờ
         glowGrad.addColorStop(1, "transparent");
-        
+
         ctx.fillStyle = glowGrad;
         ctx.beginPath();
         ctx.arc(0, 0, this.r * 1.3, 0, Math.PI * 2);
@@ -366,16 +366,16 @@ class Enemy {
         // Kiểm tra an toàn: icon tồn tại, đã tải xong (complete) và không lỗi (naturalWidth > 0)
         if (this.icon && this.icon.complete && this.icon.naturalWidth > 0) {
             const drawSize = this.r * 2 * scaleFactor;
-            
+
             // Thêm hiệu ứng phát sáng nhẹ cho icon trắng
             ctx.shadowColor = this.colors[1];
             ctx.shadowBlur = 10 * scaleFactor;
-            
+
             ctx.drawImage(
-                this.icon, 
-                -drawSize / 2, 
-                -drawSize / 2, 
-                drawSize, 
+                this.icon,
+                -drawSize / 2,
+                -drawSize / 2,
+                drawSize,
                 drawSize
             );
         } else {
@@ -385,7 +385,7 @@ class Enemy {
             ctx.fillStyle = this.colors[1];
             ctx.fill();
         }
-        
+
         ctx.restore();
     }
 }
@@ -478,7 +478,7 @@ class Sword {
         this.isDead = false;
         this.x = Input.x;
         this.y = Input.y;
-        this.vx = 0; 
+        this.vx = 0;
         this.vy = 0;
         this.isStunned = false;
         this.trail = [];
@@ -487,8 +487,8 @@ class Sword {
 
     updateGuardMode(guardCenter, r, Input, scaleFactor) {
         const globalRotation = (performance.now() / 1000) * this.spinSpeed * (CONFIG.SWORD.SPEED_MULT || 100);
-        const a = this.baseAngle + globalRotation; 
-        
+        const a = this.baseAngle + globalRotation;
+
         const tx = guardCenter.x + Math.cos(a) * r;
         const ty = guardCenter.y + Math.sin(a) * r;
 
@@ -651,7 +651,7 @@ class Sword {
                 const age = performance.now() - this.deathTime;
                 const lifeTime = CONFIG.SWORD.FRAGMENTS.LIFE_TIME;
                 const fadeTime = CONFIG.SWORD.FRAGMENTS.FADE_TIME;
-                
+
                 const alpha = age > lifeTime ? 1 - ((age - lifeTime) / fadeTime) : 1;
 
                 ctx.save();
@@ -698,8 +698,8 @@ class Sword {
             if (f.type === 'handle') {
                 ctx.fillStyle = CONFIG.COLORS.SWORD_HANDLE;
                 ctx.fillRect(-3 * scaleFactor, 0, 6 * scaleFactor, 14 * scaleFactor);
-                
-                ctx.fillStyle = CONFIG.COLORS.SWORD_BLADE[2]; 
+
+                ctx.fillStyle = CONFIG.COLORS.SWORD_BLADE[2];
                 ctx.moveTo(-sWid / 2, 0);
                 ctx.lineTo(sWid / 2, 0);
                 ctx.lineTo(sWid / 2, -sLen * 0.3);
@@ -781,7 +781,7 @@ class StarField {
     constructor(count, width, height) {
         this.stars = [];
         const totalStars = CONFIG.BG.STAR_COUNT || count;
-        
+
         for (let i = 0; i < totalStars; i++) {
             this.stars.push({
                 x: random(-width, width * 2),
@@ -794,12 +794,12 @@ class StarField {
     draw(ctx, scaleFactor) {
         ctx.shadowBlur = 0;
         const speed = CONFIG.BG.STAR_TWINKLE_SPEED;
-        
+
         for (const s of this.stars) {
             s.alpha += random(-speed, speed);
             if (s.alpha > CONFIG.BG.STAR_ALPHA.MAX) s.alpha = CONFIG.BG.STAR_ALPHA.MAX;
             else if (s.alpha < CONFIG.BG.STAR_ALPHA.MIN) s.alpha = CONFIG.BG.STAR_ALPHA.MIN;
-            
+
             ctx.beginPath();
             ctx.arc(s.x, s.y, s.r * scaleFactor, 0, Math.PI * 2);
             ctx.fillStyle = `rgba(255,255,255,${s.alpha})`;
@@ -813,22 +813,22 @@ class Pill {
         this.x = x;
         this.y = y;
         this.typeKey = typeKey; // Lưu lại để khi thu thập biết là loại nào
-        
+
         const typeData = CONFIG.PILL.TYPES[typeKey];
         this.r = typeData.radius;
         this.color = typeData.color;
-        
-        this.state = 0; 
+
+        this.state = 0;
         this.velocity = { x: (Math.random() - 0.5) * 12, y: (Math.random() - 0.5) * 12 };
         this.friction = 0.96;
         this.spawnTime = Date.now();
-        this.history = []; 
+        this.history = [];
         this.maxHistory = CONFIG.PILL.TRAIL_LENGTH;
     }
 
     update(playerX, playerY) {
         const cfg = CONFIG.PILL;
-        this.history.push({x: this.x, y: this.y});
+        this.history.push({ x: this.x, y: this.y });
         if (this.history.length > this.maxHistory) this.history.shift();
 
         if (this.state === 0) {
@@ -836,25 +836,25 @@ class Pill {
             this.y += this.velocity.y;
             this.velocity.x *= this.friction;
             this.velocity.y *= this.friction;
-            
+
             if (Date.now() - this.spawnTime > cfg.COLLECT_DELAY_MS) this.state = 1;
         } else {
             const dx = playerX - this.x;
             const dy = playerY - this.y;
             const dist = Math.sqrt(dx * dx + dy * dy);
-            
+
             // Dùng tốc độ từ CONFIG
             this.x += (dx / dist) * cfg.MAGNET_SPEED;
             this.y += (dy / dist) * cfg.MAGNET_SPEED;
-            
-            if (dist < 20) return true; 
+
+            if (dist < 20) return true;
         }
         return false;
     }
 
     draw(ctx) {
         ctx.save();
-        
+
         // 1. VẼ VỆT SÁNG (TRAIL)
         if (this.history.length > 1) {
             ctx.beginPath();
@@ -874,11 +874,11 @@ class Pill {
         ctx.shadowColor = this.color;
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
-        
+
         const grad = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.r);
         grad.addColorStop(0, "#fff");
         grad.addColorStop(1, this.color);
-        
+
         ctx.fillStyle = grad;
         ctx.fill();
         ctx.restore();
