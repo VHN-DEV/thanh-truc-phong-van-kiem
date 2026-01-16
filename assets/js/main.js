@@ -215,31 +215,31 @@ const Input = {
         const currentRank = CONFIG.CULTIVATION.RANKS[this.rankIndex];
         if (!currentRank) return;
 
-        // Tính ngưỡng giới hạn (ví dụ: 120% lượng exp cần thiết)
+        // NGƯỠNG TRÀN: Ví dụ 120% của 5 exp là 6 exp
         const overflowLimit = currentRank.exp * (CONFIG.CULTIVATION.OVERFLOW_LIMIT || 1.2);
 
         if (!this.isReadyToBreak) {
-            // Trạng thái bình thường: Tích lũy exp
+            // Giai đoạn tích lũy bình thường
             this.exp += amount;
             this.checkLevelUp();
         } else {
-            // Trạng thái ĐÃ sẵn sàng đột phá nhưng người chơi chưa bấm
-            // Cho phép tích lũy thêm một chút (exp tràn)
+            // Giai đoạn đã đầy nhưng chưa đột phá (Tu vi tràn ra ngoài)
             if (this.exp < overflowLimit) {
-                this.exp += amount * 0.5; // Giảm 50% lượng exp nhận được khi đã đầy (tùy chọn)
-                
-                // Nếu sau khi cộng mà vượt ngưỡng giới hạn
+                // Khi đã đầy, hấp thụ linh khí khó hơn (chỉ nhận 20% lượng exp từ quái)
+                this.exp += amount * 0.2; 
+
                 if (this.exp >= overflowLimit) {
-                    this.exp = overflowLimit; // Chốt ở mức tối đa
-                    showNotify("Linh lực quá tải, cưỡng ép đột phá!", "#ff4444");
-                    this.executeBreakthrough(); // Gọi hàm tự động đột phá
+                    this.exp = overflowLimit;
+                    showNotify("Tu vi tràn trề, Thiên kiếp cưỡng ép giáng xuống!", "#ff4444");
+                    
+                    // ÉP ĐỘT PHÁ
+                    setTimeout(() => this.executeBreakthrough(), 1000); 
                 }
             }
         }
-        
         this.renderExpUI();
     },
-
+    
     checkLevelUp() {
         const currentRank = CONFIG.CULTIVATION.RANKS[this.rankIndex];
         if (!currentRank) return;
