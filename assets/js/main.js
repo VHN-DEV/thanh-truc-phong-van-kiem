@@ -241,7 +241,7 @@ const Input = {
                         this.forcedBreaking = true;
                         showNotify("Linh lực quá tải, thiên đạo cưỡng ép đột phá!", "#ff4444");
                         setTimeout(() => {
-                            this.executeBreakthrough();
+                            this.executeBreakthrough(true);
                             this.forcedBreaking = false;
                         }, 1000);
                     }
@@ -262,15 +262,14 @@ const Input = {
         }
     },
 
-    executeBreakthrough() {
+    executeBreakthrough(isForced = false) { 
         const currentRank = CONFIG.CULTIVATION.RANKS[this.rankIndex];
         if (!currentRank) return;
 
-        // 1. Tính tổng tỉ lệ: Cơ bản của Rank + Boost từ 3 loại đan
+        // 1. Tính tổng tỉ lệ
         const pillBoost = this.calculateTotalPillBoost();
         let totalChance = currentRank.chance + pillBoost;
 
-        // Sử dụng biến MAX đã định nghĩa trong Config
         const maxAllowed = CONFIG.CULTIVATION.MAX_BREAKTHROUGH_CHANCE || 0.95;
         totalChance = Math.min(maxAllowed, totalChance);
 
@@ -280,23 +279,29 @@ const Input = {
             this.rankIndex++;
             this.isReadyToBreak = false;
 
-            // Reset toàn bộ đan dược sau khi đột phá thành công
             this.pills = { LOW: 0, MEDIUM: 0, HIGH: 0 };
 
             const nextRank = CONFIG.CULTIVATION.RANKS[this.rankIndex];
             if (nextRank) {
                 if (nextRank.maxMana) this.maxMana = nextRank.maxMana;
-                this.mana = this.maxMana; // Hồi đầy mana khi vượt cấp
-                showNotify(`ĐỘT PHÁ THÀNH CÔNG: ${nextRank.name.toUpperCase()}`, "#ffcc00");
+                
+                // --- LOGIC THAY ĐỔI Ở ĐÂY ---
+                if (isForced) {
+                    // Nếu bị cưỡng ép: Không hồi mana (giữ nguyên lượng mana hiện tại)
+                    showNotify(`CƯỠNG ÉP ĐỘT PHÁ THÀNH CÔNG: ${nextRank.name.toUpperCase()}`, "#ff8800");
+                } else {
+                    // Nếu chủ động: Hồi đầy mana
+                    this.mana = this.maxMana; 
+                    showNotify(`ĐỘT PHÁ THÀNH CÔNG: ${nextRank.name.toUpperCase()}`, "#ffcc00");
+                }
             }
             this.createLevelUpExplosion(this.x, this.y, currentRank.color);
         } else {
-            // --- THẤT BẠI (PHẢN PHỆ) ---
-            const penalty = Math.floor(this.exp * CONFIG.CULTIVATION.BREAKTHROUGH_PENALTY_FACTOR); // Mất 40% tu vi
+            // --- THẤT BẠI ---
+            const penalty = Math.floor(this.exp * CONFIG.CULTIVATION.BREAKTHROUGH_PENALTY_FACTOR);
             this.exp -= penalty;
-            this.isReadyToBreak = false; // Tắt trạng thái chờ để cày lại
+            this.isReadyToBreak = false;
 
-            // Thất bại: Mất một nửa số đan dược của mỗi loại
             this.pills.LOW = Math.floor(this.pills.LOW / 2);
             this.pills.MEDIUM = Math.floor(this.pills.MEDIUM / 2);
             this.pills.HIGH = Math.floor(this.pills.HIGH / 2);
