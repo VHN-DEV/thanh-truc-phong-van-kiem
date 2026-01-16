@@ -60,7 +60,7 @@
         </div>
     </div>
 
-    <div id="settings-popup" class="popup-overlay">
+    <div id="settings-popup" class="popup-overlay hidden">
         <div class="popup-content">
             <div class="popup-header">
                 <h3>⚙️ THIÊN ĐẠO QUY TÁC</h3>
@@ -92,6 +92,7 @@
                         <div class="input-group"><label>Hồi kiếm (ms):</label><input type="number" id="cfg-sw-respawn"></div>
                         <div class="input-group"><label>Thời gian xác kiếm (ms):</label><input type="number" id="cfg-sw-death-wait"></div>
                         <div class="input-group"><label>Nhịp thở (Min):</label><input type="number" step="0.005" id="cfg-sw-breath"></div>
+                        <div class="input-group"><label>Thời gian tái sinh kiếm (ms):</label><input type="number" id="cfg-sw-regen"></div>
                     </div>
                 </div>
 
@@ -102,7 +103,6 @@
                         <div class="input-group"><label>Tỉ lệ Tinh Anh:</label><input type="number" step="0.01" id="cfg-en-elite"></div>
                         <div class="input-group"><label>Tỉ lệ Khiên:</label><input type="number" step="0.1" id="cfg-en-shield-ch"></div>
                         <div class="input-group"><label>Độ bền khiên (ratio):</label><input type="number" step="0.05" id="cfg-en-shield-hp"></div>
-                        <div class="input-group"><label>Hệ số sức mạnh:</label><input type="number" step="0.1" id="cfg-en-scale"></div>
                         <div class="input-group"><label>Số mảnh vỡ quái:</label><input type="number" id="cfg-en-debris"></div>
                         <div class="input-group"><label>Khựng khi trúng (ms):</label><input type="number" id="cfg-sw-stun"></div>
                     </div>
@@ -115,10 +115,13 @@
                         <div class="input-group"><label>Tấn công tốn:</label><input type="number" step="0.1" id="cfg-ma-atk"></div>
                         <div class="input-group"><label>Di chuyển tốn:</label><input type="number" step="0.1" id="cfg-ma-move"></div>
                         <div class="input-group"><label>Hồi kiếm tốn:</label><input type="number" step="1" id="cfg-ma-res-cost"></div>
+                        <div class="input-group"><label>Tiêu tốn đổi trạng thái hộ thể (ratio):</label><input type="number" step="0.1" id="cfg-sw-change-form"></div>
+                        <div class="input-group"><label>Hồi mana kiếm khi tiêu diệt:</label><input type="number" step="1" id="cfg-sw-gain-kill"></div>
                         <div class="input-group"><label>Tỉ lệ rơi đan:</label><input type="number" step="0.05" id="cfg-pi-chance"></div>
                         <div class="input-group"><label>Tốc độ hút đan:</label><input type="number" id="cfg-pi-magnet"></div>
                         <div class="input-group"><label>Độ dài vệt đan:</label><input type="number" id="cfg-pi-trail"></div>
                         <div class="input-group"><label>Phạt đột phá (ratio):</label><input type="number" step="0.1" id="cfg-cu-penalty"></div>
+                        <div class="input-group"><label>Max tỉ lệ đột phá:</label><input type="number" step="0.05" id="cfg-cu-max-chance"></div>
                     </div>
                 </div>
             </div>

@@ -78,8 +78,6 @@ const CONFIG = {
             ["#99ff99", "#33cc33"], ["#ffcc99", "#cc6600"],
             ["#ff99ff", "#cc33cc"], ["#ffff99", "#cccc33"]
         ],
-        SCALING_FACTOR: 0.4,    // Hệ số tăng chỉ số theo cấp độ người chơi (40% mỗi cấp)
-        PILL_CHANCE: 0.15,      // Tỉ lệ rơi ra Đan dược khi quái chết
         ANIMALS: [
             "./assets/images/animals/ammonite.svg",
             "./assets/images/animals/angel-wings.svg",

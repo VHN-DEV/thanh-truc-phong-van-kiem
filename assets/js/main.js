@@ -548,23 +548,26 @@ const SettingsUI = {
             'cfg-sw-death-wait': CONFIG.SWORD.DEATH_WAIT_MS,
             'cfg-sw-breath': CONFIG.SWORD.BREATH_SPEED.MIN,
             'cfg-sw-stun': CONFIG.SWORD.STUN_DURATION_MS,
+            'cfg-sw-regen': CONFIG.SWORD.REGEN_INTERVAL_MS,
 
             'cfg-en-spawn': CONFIG.ENEMY.SPAWN_COUNT,
             'cfg-en-elite': CONFIG.ENEMY.ELITE_CHANCE,
             'cfg-en-shield-ch': CONFIG.ENEMY.SHIELD_CHANCE,
             'cfg-en-shield-hp': CONFIG.ENEMY.SHIELD_HP_RATIO,
-            'cfg-en-scale': CONFIG.ENEMY.SCALING_FACTOR,
             'cfg-en-debris': CONFIG.ENEMY.DEBRIS.COUNT,
 
             'cfg-ma-regen': CONFIG.MANA.REGEN_PER_SEC,
             'cfg-ma-atk': CONFIG.MANA.COST_ATTACK_PER_SEC,
             'cfg-ma-move': CONFIG.MANA.COST_MOVE_PER_SEC,
             'cfg-ma-res-cost': Math.abs(CONFIG.MANA.COST_RESPAWN),
-            
-            'cfg-pi-chance': CONFIG.ENEMY.PILL_CHANCE,
+            'cfg-sw-change-form': CONFIG.MANA.COST_CHANGE_FORM,
+            'cfg-sw-gain-kill': CONFIG.MANA.GAIN_KILL,
+
+            'cfg-pi-chance': CONFIG.PILL.CHANCE,
             'cfg-pi-magnet': CONFIG.PILL.MAGNET_SPEED,
             'cfg-pi-trail': CONFIG.PILL.TRAIL_LENGTH,
-            'cfg-cu-penalty': CONFIG.CULTIVATION.BREAKTHROUGH_PENALTY_FACTOR
+            'cfg-cu-penalty': CONFIG.CULTIVATION.BREAKTHROUGH_PENALTY_FACTOR,
+            'cfg-cu-max-chance': CONFIG.CULTIVATION.MAX_BREAKTHROUGH_CHANCE
         };
 
         for (let id in mapping) {
@@ -597,13 +600,13 @@ const SettingsUI = {
             CONFIG.SWORD.RESPAWN_DELAY_MS = parseInt(document.getElementById('cfg-sw-respawn').value);
             CONFIG.SWORD.DEATH_WAIT_MS = parseInt(document.getElementById('cfg-sw-death-wait').value);
             CONFIG.SWORD.STUN_DURATION_MS = parseInt(document.getElementById('cfg-sw-stun').value);
+            CONFIG.SWORD.REGEN_INTERVAL_MS = parseInt(document.getElementById('cfg-sw-regen').value);
 
             // Cập nhật Quái
             CONFIG.ENEMY.SPAWN_COUNT = parseInt(document.getElementById('cfg-en-spawn').value);
             CONFIG.ENEMY.ELITE_CHANCE = parseFloat(document.getElementById('cfg-en-elite').value);
             CONFIG.ENEMY.SHIELD_CHANCE = parseFloat(document.getElementById('cfg-en-shield-ch').value);
             CONFIG.ENEMY.SHIELD_HP_RATIO = parseFloat(document.getElementById('cfg-en-shield-hp').value);
-            CONFIG.ENEMY.SCALING_FACTOR = parseFloat(document.getElementById('cfg-en-scale').value);
             CONFIG.ENEMY.DEBRIS.COUNT = parseInt(document.getElementById('cfg-en-debris').value);
 
             // Cập nhật Mana & Đan
@@ -611,11 +614,13 @@ const SettingsUI = {
             CONFIG.MANA.COST_ATTACK_PER_SEC = parseFloat(document.getElementById('cfg-ma-atk').value);
             CONFIG.MANA.COST_MOVE_PER_SEC = parseFloat(document.getElementById('cfg-ma-move').value);
             CONFIG.MANA.COST_RESPAWN = -Math.abs(parseFloat(document.getElementById('cfg-ma-res-cost').value));
-            CONFIG.ENEMY.PILL_CHANCE = parseFloat(document.getElementById('cfg-pi-chance').value);
-            CONFIG.PILL.CHANCE = CONFIG.ENEMY.PILL_CHANCE;
+            CONFIG.MANA.COST_CHANGE_FORM = parseFloat(document.getElementById('cfg-sw-change-form').value);
+            CONFIG.MANA.GAIN_KILL = parseFloat(document.getElementById('cfg-sw-gain-kill').value);
+            CONFIG.PILL.CHANCE = parseFloat(document.getElementById('cfg-pi-chance').value);
             CONFIG.PILL.MAGNET_SPEED = parseInt(document.getElementById('cfg-pi-magnet').value);
             CONFIG.PILL.TRAIL_LENGTH = parseInt(document.getElementById('cfg-pi-trail').value);
             CONFIG.CULTIVATION.BREAKTHROUGH_PENALTY_FACTOR = parseFloat(document.getElementById('cfg-cu-penalty').value);
+            CONFIG.CULTIVATION.MAX_BREAKTHROUGH_CHANCE = parseFloat(document.getElementById('cfg-cu-max-chance').value);
 
             showNotify("Thiên Đạo Luân Hồi đã được thiết lập lại!", "#8fffe0");
             this.close();
