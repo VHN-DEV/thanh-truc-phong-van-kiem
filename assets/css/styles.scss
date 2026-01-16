@@ -324,7 +324,7 @@ canvas {
 // 6. SWORD COUNTER UI
 // ====================================================================
 #sword-counter {
-    @include abs-pos($top: 20px, $right: 45px); 
+    @include abs-pos($top: 20px, $right: 45px);
     position: fixed;
     display: flex;
     align-items: center;
@@ -447,19 +447,24 @@ canvas {
 // ====================================================================
 .popup-overlay {
     position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
     background: rgba(0, 0, 0, 0.85);
     backdrop-filter: blur(10px);
     z-index: 2000;
-    display: none; 
+    display: none;
     @include flex-center;
 
     // QUAN TRỌNG: Ghi đè lại để cho phép bấm vào popup
-    pointer-events: auto !important; 
+    pointer-events: auto !important;
     user-select: auto !important;
 
-    &.show { display: flex; }
-    
+    &.show {
+        display: flex;
+    }
+
     // Đảm bảo các ô input bên trong hoạt động tốt
     input {
         pointer-events: auto !important;
@@ -486,8 +491,18 @@ canvas {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    h3 { color: $primary-color; margin: 0; font-size: 16px; }
-    .close-btn { color: white; font-size: 28px; cursor: pointer; }
+
+    h3 {
+        color: $primary-color;
+        margin: 0;
+        font-size: 16px;
+    }
+
+    .close-btn {
+        color: white;
+        font-size: 28px;
+        cursor: pointer;
+    }
 }
 
 .popup-body {
@@ -499,13 +514,16 @@ canvas {
     &::-webkit-scrollbar {
         width: 4px; // Độ rộng thanh cuộn siêu mỏng
     }
+
     &::-webkit-scrollbar-track {
         background: rgba(0, 0, 0, 0.2); // Màu nền của rãnh cuộn
         border-radius: 10px;
     }
+
     &::-webkit-scrollbar-thumb {
         background: rgba($primary-color, 0.5); // Màu thanh cuộn trùng màu chủ đạo
         border-radius: 10px;
+
         &:hover {
             background: $primary-color; // Sáng lên khi di chuột vào
         }
@@ -517,10 +535,11 @@ canvas {
 
     .config-section {
         margin-bottom: 25px;
-        h4 { 
-            color: #ffeb3b; 
-            border-left: 3px solid #ffeb3b; 
-            padding-left: 10px; 
+
+        h4 {
+            color: #ffeb3b;
+            border-left: 3px solid #ffeb3b;
+            padding-left: 10px;
             margin-bottom: 15px;
             font-size: 14px;
             text-transform: uppercase;
@@ -536,9 +555,14 @@ canvas {
         padding: 4px 0;
         border-bottom: 1px solid rgba(255, 255, 255, 0.05); // Đường gạch chân nhẹ
 
-        label { font-size: 13px; opacity: 0.8; flex: 1; }
+        label {
+            font-size: 13px;
+            opacity: 0.8;
+            flex: 1;
+        }
+
         input {
-            background: rgba(0,0,0,0.5);
+            background: rgba(0, 0, 0, 0.5);
             border: 1px solid rgba($primary-color, 0.3);
             color: $primary-color;
             padding: 4px 8px;
@@ -548,7 +572,11 @@ canvas {
             font-family: monospace;
             outline: none;
             transition: all 0.2s;
-            &:focus { border-color: $primary-color; background: rgba(0,0,0,0.8); }
+
+            &:focus {
+                border-color: $primary-color;
+                background: rgba(0, 0, 0, 0.8);
+            }
         }
     }
 }
@@ -562,6 +590,10 @@ canvas {
     font-weight: bold;
     border-radius: 0 0 12px 12px;
     cursor: pointer;
-    &:active { filter: brightness(1.2); }
+
+    &:active {
+        filter: brightness(1.2);
+    }
 }
+
 // <!-- Create By: Vũ Hoài Nam -->

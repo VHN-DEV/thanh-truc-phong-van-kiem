@@ -10,7 +10,7 @@ const CONFIG = {
         SMOOTH: 0.1             // Độ mượt khi chuyển đổi zoom (càng nhỏ càng chậm)
     },
     BG: {
-        STAR_COUNT: 1000,       // Tổng số lượng sao trên nền trời
+        STAR_COUNT: 1000,                       // Tổng số lượng sao trên nền trời
         STAR_SIZE: { MIN: 0.5, MAX: 2 },        // Kích thước ngẫu nhiên của hạt sao
         STAR_ALPHA: { MIN: 0.2, MAX: 1 },       // Độ trong suốt ngẫu nhiên của sao
         STAR_TWINKLE_SPEED: 0.01                // Tốc độ nhấp nháy của sao
@@ -26,13 +26,13 @@ const CONFIG = {
         STUN_DURATION_MS: 1000, // Thời gian mục tiêu bị khựng khi trúng kiếm
         RESPAWN_DELAY_MS: 1500, // Thời gian hồi phục sau khi kiếm bị vỡ
         DEATH_WAIT_MS: 2000,    // Thời gian thanh kiếm nằm lại hiện trường trước khi biến mất hẳn
-        SPEED_MULT: 90,        // Hệ số nhân tốc độ quay chung toàn hệ thống
+        SPEED_MULT: 90,         // Hệ số nhân tốc độ quay chung toàn hệ thống
         BREATH_SPEED: { MIN: 0.015, MAX: 0.025 }, // Tốc độ hiệu ứng "nhịp thở" (co giãn vòng kiếm)
         FLOW_OFFSET: { MIN: 40, MAX: 100 },       // Biên độ dao động xa gần của kiếm khi bay
         ATTACK_DELAY_VAR: { BASE: 6, RAND: 10 },  // Độ trễ ngẫu nhiên giữa các lần phóng kiếm
         FRAGMENTS: {            // Hiệu ứng mảnh vỡ khi kiếm gãy
             LIFE_TIME: 2000,    // Thời gian tồn tại của mảnh vỡ
-            FADE_TIME: 1000      // Thời gian mờ dần trước khi mất tích
+            FADE_TIME: 1000     // Thời gian mờ dần trước khi mất tích
         }
     },
     INPUT: {
@@ -54,26 +54,26 @@ const CONFIG = {
         SHIELD_RING_OUTER: "rgba(140, 245, 255, 0.2)", // Màu viền ngoài của khiên
     },
     ENEMY: {
-        SPAWN_COUNT: 10,         // Số lượng quái xuất hiện cùng lúc
-        SPAWN_PADDING: 50,      // Khoảng cách an toàn từ mép màn hình khi quái xuất hiện
-        ELITE_CHANCE: 0.01,      // Tỉ lệ quái tinh anh xuất hiện (1%)
-        BASE_SIZE: { MIN: 10, VAR: 50 }, // Công thức kích thước: r = MIN + random^1.5 * VAR
+        SPAWN_COUNT: 10,                  // Số lượng quái xuất hiện cùng lúc
+        SPAWN_PADDING: 50,                // Khoảng cách an toàn từ mép màn hình khi quái xuất hiện
+        ELITE_CHANCE: 0.01,               // Tỉ lệ quái tinh anh xuất hiện (1%)
+        BASE_SIZE: { MIN: 10, VAR: 50 },  // Công thức kích thước: r = MIN + random^1.5 * VAR
         GUARANTEED_PLAYER_SCALE_COUNT: 1, // Số lượng quái luôn bám theo cấp người chơi
         SPAWN_RANK_RANGE: {
             MIN_ID: 1,
             MAX_ID: 45
         },
-        SHIELD_CHANCE: 0.3,     // Tỉ lệ quái sinh ra có khiên (0.3 = 30%)
+        SHIELD_CHANCE: 0.3,                         // Tỉ lệ quái sinh ra có khiên (0.3 = 30%)
         SHIELD_COLOR: "rgba(100, 200, 255, 0.4)", // Màu lõi khiên
-        SHIELD_LINE: "#80dfff", // Màu nét vẽ vết nứt khiên
-        SHIELD_HP_RATIO: 0.1,   // 0.1 tương đương 10% máu quái
-        DEBRIS: {               // Mảnh vỡ khi quái chết
-            COUNT: 10,          // Số lượng mảnh bắn ra
-            SPEED: { MIN: 4, MAX: 12 }, // Tốc độ bắn mảnh vỡ
-            SIZE: { MIN: 1, MAX: 3 },   // Kích thước mảnh vỡ
-            LIFE_DECAY: 0.025   // Tốc độ biến mất của mảnh vỡ mỗi frame
+        SHIELD_LINE: "#80dfff",                     // Màu nét vẽ vết nứt khiên
+        SHIELD_HP_RATIO: 0.1,                       // 0.1 tương đương 10% máu quái
+        DEBRIS: {                                   // Mảnh vỡ khi quái chết
+            COUNT: 10,                              // Số lượng mảnh bắn ra
+            SPEED: { MIN: 4, MAX: 12 },             // Tốc độ bắn mảnh vỡ
+            SIZE: { MIN: 1, MAX: 3 },               // Kích thước mảnh vỡ
+            LIFE_DECAY: 0.025                       // Tốc độ biến mất của mảnh vỡ mỗi frame
         },
-        PALETTES: [             // Danh sách các bộ màu ngẫu nhiên cho quái
+        PALETTES: [                                 // Danh sách các bộ màu ngẫu nhiên cho quái
             ["#ff9999", "#cc3333"], ["#99ccff", "#3366cc"],
             ["#99ff99", "#33cc33"], ["#ffcc99", "#cc6600"],
             ["#ff99ff", "#cc33cc"], ["#ffff99", "#cccc33"]
@@ -139,6 +139,7 @@ const CONFIG = {
     CULTIVATION: {
         MAX_BREAKTHROUGH_CHANCE: 0.99, // Tỉ lệ đột phá tối đa tôi đang để là 99% (luôn có 1% rủi ro để tăng độ kịch tính)
         BREAKTHROUGH_PENALTY_FACTOR: 0.4, // Hệ số mất tu vi khi đột phá thất bại (40%)
+        OVERFLOW_LIMIT: 1.2,              // Giới hạn tràn exp (120% lượng exp cần thiết)
         RANKS: [
             // --- NHÂN GIỚI ---
             // Luyện Khí Kỳ (Xanh lá)
@@ -204,7 +205,7 @@ const CONFIG = {
             { id: 42, name: "Chân tiên sơ kỳ", exp: 600000, chance: 0.02, swordDurability: 44, damage: 42, hp: 5100, maxMana: 215, color: "#FFD700", lightColor: "#FFF59D" },
             { id: 43, name: "Chân tiên trung kỳ", exp: 750000, chance: 0.015, swordDurability: 49, damage: 43, hp: 5200, maxMana: 220, color: "#FFC107", lightColor: "#FFF9C4" },
             { id: 44, name: "Chân tiên hậu kỳ", exp: 950000, chance: 0.01, swordDurability: 46, damage: 44, hp: 5500, maxMana: 225, color: "#FFA000", lightColor: "#FFFDE7" },
-            { id: 45, name: "Chân tiên đại viên mãn", exp: 999999999, chance: 0, swordDurability: 9999, damage: 9999, hp: 6000, maxMana: 9999, color: "#FF8F00", lightColor: "#FFFFFF" }
+            { id: 45, name: "Chân tiên đại viên mãn", exp: 999999999, chance: 0, swordDurability: 9999, damage: 9999, hp: 99999, maxMana: 9999, color: "#FF8F00", lightColor: "#FFFFFF" }
         ]
     },
     PILL: {

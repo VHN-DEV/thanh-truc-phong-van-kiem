@@ -212,12 +212,31 @@ const Input = {
     },
 
     updateExp(amount) {
-        // Nếu đang chờ đột phá, exp không tăng nữa (hoặc tăng chậm lại tùy đạo hữu)
-        // Ở đây ta cho dừng tăng để ép người chơi phải đột phá
+        const currentRank = CONFIG.CULTIVATION.RANKS[this.rankIndex];
+        if (!currentRank) return;
+
+        // Tính ngưỡng giới hạn (ví dụ: 120% lượng exp cần thiết)
+        const overflowLimit = currentRank.exp * (CONFIG.CULTIVATION.OVERFLOW_LIMIT || 1.2);
+
         if (!this.isReadyToBreak) {
+            // Trạng thái bình thường: Tích lũy exp
             this.exp += amount;
             this.checkLevelUp();
+        } else {
+            // Trạng thái ĐÃ sẵn sàng đột phá nhưng người chơi chưa bấm
+            // Cho phép tích lũy thêm một chút (exp tràn)
+            if (this.exp < overflowLimit) {
+                this.exp += amount * 0.5; // Giảm 50% lượng exp nhận được khi đã đầy (tùy chọn)
+                
+                // Nếu sau khi cộng mà vượt ngưỡng giới hạn
+                if (this.exp >= overflowLimit) {
+                    this.exp = overflowLimit; // Chốt ở mức tối đa
+                    showNotify("Linh lực quá tải, cưỡng ép đột phá!", "#ff4444");
+                    this.executeBreakthrough(); // Gọi hàm tự động đột phá
+                }
+            }
         }
+        
         this.renderExpUI();
     },
 
