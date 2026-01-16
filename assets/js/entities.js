@@ -380,9 +380,8 @@ class Enemy {
         ctx.fill();
 
         // 2. Vẽ Icon SVG
-        // Kiểm tra an toàn: icon tồn tại, đã tải xong (complete) và không lỗi (naturalWidth > 0)
         if (this.icon && this.icon.complete && this.icon.naturalWidth > 0) {
-            const drawSize = (this.r * 2) * scaleFactor;
+            const drawSize = (this.r * 1.5) * scaleFactor;
 
             // Thêm hiệu ứng phát sáng nhẹ cho icon trắng
             ctx.shadowColor = this.colors[1];
@@ -396,7 +395,6 @@ class Enemy {
                 drawSize
             );
         } else {
-            // Backup: Nếu ảnh hỏng/chưa load kịp thì vẽ hình tròn đặc để không lỗi game
             ctx.beginPath();
             ctx.arc(0, 0, this.r * scaleFactor, 0, Math.PI * 2);
             ctx.fillStyle = this.colors[1];
