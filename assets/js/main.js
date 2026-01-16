@@ -461,6 +461,173 @@ window.addEventListener('touchmove', e => {
 //     Camera.adjustZoom(-CONFIG.ZOOM.STEP);
 // });
 
+const SettingsUI = {
+    overlay: document.getElementById('settings-popup'),
+    btnOpen: document.getElementById('btn-settings'),
+    btnClose: document.getElementById('close-settings'),
+    btnSave: document.getElementById('save-settings'),
+
+    init() {
+        if (!this.overlay || !this.btnOpen) return;
+
+        // 1. Ẩn popup khi khởi tạo
+        this.overlay.classList.remove('show');
+        this.overlay.style.display = 'none'; 
+
+        // 2. Mở popup
+        this.btnOpen.addEventListener('pointerdown', (e) => {
+            e.stopPropagation();
+            this.open();
+        });
+
+        // 3. QUAN TRỌNG: Cho phép tương tác với nội dung bên trong popup
+        // Đoạn này giúp các ô input nhận được sự kiện click/touch
+        const content = this.overlay.querySelector('.popup-content');
+        if (content) {
+            content.addEventListener('pointerdown', (e) => {
+                e.stopPropagation(); // Ngăn không cho sự kiện click lọt ra ngoài overlay
+                // Không dùng e.preventDefault() ở đây để input có thể focus
+            });
+        }
+
+        // 4. Nút đóng
+        if (this.btnClose) {
+            this.btnClose.addEventListener('pointerdown', (e) => {
+                e.stopPropagation();
+                this.close();
+            });
+        }
+
+        // 5. Nút lưu
+        if (this.btnSave) {
+            this.btnSave.addEventListener('pointerdown', (e) => {
+                e.stopPropagation();
+                this.save();
+            });
+        }
+        
+        // 6. Đóng khi nhấn ra ngoài vùng trống (overlay)
+        this.overlay.addEventListener('pointerdown', (e) => {
+            if (e.target === this.overlay) {
+                e.stopPropagation();
+                this.close();
+            }
+        });
+    },
+
+    close() {
+        this.overlay.classList.remove('show');
+        setTimeout(() => {
+            if (!this.overlay.classList.contains('show')) {
+                this.overlay.style.display = 'none';
+            }
+        }, 300);
+        document.body.style.cursor = 'none';
+    },
+
+    open() {
+        document.body.style.cursor = 'default';
+        
+        // Bản đồ ID HTML -> Đường dẫn thuộc tính trong CONFIG
+        const mapping = {
+            'cfg-bg-star-count': CONFIG.BG.STAR_COUNT,
+            'cfg-bg-star-min': CONFIG.BG.STAR_SIZE.MIN,
+            'cfg-bg-star-twinkle': CONFIG.BG.STAR_TWINKLE_SPEED,
+            'cfg-zoom-smooth': CONFIG.ZOOM.SMOOTH,
+            'cfg-zoom-sens': CONFIG.ZOOM.SENSITIVITY,
+            'cfg-col-bg-fade': CONFIG.COLORS.BG_FADE,
+            
+            'cfg-sw-count': CONFIG.SWORD.COUNT,
+            'cfg-sw-radius': CONFIG.SWORD.BASE_RADIUS,
+            'cfg-sw-spacing': CONFIG.SWORD.LAYER_SPACING,
+            'cfg-sw-spin': CONFIG.SWORD.SPIN_SPEED_BASE,
+            'cfg-sw-speed-mult': CONFIG.SWORD.SPEED_MULT,
+            'cfg-sw-trail': CONFIG.SWORD.TRAIL_LENGTH,
+            'cfg-sw-size': CONFIG.SWORD.SIZE,
+            'cfg-sw-respawn': CONFIG.SWORD.RESPAWN_DELAY_MS,
+            'cfg-sw-death-wait': CONFIG.SWORD.DEATH_WAIT_MS,
+            'cfg-sw-breath': CONFIG.SWORD.BREATH_SPEED.MIN,
+            'cfg-sw-stun': CONFIG.SWORD.STUN_DURATION_MS,
+
+            'cfg-en-spawn': CONFIG.ENEMY.SPAWN_COUNT,
+            'cfg-en-elite': CONFIG.ENEMY.ELITE_CHANCE,
+            'cfg-en-shield-ch': CONFIG.ENEMY.SHIELD_CHANCE,
+            'cfg-en-shield-hp': CONFIG.ENEMY.SHIELD_HP_RATIO,
+            'cfg-en-scale': CONFIG.ENEMY.SCALING_FACTOR,
+            'cfg-en-debris': CONFIG.ENEMY.DEBRIS.COUNT,
+
+            'cfg-ma-regen': CONFIG.MANA.REGEN_PER_SEC,
+            'cfg-ma-atk': CONFIG.MANA.COST_ATTACK_PER_SEC,
+            'cfg-ma-move': CONFIG.MANA.COST_MOVE_PER_SEC,
+            'cfg-ma-res-cost': Math.abs(CONFIG.MANA.COST_RESPAWN),
+            
+            'cfg-pi-chance': CONFIG.ENEMY.PILL_CHANCE,
+            'cfg-pi-magnet': CONFIG.PILL.MAGNET_SPEED,
+            'cfg-pi-trail': CONFIG.PILL.TRAIL_LENGTH,
+            'cfg-cu-penalty': CONFIG.CULTIVATION.BREAKTHROUGH_PENALTY_FACTOR
+        };
+
+        for (let id in mapping) {
+            let el = document.getElementById(id);
+            if (el) el.value = mapping[id];
+        }
+
+        this.overlay.style.display = 'flex';
+        setTimeout(() => this.overlay.classList.add('show'), 10);
+    },
+
+    save() {
+        try {
+            // Cập nhật Thế giới
+            CONFIG.BG.STAR_COUNT = parseInt(document.getElementById('cfg-bg-star-count').value);
+            CONFIG.BG.STAR_SIZE.MIN = parseFloat(document.getElementById('cfg-bg-star-min').value);
+            CONFIG.BG.STAR_TWINKLE_SPEED = parseFloat(document.getElementById('cfg-bg-star-twinkle').value);
+            CONFIG.ZOOM.SMOOTH = parseFloat(document.getElementById('cfg-zoom-smooth').value);
+            CONFIG.ZOOM.SENSITIVITY = parseFloat(document.getElementById('cfg-zoom-sens').value);
+            CONFIG.COLORS.BG_FADE = document.getElementById('cfg-col-bg-fade').value;
+
+            // Cập nhật Kiếm
+            CONFIG.SWORD.COUNT = parseInt(document.getElementById('cfg-sw-count').value);
+            CONFIG.SWORD.BASE_RADIUS = parseInt(document.getElementById('cfg-sw-radius').value);
+            CONFIG.SWORD.LAYER_SPACING = parseInt(document.getElementById('cfg-sw-spacing').value);
+            CONFIG.SWORD.SPIN_SPEED_BASE = parseFloat(document.getElementById('cfg-sw-spin').value);
+            CONFIG.SWORD.SPEED_MULT = parseFloat(document.getElementById('cfg-sw-speed-mult').value);
+            CONFIG.SWORD.TRAIL_LENGTH = parseInt(document.getElementById('cfg-sw-trail').value);
+            CONFIG.SWORD.SIZE = parseInt(document.getElementById('cfg-sw-size').value);
+            CONFIG.SWORD.RESPAWN_DELAY_MS = parseInt(document.getElementById('cfg-sw-respawn').value);
+            CONFIG.SWORD.DEATH_WAIT_MS = parseInt(document.getElementById('cfg-sw-death-wait').value);
+            CONFIG.SWORD.STUN_DURATION_MS = parseInt(document.getElementById('cfg-sw-stun').value);
+
+            // Cập nhật Quái
+            CONFIG.ENEMY.SPAWN_COUNT = parseInt(document.getElementById('cfg-en-spawn').value);
+            CONFIG.ENEMY.ELITE_CHANCE = parseFloat(document.getElementById('cfg-en-elite').value);
+            CONFIG.ENEMY.SHIELD_CHANCE = parseFloat(document.getElementById('cfg-en-shield-ch').value);
+            CONFIG.ENEMY.SHIELD_HP_RATIO = parseFloat(document.getElementById('cfg-en-shield-hp').value);
+            CONFIG.ENEMY.SCALING_FACTOR = parseFloat(document.getElementById('cfg-en-scale').value);
+            CONFIG.ENEMY.DEBRIS.COUNT = parseInt(document.getElementById('cfg-en-debris').value);
+
+            // Cập nhật Mana & Đan
+            CONFIG.MANA.REGEN_PER_SEC = parseFloat(document.getElementById('cfg-ma-regen').value);
+            CONFIG.MANA.COST_ATTACK_PER_SEC = parseFloat(document.getElementById('cfg-ma-atk').value);
+            CONFIG.MANA.COST_MOVE_PER_SEC = parseFloat(document.getElementById('cfg-ma-move').value);
+            CONFIG.MANA.COST_RESPAWN = -Math.abs(parseFloat(document.getElementById('cfg-ma-res-cost').value));
+            CONFIG.ENEMY.PILL_CHANCE = parseFloat(document.getElementById('cfg-pi-chance').value);
+            CONFIG.PILL.CHANCE = CONFIG.ENEMY.PILL_CHANCE;
+            CONFIG.PILL.MAGNET_SPEED = parseInt(document.getElementById('cfg-pi-magnet').value);
+            CONFIG.PILL.TRAIL_LENGTH = parseInt(document.getElementById('cfg-pi-trail').value);
+            CONFIG.CULTIVATION.BREAKTHROUGH_PENALTY_FACTOR = parseFloat(document.getElementById('cfg-cu-penalty').value);
+
+            showNotify("Thiên Đạo Luân Hồi đã được thiết lập lại!", "#8fffe0");
+            this.close();
+        } catch (e) {
+            console.error("Lỗi khi ghi chép Thiên Thư:", e);
+        }
+    }
+};
+
+// Khởi chạy
+SettingsUI.init();
+
 // 2. Nút Đổi Hình Thái (Change Form)
 document.getElementById('btn-form').addEventListener('pointerdown', (e) => {
     e.stopPropagation();
