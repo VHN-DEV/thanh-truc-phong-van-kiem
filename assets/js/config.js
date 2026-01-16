@@ -56,6 +56,7 @@ const CONFIG = {
     ENEMY: {
         SPAWN_COUNT: 10,                  // Số lượng quái xuất hiện cùng lúc
         SPAWN_PADDING: 50,                // Khoảng cách an toàn từ mép màn hình khi quái xuất hiện
+        ELITE_MULT: 5, // Hệ số nhân phần thưởng cho quái Tinh Anh
         ELITE_CHANCE: 0.01,               // Tỉ lệ quái tinh anh xuất hiện (1%)
         BASE_SIZE: { MIN: 10, VAR: 50 },  // Công thức kích thước: r = MIN + random^1.5 * VAR
         GUARANTEED_PLAYER_SCALE_COUNT: 1, // Số lượng quái luôn bám theo cấp người chơi

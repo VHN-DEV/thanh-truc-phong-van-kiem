@@ -221,7 +221,13 @@ const Input = {
         if (!this.isReadyToBreak) {
             // Giai đoạn tích lũy bình thường
             this.exp += amount;
-            this.checkLevelUp();
+            
+            // Chỉ khi EXP vượt ngưỡng mới xử lý thăng cấp/chờ đột phá
+            if (this.exp >= currentRank.exp) {
+                this.exp = currentRank.exp; // Chốt chặn để không vượt quá mức 100% khi chưa đột phá
+                this.isReadyToBreak = true;
+                showNotify("Linh khí tràn đầy, sẵn sàng đột phá!", "#00ffcc");
+            }
         } else {
             // Giai đoạn đã đầy nhưng chưa đột phá (Tu vi tràn ra ngoài)
             if (this.exp < overflowLimit) {
@@ -230,14 +236,19 @@ const Input = {
 
                 if (this.exp >= overflowLimit) {
                     this.exp = overflowLimit;
-                    showNotify("Tu vi tràn trề, Thiên kiếp cưỡng ép giáng xuống!", "#ff4444");
-                    
-                    // ÉP ĐỘT PHÁ
-                    setTimeout(() => this.executeBreakthrough(), 1000); 
+                    // Chỉ thông báo một lần duy nhất hoặc dùng setTimeout tránh lag
+                    if(!this.forcedBreaking) { 
+                        this.forcedBreaking = true;
+                        showNotify("Linh lực quá tải, thiên đạo cưỡng ép đột phá!", "#ff4444");
+                        setTimeout(() => {
+                            this.executeBreakthrough();
+                            this.forcedBreaking = false;
+                        }, 1000);
+                    }
                 }
             }
         }
-        this.renderExpUI();
+        this.renderExpUI(); // Cập nhật giao diện
     },
     
     checkLevelUp() {

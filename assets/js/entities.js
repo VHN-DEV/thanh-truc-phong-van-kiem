@@ -173,24 +173,22 @@ class Enemy {
         this.hp -= damage;
 
         if (this.hp <= 0) {
-            // 1. Tính toán phần thưởng EXP và Mana
-            let expGain = Math.ceil(5 * (1 + Input.rankIndex * 1.5));
-            let manaGain = CONFIG.MANA.GAIN_KILL;
+            const rewardMult = this.isElite ? CONFIG.ENEMY.ELITE_MULT : 1;
+            let expGain = (this.rankData.expGive || 1) * rewardMult;
+            let manaGain = CONFIG.MANA.GAIN_KILL * rewardMult;
+
             const pillCfg = CONFIG.PILL;
-            const chance = this.isElite ? pillCfg.ELITE_CHANCE : pillCfg.CHANCE;
+            const dropChance = this.isElite ? pillCfg.ELITE_CHANCE : pillCfg.CHANCE; // Đổi tên thành dropChance cho rõ ràng
 
             if (this.isElite) {
-                expGain *= 10;
-                manaGain *= 5;
                 showNotify("DIỆT TINH ANH: THU HOẠCH LỚN!", "#ffcc00");
             }
 
-            // 2. Cộng EXP và Mana ngay lập tức
             Input.updateExp(expGain);
             Input.updateMana(manaGain);
 
             // 3. XỬ LÝ RƠI LINH ĐAN THEO PHẨM CẤP
-            if (Math.random() < chance) {
+            if (Math.random() < dropChance) {
                 // Lấy cấu hình rơi dựa trên loại quái
                 const rates = this.isElite ? pillCfg.DROP_RATES.ELITE : pillCfg.DROP_RATES.NORMAL;
                 const count = this.isElite ? pillCfg.DROP_COUNT.ELITE : pillCfg.DROP_COUNT.NORMAL;
