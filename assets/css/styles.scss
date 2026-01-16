@@ -454,8 +454,8 @@ canvas {
     background: rgba(0, 0, 0, 0.85);
     backdrop-filter: blur(10px);
     z-index: 2000;
-    display: none;
     @include flex-center;
+    display: none;
 
     // QUAN TRỌNG: Ghi đè lại để cho phép bấm vào popup
     pointer-events: auto !important;

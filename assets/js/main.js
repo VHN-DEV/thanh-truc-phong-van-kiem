@@ -512,10 +512,6 @@ const SettingsUI = {
     init() {
         if (!this.overlay || !this.btnOpen) return;
 
-        // 1. Ẩn popup khi khởi tạo
-        this.overlay.classList.remove('show');
-        this.overlay.style.display = 'none'; 
-
         // 2. Mở popup
         this.btnOpen.addEventListener('pointerdown', (e) => {
             e.stopPropagation();
@@ -614,7 +610,10 @@ const SettingsUI = {
 
         for (let id in mapping) {
             let el = document.getElementById(id);
-            if (el) el.value = mapping[id];
+            if (el) {
+                const value = mapping[id];
+                el.value = (value !== undefined) ? value : ""; 
+            }
         }
 
         this.overlay.style.display = 'flex';
@@ -671,9 +670,6 @@ const SettingsUI = {
         }
     }
 };
-
-// Khởi chạy
-SettingsUI.init();
 
 // 2. Nút Đổi Hình Thái (Change Form)
 document.getElementById('btn-form').addEventListener('pointerdown', (e) => {
@@ -756,6 +752,7 @@ function init() {
 
     Input.renderManaUI();
     Input.renderExpUI();
+    SettingsUI.init();
     starField = new StarField(250, width, height);
     for (let i = 0; i < CONFIG.ENEMY.SPAWN_COUNT; i++) enemies.push(new Enemy());
     for (let i = 0; i < CONFIG.SWORD.COUNT; i++) swords.push(new Sword(i, scaleFactor));
