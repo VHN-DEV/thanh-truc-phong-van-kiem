@@ -153,20 +153,44 @@ class Enemy {
         }
     }
 
-    // Tìm hàm hit(sword) trong entities.js và thay thế đoạn cuối (phần xử lý khi hp <= 0)
     hit(sword) {
-        const currentRank = CONFIG.CULTIVATION.RANKS[Input.rankIndex];
+        const playerRankIndex = Input.rankIndex || 0;
+        const enemyRankIndex = CONFIG.CULTIVATION.RANKS.indexOf(this.rankData);
+        const rankDiff = enemyRankIndex - playerRankIndex;
+
+        // 1. CẤU HÌNH THỜI GIAN CHỜ THÔNG BÁO (Tránh spam liên tục)
+        const now = Date.now();
+
+        // 2. TÍNH SÁT THƯƠNG CƠ BẢN
+        const currentRank = CONFIG.CULTIVATION.RANKS[playerRankIndex];
         const baseDamage = currentRank ? currentRank.damage : 1;
+        let damage = Math.ceil(baseDamage * (sword?.powerPenalty || 1));
 
-        // Áp dụng hệ số độ bền của kiếm
-        const damage = Math.ceil(baseDamage * (sword?.powerPenalty || 1));
+        // 3. KIỂM TRA CHÊNH LỆCH CẢNH GIỚI (Áp chế tu vi)
+        if (rankDiff >= CONFIG.ENEMY.MAJOR_RANK_DIFF) {
+            // TRƯỜNG HỢP: BẤT TỬ (Chênh lệch hơn 1 đại cảnh giới)
+            damage = 0; 
+            if (now - (this.lastNotifyTime || 0) > CONFIG.ENEMY.NOTIFY_COOLDOWN_MS) {
+                showNotify("BẤT TỬ: Tu vi quá chênh lệch!", "#ff0000");
+                this.lastNotifyTime = now;
+            }
+            return "immune"; 
+        } else if (rankDiff >= CONFIG.ENEMY.DIFF_LIMIT) {
+            // TRƯỜNG HỢP: NÉ TRÁNH (Chênh lệch từ 3 cảnh giới trở lên)
+            damage = 1; 
+            if (now - (this.lastNotifyTime || 0) > CONFIG.ENEMY.NOTIFY_COOLDOWN_MS) {
+                showNotify("NÉ TRÁNH: Cấp bậc áp chế!", "#ffcc00");
+                this.lastNotifyTime = now;
+            }
+        }
 
+        // 4. XỬ LÝ KHIÊN
         if (this.hasShield && this.shieldHp > 0) {
             this.shieldHp -= damage;
             let currentLevel = Math.floor(((this.maxShieldHp - this.shieldHp) / this.maxShieldHp) * 5);
             if (currentLevel > this.shieldLevel) {
                 this.shieldLevel = currentLevel;
-                this.cracks = []; // RESET mảng trước khi tạo vết nứt mới để tránh tràn bộ nhớ
+                this.cracks = []; 
                 this.generateCracks(this.shieldLevel);
             }
             if (this.shieldHp <= 0) {
@@ -176,6 +200,7 @@ class Enemy {
             return "shielded";
         }
 
+        // 5. TRỪ MÁU QUÁI
         this.hp -= damage;
 
         if (this.hp <= 0) {
@@ -184,7 +209,7 @@ class Enemy {
             let manaGain = CONFIG.MANA.GAIN_KILL * rewardMult;
 
             const pillCfg = CONFIG.PILL;
-            const dropChance = this.isElite ? pillCfg.ELITE_CHANCE : pillCfg.CHANCE; // Đổi tên thành dropChance cho rõ ràng
+            const dropChance = this.isElite ? pillCfg.ELITE_CHANCE : pillCfg.CHANCE;
 
             if (this.isElite) {
                 showNotify("DIỆT TINH ANH: THU HOẠCH LỚN!", "#ffcc00");
@@ -193,28 +218,20 @@ class Enemy {
             Input.updateExp(expGain);
             Input.updateMana(manaGain);
 
-            // 3. XỬ LÝ RƠI LINH ĐAN THEO PHẨM CẤP
+            // XỬ LÝ RƠI LINH ĐAN
             if (Math.random() < dropChance) {
-                // Lấy cấu hình rơi dựa trên loại quái
                 const rates = this.isElite ? pillCfg.DROP_RATES.ELITE : pillCfg.DROP_RATES.NORMAL;
                 const count = this.isElite ? pillCfg.DROP_COUNT.ELITE : pillCfg.DROP_COUNT.NORMAL;
 
                 for (let i = 0; i < count; i++) {
                     let typeKey = 'LOW';
                     const rand = Math.random();
-
-                    // Logic chọn loại đan dựa trên DROP_RATES trong Config
-                    if (rand < rates.HIGH) {
-                        typeKey = 'HIGH';
-                    } else if (rand < rates.HIGH + rates.MEDIUM) {
-                        typeKey = 'MEDIUM';
-                    } else {
-                        typeKey = 'LOW';
-                    }
+                    if (rand < rates.HIGH) typeKey = 'HIGH';
+                    else if (rand < rates.HIGH + rates.MEDIUM) typeKey = 'MEDIUM';
+                    else typeKey = 'LOW';
 
                     pills.push(new Pill(this.x, this.y, typeKey));
                 }
-
                 showNotify(this.isElite ? "Đại cơ duyên! Linh Đan xuất thế!" : "Thu hoạch Linh Đan",
                     this.isElite ? "#ffcc00" : "#00ffcc");
             }
@@ -222,6 +239,7 @@ class Enemy {
             this.respawn();
             return "killed";
         }
+        
         return "hit";
     }
 

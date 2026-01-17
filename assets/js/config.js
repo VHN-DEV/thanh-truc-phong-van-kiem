@@ -60,6 +60,9 @@ const CONFIG = {
         ELITE_CHANCE: 0.01,               // Tỉ lệ quái tinh anh xuất hiện (1%)
         BASE_SIZE: { MIN: 10, VAR: 50 },  // Công thức kích thước: r = MIN + random^1.5 * VAR
         GUARANTEED_PLAYER_SCALE_COUNT: 1, // Số lượng quái luôn bám theo cấp người chơi
+        DIFF_LIMIT: 3, // Ngưỡng chênh lệch cảnh giới để bắt đầu giảm sát thương
+        MAJOR_RANK_DIFF: 9, // Ngưỡng chênh lệch cảnh giới để bắt đầu né tránh hoàn toàn
+        NOTIFY_COOLDOWN_MS: 3000,    // Thời gian chờ giữa các lần thông báo né tránh
         SPAWN_RANK_RANGE: {
             MIN_ID: 1,
             MAX_ID: 45
