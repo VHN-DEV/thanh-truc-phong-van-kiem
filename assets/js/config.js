@@ -71,6 +71,8 @@ const CONFIG = {
         SHIELD_COLOR: "rgba(100, 200, 255, 0.4)", // Màu lõi khiên
         SHIELD_LINE: "#80dfff",                     // Màu nét vẽ vết nứt khiên
         SHIELD_HP_RATIO: 0.1,                       // 0.1 tương đương 10% máu quái
+        RECOVERY_DELAY_MS: 3000,                    // Thời gian chờ sau khi bị tấn công trước khi bắt đầu hồi phục khiên
+        RECOVERY_SPEED_PER_SEC: 0.05,               // Tốc độ hồi phục khiên mỗi giây (0.05 = 5% HP khiên mỗi giây)
         DEBRIS: {                                   // Mảnh vỡ khi quái chết
             COUNT: 10,                              // Số lượng mảnh bắn ra
             SPEED: { MIN: 4, MAX: 12 },             // Tốc độ bắn mảnh vỡ

@@ -13,6 +13,8 @@ class Enemy {
         const startX = (window.innerWidth / 2) - (visibleWidth / 2);
         const startY = (window.innerHeight / 2) - (visibleHeight / 2);
         const padding = CONFIG.ENEMY.SPAWN_PADDING;
+        this.lastHitTime = 0; // Thời điểm cuối cùng bị trúng đòn
+        this.lastNotifyTime = 0;
 
         this.x = random(startX + padding, startX + visibleWidth - padding);
         this.y = random(startY + padding, startY + visibleHeight - padding);
@@ -182,9 +184,14 @@ class Enemy {
             }
         }
 
+        // Cập nhật thời điểm bị tấn công để tính toán hồi phục sau này
+        this.lastHitTime = Date.now(); 
+
         // 4. XỬ LÝ KHIÊN
         if (this.hasShield && this.shieldHp > 0) {
             this.shieldHp -= damage;
+            
+            // Tính toán shieldLevel dựa trên máu khiên còn lại
             let currentLevel = Math.floor(((this.maxShieldHp - this.shieldHp) / this.maxShieldHp) * 5);
             if (currentLevel > this.shieldLevel) {
                 this.shieldLevel = currentLevel;
@@ -310,7 +317,34 @@ class Enemy {
         }
     }
 
+    updateShieldRecovery() {
+        if (!this.hasShield || this.shieldHp <= 0) return;
+        if (this.shieldHp >= this.maxShieldHp) return;
+
+        const now = Date.now();
+        const idleTime = now - this.lastHitTime;
+
+        if (idleTime > CONFIG.ENEMY.RECOVERY_DELAY_MS) {
+            this.shieldHp = Math.min(this.maxShieldHp, this.shieldHp + this.maxShieldHp * CONFIG.ENEMY.RECOVERY_SPEED_PER_SEC);
+
+            // Cập nhật lại vết nứt dựa trên máu khiên đã hồi phục
+            let currentLevel = Math.floor(((this.maxShieldHp - this.shieldHp) / this.maxShieldHp) * 5);
+            
+            // Nếu máu khiên hồi đủ để giảm cấp độ nứt (ví dụ từ nứt độ 4 về độ 3)
+            if (currentLevel < this.shieldLevel) {
+                this.shieldLevel = currentLevel;
+                this.cracks = [];
+                if (this.shieldLevel > 0) {
+                    this.generateCracks(this.shieldLevel);
+                }
+            }
+        }
+    }
+
     draw(ctx, scaleFactor) {
+        // Gọi logic hồi phục trước khi vẽ
+        this.updateShieldRecovery();
+        
         ctx.save();
         ctx.translate(this.x, this.y);
 
