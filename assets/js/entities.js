@@ -3,6 +3,10 @@ const random = (min, max) => Math.random() * (max - min) + min;
 class Enemy {
     constructor() {
         this.particles = [];
+        this.angle = Math.random() * Math.PI * 2; // Hướng di chuyển hiện tại
+        this.velocity = { x: 0, y: 0 };
+        this.floatOffset = Math.random() * 1000; // Độ lệch thời gian để các con quái không chuyển động giống hệt nhau
+        this.wanderSpeed = this.isElite ? 0.8 : 0.4; // Tinh anh di chuyển nhanh hơn
         this.respawn();
     }
 
@@ -13,84 +17,82 @@ class Enemy {
         const startX = (window.innerWidth / 2) - (visibleWidth / 2);
         const startY = (window.innerHeight / 2) - (visibleHeight / 2);
         const padding = CONFIG.ENEMY.SPAWN_PADDING;
-        this.lastHitTime = 0; // Thời điểm cuối cùng bị trúng đòn
+        
+        this.lastHitTime = 0;
         this.lastNotifyTime = 0;
-
         this.x = random(startX + padding, startX + visibleWidth - padding);
         this.y = random(startY + padding, startY + visibleHeight - padding);
         this.particles = [];
         this.cracks = [];
         this.shieldLevel = 0;
 
-        // 1. XÁC ĐỊNH TINH ANH & CẢNH GIỚI (Sử dụng CONFIG.CULTIVATION.RANKS)
+        // 1. KIỂM TRA SỐ LƯỢNG QUÁI VỪA SỨC HIỆN CÓ
         const playerRank = Input.rankIndex || 0;
-        this.isElite = Math.random() < CONFIG.ENEMY.ELITE_CHANCE;
+        const diffLimit = CONFIG.ENEMY.DIFF_LIMIT || 3;
 
+        // Đếm xem trong mảng enemies hiện tại có bao nhiêu con quái mà người chơi đánh được
+        // Lưu ý: Loại trừ chính bản thân con quái đang respawn này ra khỏi danh sách đếm
+        const killableEnemies = enemies.filter(e => {
+            if (e === this || !e.rankData) return false;
+            const eRankIndex = CONFIG.CULTIVATION.RANKS.findIndex(r => r.id === e.rankData.id);
+            return (eRankIndex - playerRank) < diffLimit;
+        });
+
+        // Nếu số lượng quái đánh được ít hơn 2, con này BẮT BUỘC phải là quái vừa sức
+        const forceEasy = killableEnemies.length < 2;
+
+        this.isElite = Math.random() < CONFIG.ENEMY.ELITE_CHANCE;
         let enemyRankIndex;
 
-        // Xác định vị trí của con quái này trong mảng quản lý để áp dụng Mode 1
-        // enemies.indexOf(this) giúp kiểm tra xem nó có nằm trong nhóm N con đầu tiên không
-        const enemyIndexInArray = enemies.indexOf(this);
-        const isGuaranteedPlayerLevel = enemyIndexInArray !== -1 && enemyIndexInArray < (CONFIG.ENEMY.GUARANTEED_PLAYER_SCALE_COUNT || 1);
-
-        if (this.isElite) {
-            // Tinh anh mặc định mạnh hơn người chơi 2 bậc
+        if (forceEasy) {
+            // 🟢 CHẾ ĐỘ CÂN BẰNG: Đảm bảo người chơi luôn có mục tiêu
+            // Chọn rank từ [Player - 1] đến [Player + DiffLimit - 1]
+            const maxOffset = diffLimit - 1;
+            const minOffset = -1;
+            const randomOffset = Math.floor(Math.random() * (maxOffset - minOffset + 1)) + minOffset;
+            
+            enemyRankIndex = Math.max(0, Math.min(CONFIG.CULTIVATION.RANKS.length - 1, playerRank + randomOffset));
+            this.isElite = false; // Quái "cứu trợ" không nên là Tinh Anh để người chơi dễ thở
+        } else if (this.isElite) {
+            // 🔴 TINH ANH
             enemyRankIndex = Math.min(CONFIG.CULTIVATION.RANKS.length - 1, playerRank + 2);
-        } else if (isGuaranteedPlayerLevel) {
-            // 🟢 Mode 1: Quái xoay quanh cấp độ người chơi (Cho các con quái "đảm bảo" hoặc khi bật global)
-            enemyRankIndex = Math.max(0, Math.min(
-                CONFIG.CULTIVATION.RANKS.length - 1,
-                playerRank + Math.floor(Math.random() * 3) - 1
-            ));
         } else {
-            // 🔵 Mode 2: Quái spawn theo khoảng ID cấu hình (Cho các con quái còn lại)
+            // 🔵 NGẪU NHIÊN THEO KHU VỰC
             const { MIN_ID, MAX_ID } = CONFIG.ENEMY.SPAWN_RANK_RANGE;
             const rank = this.getRandomRankById(MIN_ID, MAX_ID);
             enemyRankIndex = CONFIG.CULTIVATION.RANKS.findIndex(r => r.id === (rank ? rank.id : 1));
-
-            // Backup nếu không tìm thấy rank trong mảng
             if (enemyRankIndex === -1) enemyRankIndex = 0;
         }
 
-        // Gán dữ liệu cảnh giới dựa trên index đã tính toán
+        // 2. CẬP NHẬT DỮ LIỆU RANK
         this.rankData = CONFIG.CULTIVATION.RANKS[enemyRankIndex];
         this.rankName = (this.isElite ? "★ TINH ANH ★ " : "") + this.rankData.name;
-
-        // ĐỒNG BỘ MÀU: Lấy màu chính xác từ RankData (màu cảnh giới)
         this.colors = [this.rankData.lightColor, this.rankData.color];
 
-        // --- 2. TÍNH HP (Sử dụng trực tiếp biến hp đạo hữu mới thêm vào CONFIG) ---
+        // 3. THIẾT LẬP CHỈ SỐ SINH TỒN
         const baseRankHp = this.rankData.hp || 1000;
-        const variation = 1 + (Math.random() * 0.05); // Biến động 5% để chỉ số sinh động hơn
-        const eliteMult = this.isElite ? 4.0 : 1.0;   // Tinh anh trâu gấp 4 lần
-
-        this.maxHp = Math.floor(baseRankHp * variation * eliteMult);
+        const eliteMult = this.isElite ? 4.0 : 1.0;
+        this.maxHp = Math.floor(baseRankHp * (1 + Math.random() * 0.05) * eliteMult);
         this.hp = this.maxHp;
 
-        // 3. TÍNH KÍCH THƯỚC (Sử dụng CONFIG.ENEMY.BASE_SIZE)
         const eliteSizeMult = this.isElite ? 1.8 : 1.0;
         this.r = (CONFIG.ENEMY.BASE_SIZE.MIN + Math.random() * CONFIG.ENEMY.BASE_SIZE.VAR) * eliteSizeMult;
 
-        // 4. KHIÊN (Sử dụng CONFIG.ENEMY.SHIELD_CHANCE)
         this.hasShield = Math.random() < (CONFIG.ENEMY.SHIELD_CHANCE + (this.isElite ? 0.4 : 0));
-
         if (this.hasShield) {
-            // Lấy hệ số từ CONFIG, nếu quên chưa đặt thì mặc định là 0.5 (50%)
-            const ratio = CONFIG.ENEMY.SHIELD_HP_RATIO || 0.5;
-
-            // Độ bền khiên = Máu hiện tại x Hệ số
-            this.shieldHp = Math.floor(this.hp * ratio);
+            this.shieldHp = Math.floor(this.hp * (CONFIG.ENEMY.SHIELD_HP_RATIO || 0.5));
             this.maxShieldHp = this.shieldHp;
-        } else {
-            this.shieldHp = 0;
-            this.maxShieldHp = 0;
         }
 
-        // 5. ICON (Sử dụng CONFIG.ENEMY.ANIMALS)
-        const animalPaths = CONFIG.ENEMY.ANIMALS;
-        const randomPath = animalPaths[Math.floor(Math.random() * animalPaths.length)];
-        const iconKey = randomPath.split('/').pop().split('.')[0];
-        this.icon = enemyIcons[iconKey];
+        // 4. KHỞI TẠO DI CHUYỂN
+        this.wanderSpeed = (this.isElite ? 0.8 : 0.4) * (this.rankData.speedMult || 1);
+        
+        // Cập nhật Icon
+        if (CONFIG.ENEMY.ANIMALS) {
+            const randomPath = CONFIG.ENEMY.ANIMALS[Math.floor(Math.random() * CONFIG.ENEMY.ANIMALS.length)];
+            const iconKey = randomPath.split('/').pop().split('.')[0];
+            this.icon = enemyIcons[iconKey];
+        }
     }
 
     getRandomRankById(minId, maxId) {
@@ -108,6 +110,27 @@ class Enemy {
 
         // Random 1 rank trong danh sách hợp lệ
         return candidates[Math.floor(Math.random() * candidates.length)];
+    }
+
+    updateMovement(scaleFactor) {
+        const now = Date.now() * 0.001;
+        
+        // 1. Hiệu ứng trôi bồng bềnh (Floating)
+        // Sử dụng nhiễu lượng giác để quái vật tự di chuyển nhẹ xung quanh vị trí gốc
+        this.angle += Math.sin(now + this.floatOffset) * 0.02;
+        
+        const speed = this.wanderSpeed * scaleFactor;
+        this.velocity.x = Math.cos(this.angle) * speed;
+        this.velocity.y = Math.sin(this.angle) * speed;
+
+        this.x += this.velocity.x;
+        this.y += this.velocity.y;
+
+        // 2. Giới hạn vùng di chuyển (Boundary Check)
+        // Nếu quái vật đi ra khỏi màn hình thì quay đầu lại
+        const margin = 50 * scaleFactor;
+        if (this.x < margin || this.x > window.innerWidth - margin) this.angle = Math.PI - this.angle;
+        if (this.y < margin || this.y > window.innerHeight - margin) this.angle = -this.angle;
     }
 
     generateCracks(level) {
@@ -342,26 +365,38 @@ class Enemy {
     }
 
     draw(ctx, scaleFactor) {
-        // Gọi logic hồi phục trước khi vẽ
+        // 1. CẬP NHẬT LOGIC: Chuyển động và Hồi khiên
+        this.updateMovement(scaleFactor);
         this.updateShieldRecovery();
         
+        // 2. TÍNH TOÁN HIỆU ỨNG SINH ĐỘNG
+        const now = Date.now();
+        // Nhịp thở: Co giãn nhẹ từ 0.95 đến 1.05
+        const breathScale = 1 + Math.sin(now * 0.002 + this.floatOffset) * 0.05;
+        const rankColor = this.rankData.color;
+
         ctx.save();
+        
+        // Di chuyển canvas đến vị trí của quái
         ctx.translate(this.x, this.y);
 
-        // Lấy màu từ RankData (màu chính của cảnh giới)
-        const rankColor = this.rankData.color;
+        // --- PHẦN 1: VẼ THÂN QUÁI (Có hiệu ứng co giãn nhịp thở) ---
+        ctx.save();
+        ctx.scale(breathScale, breathScale);
 
         this.drawParticles(ctx, scaleFactor);
         if (this.hasShield) this.drawShield(ctx, scaleFactor);
         this.drawBody(ctx, scaleFactor);
+        
+        ctx.restore(); // Kết thúc scale cho phần thân
 
-        // 1. VẼ TÊN CẢNH GIỚI: Sử dụng màu của Rank
-        // Nếu là Tinh Anh thì cho phát sáng chữ, nếu không thì vẽ chữ thường
+        // --- PHẦN 2: VẼ UI (Tên và Thanh máu - Không bị scale để tránh khó đọc) ---
+        
+        // 1. VẼ TÊN CẢNH GIỚI
         ctx.fillStyle = rankColor;
         ctx.font = `bold ${11 * scaleFactor}px "Segoe UI", Arial`;
         ctx.textAlign = "center";
 
-        // Thêm hiệu ứng phát sáng cho chữ nếu là Tinh Anh để dễ phân biệt
         if (this.isElite) {
             ctx.shadowColor = rankColor;
             ctx.shadowBlur = 8 * scaleFactor;
@@ -369,9 +404,9 @@ class Enemy {
 
         const textY = -this.r - (this.hasShield ? 15 : 10) * scaleFactor;
         ctx.fillText(this.rankName, 0, textY);
-        ctx.shadowBlur = 0; // Reset shadow sau khi vẽ chữ
+        ctx.shadowBlur = 0; 
 
-        // 2. VẼ THANH MÁU: Chuyển màu theo Cảnh giới
+        // 2. VẼ THANH MÁU
         const barWidth = this.r * 1.5 * scaleFactor;
         const barHeight = 4 * scaleFactor;
         const barY = textY + 5 * scaleFactor;
@@ -380,20 +415,17 @@ class Enemy {
         ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
         ctx.fillRect(-barWidth / 2, barY, barWidth, barHeight);
 
-        // Máu còn lại: 
-        // Mix màu cảnh giới với một chút sắc trắng để thanh máu nổi bật hơn
+        // Máu hiện tại
         const hpRatio = Math.max(0, this.hp / this.maxHp);
         ctx.fillStyle = rankColor;
-
-        // Vẽ thanh máu chính
         ctx.fillRect(-barWidth / 2, barY, barWidth * hpRatio, barHeight);
 
-        // Thêm một viền sáng mỏng cho thanh máu để trông chuyên nghiệp hơn
+        // Viền thanh máu
         ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
         ctx.lineWidth = 0.5 * scaleFactor;
         ctx.strokeRect(-barWidth / 2, barY, barWidth, barHeight);
 
-        ctx.restore();
+        ctx.restore(); // Kết thúc toàn bộ hàm vẽ Enemy
     }
 
     drawParticles(ctx, scaleFactor) {
