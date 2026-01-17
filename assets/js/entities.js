@@ -158,7 +158,7 @@ class Enemy {
         const enemyRankIndex = CONFIG.CULTIVATION.RANKS.indexOf(this.rankData);
         const rankDiff = enemyRankIndex - playerRankIndex;
 
-        // 1. CẤU HÌNH THỜI GIAN CHỜ THÔNG BÁO (Tránh spam liên tục)
+        // 1. CẤU HÌNH THỜI GIAN CHỜ THÔNG BÁO
         const now = Date.now();
 
         // 2. TÍNH SÁT THƯƠNG CƠ BẢN
@@ -166,18 +166,16 @@ class Enemy {
         const baseDamage = currentRank ? currentRank.damage : 1;
         let damage = Math.ceil(baseDamage * (sword?.powerPenalty || 1));
 
-        // 3. KIỂM TRA CHÊNH LỆCH CẢNH GIỚI (Áp chế tu vi)
+        // 3. ÁP DỤNG LOGIC NÉ TRÁNH / BẤT TỬ VÀO LƯỢNG DAMAGE
+        // (Logic này can thiệp vào biến damage trước khi trừ vào Khiên hoặc Máu)
         if (rankDiff >= CONFIG.ENEMY.MAJOR_RANK_DIFF) {
-            // TRƯỜNG HỢP: BẤT TỬ (Chênh lệch hơn 1 đại cảnh giới)
-            damage = 0; 
+            damage = 0; // Sát thương Bất tử
             if (now - (this.lastNotifyTime || 0) > CONFIG.ENEMY.NOTIFY_COOLDOWN_MS) {
                 showNotify("BẤT TỬ: Tu vi quá chênh lệch!", "#ff0000");
                 this.lastNotifyTime = now;
             }
-            return "immune"; 
         } else if (rankDiff >= CONFIG.ENEMY.DIFF_LIMIT) {
-            // TRƯỜNG HỢP: NÉ TRÁNH (Chênh lệch từ 3 cảnh giới trở lên)
-            damage = 1; 
+            damage = 1; // Sát thương Né tránh
             if (now - (this.lastNotifyTime || 0) > CONFIG.ENEMY.NOTIFY_COOLDOWN_MS) {
                 showNotify("NÉ TRÁNH: Cấp bậc áp chế!", "#ffcc00");
                 this.lastNotifyTime = now;
@@ -193,23 +191,23 @@ class Enemy {
                 this.cracks = []; 
                 this.generateCracks(this.shieldLevel);
             }
+
             if (this.shieldHp <= 0) {
                 this.hasShield = false;
                 this.createShieldDebris();
             }
-            return "shielded";
+            
+            // Trả về "shielded" để hệ thống xử lý văng kiếm/gãy kiếm bên ngoài class Enemy
+            return "shielded"; 
         }
 
-        // 5. TRỪ MÁU QUÁI
+        // 5. TRỪ MÁU QUÁI (Nếu không có khiên)
         this.hp -= damage;
 
         if (this.hp <= 0) {
             const rewardMult = this.isElite ? CONFIG.ENEMY.ELITE_MULT : 1;
             let expGain = (this.rankData.expGive || 1) * rewardMult;
             let manaGain = CONFIG.MANA.GAIN_KILL * rewardMult;
-
-            const pillCfg = CONFIG.PILL;
-            const dropChance = this.isElite ? pillCfg.ELITE_CHANCE : pillCfg.CHANCE;
 
             if (this.isElite) {
                 showNotify("DIỆT TINH ANH: THU HOẠCH LỚN!", "#ffcc00");
@@ -219,6 +217,9 @@ class Enemy {
             Input.updateMana(manaGain);
 
             // XỬ LÝ RƠI LINH ĐAN
+            const pillCfg = CONFIG.PILL;
+            const dropChance = this.isElite ? pillCfg.ELITE_CHANCE : pillCfg.CHANCE;
+
             if (Math.random() < dropChance) {
                 const rates = this.isElite ? pillCfg.DROP_RATES.ELITE : pillCfg.DROP_RATES.NORMAL;
                 const count = this.isElite ? pillCfg.DROP_COUNT.ELITE : pillCfg.DROP_COUNT.NORMAL;
@@ -239,7 +240,11 @@ class Enemy {
             this.respawn();
             return "killed";
         }
-        
+
+        // Nếu sát thương bị đưa về 0 do Bất tử, vẫn trả về trạng thái đặc biệt 
+        // để bên ngoài (Sword/Input) biết là không có tác dụng
+        if (damage === 0) return "immune";
+
         return "hit";
     }
 
