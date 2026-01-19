@@ -17,7 +17,7 @@ const CONFIG = {
     },
     SWORD: {
         COUNT: 72,              // Tổng số lượng kiếm tối đa
-        BASE_RADIUS: 200,       // Khoảng cách từ tâm đến lớp kiếm đầu tiên
+        BASE_RADIUS: 150,       // Khoảng cách từ tâm đến lớp kiếm đầu tiên
         LAYER_SPACING: 70,      // Khoảng cách giữa các lớp kiếm (vòng trong - vòng ngoài)
         SPIN_SPEED_BASE: 0.05,  // Tốc độ quay cơ bản của vòng kiếm
         ATTACK_DELAY_MS: 180,   // Thời gian chờ để kích hoạt trạng thái tấn công khi nhấn giữ
