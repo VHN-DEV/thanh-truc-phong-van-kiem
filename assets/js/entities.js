@@ -524,6 +524,9 @@ class Sword {
         this.fragments = [];
         this.deathTime = 0;
         this.powerPenalty = 1; // hệ số sát thương theo độ bền
+        this.isEnlarged = false;      // Đang trong trạng thái cường hóa phóng to
+        this.currentVisualScale = 1;  // Tỉ lệ hiển thị thực tế (để animation mượt)
+        this.targetVisualScale = 1;   // Tỉ lệ đích muốn hướng tới
     }
 
     update(guardCenter, enemies, Input, scaleFactor) {
@@ -590,6 +593,13 @@ class Sword {
     }
 
     updateGuardMode(guardCenter, r, Input, scaleFactor) {
+        // Nếu đang bay về mà vẫn to, thì thu nhỏ lại
+        if (this.isEnlarged) {
+            this.isEnlarged = false;
+            this.targetVisualScale = 1;
+        }
+        this.currentVisualScale += (this.targetVisualScale - this.currentVisualScale) * 0.1;
+        
         let globalRotation = 0;
         if (!CONFIG.SWORD.IS_PAUSED) {
             globalRotation = (performance.now() / 1000) * this.spinSpeed * (CONFIG.SWORD.SPEED_MULT || 100);
@@ -673,6 +683,17 @@ class Sword {
         this.attackFrame++;
         if (this.attackFrame < this.attackDelay) return;
 
+        // --- SỬA/THÊM: CHỈ NGẪU NHIÊN KHI BẮT ĐẦU TẤN CÔNG ---
+        // Điều kiện: Chưa phóng to + May mắn (1%) + Đủ Mana
+        if (!this.isEnlarged && Math.random() < 0.01 && Input.mana >= 1) {
+            Input.updateMana(-1); // Trừ 1 Mana cho một lần phóng to
+            this.isEnlarged = true;
+            this.targetVisualScale = 2.5; // Kích thước khổng lồ
+        }
+
+        // Hiệu ứng co giãn mượt mà (luôn chạy để update currentVisualScale)
+        this.currentVisualScale += (this.targetVisualScale - this.currentVisualScale) * 0.1;
+
         // --- GIẢM SÁT THƯƠNG KHI KIẾM GẦN VỠ ---
         const durabilityRate = this.hp / this.maxHp; // 1 → mới, 0 → sắp gãy
         this.powerPenalty = 0.6 + durabilityRate * 0.4;
@@ -694,7 +715,24 @@ class Sword {
             this.x += this.vx; this.y += this.vy;
             this.drawAngle = Math.atan2(this.vy, this.vx) + Math.PI / 2;
             if (Math.hypot(this.x - target.x, this.y - target.y) < target.r + (target.hasShield ? 10 : 0)) {
+                if (this.isEnlarged) {
+                    this.powerPenalty *= 1.5; // Tăng 50% sát thương cho phát chém này
+                    
+                    // Tạo hiệu ứng đặc biệt khi chém bằng kiếm to
+                    if (typeof Input.createLevelUpExplosion === 'function') {
+                        Input.createLevelUpExplosion(target.x, target.y, "#ffcc00");
+                    }
+                    
+                    // Chém xong thì thu nhỏ lại ngay
+                    this.isEnlarged = false;
+                    this.targetVisualScale = 1;
+                }
+
                 const result = target.hit(this);
+
+                // Reset lại powerPenalty về mức bình thường dựa trên độ bền sau khi tính hit xong
+                const durabilityRate = this.hp / this.maxHp;
+                this.powerPenalty = 0.6 + durabilityRate * 0.4;
 
                 if (result === "shielded") {
                     this.hp -= target.isElite ? 3 : 1;
@@ -783,6 +821,7 @@ class Sword {
         ctx.save();
         ctx.translate(this.x, this.y);
         ctx.rotate(this.drawAngle);
+        ctx.scale(this.currentVisualScale, this.currentVisualScale);
         this.drawAura(ctx, scaleFactor);
         this.drawBlade(ctx, scaleFactor);
         ctx.restore();
