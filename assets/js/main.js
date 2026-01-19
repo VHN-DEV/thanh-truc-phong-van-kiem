@@ -448,6 +448,57 @@ const Input = {
             });
         }
     },
+
+    drawCangLamFlame(ctx, scaleFactor) {
+        const time = performance.now() * 0.003;
+        ctx.save();
+        ctx.translate(this.x, this.y);
+
+        // 1. Quầng sáng lạnh (Aura Băng Diễm)
+        // Càng Lam Băng Diễm có đặc điểm tỏa ra hàn khí màu xanh lam nhạt
+        ctx.shadowBlur = 20 * scaleFactor;
+        ctx.shadowColor = "#00ffff"; // Màu Cyan cực sáng
+
+        // 2. Định nghĩa các lớp màu "Càng Lam"
+        // Lớp 1: Lam đậm (viền ngoài)
+        // Lớp 2: Lam băng (thân lửa)
+        // Lớp 3: Thiên lam trắng (lõi hỏa rực cháy)
+        const layers = [
+            { w: 12, h: 22, color: "rgba(0, 102, 255, 0.3)", f: 0.8 }, // Royal Blue mờ
+            { w: 8,  h: 16, color: "#00d9ff", f: 1.2 },               // Electric Blue
+            { w: 5,  h: 10, color: "#e0ffff", f: 1.8 }                // Lõi trắng xanh
+        ];
+
+        layers.forEach((layer, i) => {
+            const flicker = Math.sin(time * layer.f + i) * 3;
+            const w = (layer.w + flicker/2) * scaleFactor;
+            const h = (layer.h + flicker) * scaleFactor;
+
+            ctx.beginPath();
+            ctx.fillStyle = layer.color;
+            
+            // Vẽ dáng lửa hơi nhọn và mảnh hơn (nhìn sắc lạnh hơn)
+            ctx.moveTo(0, 0); 
+            ctx.bezierCurveTo(-w, 0, -w/2, -h * 0.6, 0, -h); 
+            ctx.bezierCurveTo(w/2, -h * 0.6, w, 0, 0, 0);    
+            ctx.fill();
+        });
+
+        // 3. Hàn khí (Các đốm sáng nhỏ li ti bay lên)
+        for (let j = 0; j < 4; j++) {
+            const pOffset = (time * 0.8 + j * 0.4) % 1.2;
+            const px = Math.sin(time * 1.5 + j) * 8 * scaleFactor;
+            const py = -pOffset * 25 * scaleFactor;
+            const pr = (1.8 * (1.2 - pOffset)) * scaleFactor;
+
+            ctx.beginPath();
+            ctx.arc(px, py, Math.max(0, pr), 0, Math.PI * 2);
+            ctx.fillStyle = "rgba(150, 255, 255, 0.5)";
+            ctx.fill();
+        }
+
+        ctx.restore();
+    },
 };
 
 // Đăng ký sự kiện Hệ thống (Gộp Pointer Events để tối ưu)
@@ -841,13 +892,11 @@ function updatePhysics(dt) {
 }
 
 function renderCursor() {
-    ctx.shadowBlur = 10;
-    ctx.shadowColor = "#6fffe0";
-    ctx.beginPath();
-    ctx.arc(Input.x, Input.y, 4 * scaleFactor, 0, Math.PI * 2);
-    ctx.fillStyle = "#6fffe0";
-    ctx.fill();
-    ctx.shadowBlur = 0;
+    // Không dùng shadow của canvas cũ để tránh bị đè màu
+    ctx.shadowBlur = 0; 
+    
+    // Gọi trực tiếp Băng Diễm từ Input
+    Input.drawCangLamFlame(ctx, scaleFactor);
 }
 
 function animate() {
