@@ -461,6 +461,11 @@ window.addEventListener('wheel', e => {
 window.addEventListener('keydown', e => {
     if (e.key === '+' || e.key === '=') Camera.adjustZoom(CONFIG.ZOOM.STEP);
     if (e.key === '-' || e.key === '_') Camera.adjustZoom(-CONFIG.ZOOM.STEP);
+
+    if (e.key.toLowerCase() === 'p') {
+        CONFIG.SWORD.IS_PAUSED = !CONFIG.SWORD.IS_PAUSED;
+        console.log("Trạng thái tạm dừng xoay:", CONFIG.SWORD.IS_PAUSED);
+    }
 });
 
 // 2. Touch Events (Mobile - Pinch to Zoom)

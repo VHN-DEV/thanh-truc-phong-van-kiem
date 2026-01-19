@@ -590,7 +590,13 @@ class Sword {
     }
 
     updateGuardMode(guardCenter, r, Input, scaleFactor) {
-        const globalRotation = (performance.now() / 1000) * this.spinSpeed * (CONFIG.SWORD.SPEED_MULT || 100);
+        let globalRotation = 0;
+        if (!CONFIG.SWORD.IS_PAUSED) {
+            globalRotation = (performance.now() / 1000) * this.spinSpeed * (CONFIG.SWORD.SPEED_MULT || 100);
+        } else {
+            globalRotation = 0; 
+        }
+
         const a = this.baseAngle + globalRotation;
 
         const tx = guardCenter.x + Math.cos(a) * r;
@@ -831,7 +837,7 @@ class Sword {
     }
 
     drawAura(ctx, scaleFactor) {
-        const auraCount = Math.floor(random(2, 4));
+        const auraCount = Math.floor(random(2, 8));
         ctx.shadowColor = CONFIG.COLORS.SWORD_AURA_SHADOW;
         ctx.shadowBlur = 8 * scaleFactor;
         for (let i = 0; i < auraCount; i++) {
@@ -845,39 +851,115 @@ class Sword {
                 ctx.lineTo(px, py);
             }
             ctx.strokeStyle = `rgba(255,255,180,${random(0.3, 0.6)})`;
-            ctx.lineWidth = 1.5 * scaleFactor;
+            ctx.lineWidth = 2 * scaleFactor;
             ctx.stroke();
         }
     }
 
     drawBlade(ctx, scaleFactor) {
         const sLen = CONFIG.SWORD.SIZE * scaleFactor;
-        const sWid = 4 * scaleFactor;
-        ctx.shadowColor = CONFIG.COLORS.SWORD_GLOW_OUTER;
-        ctx.shadowBlur = 15 * scaleFactor;
-        const g = ctx.createLinearGradient(0, -sLen, 0, 0);
-        g.addColorStop(0, CONFIG.COLORS.SWORD_BLADE[0]);
-        g.addColorStop(0.5, CONFIG.COLORS.SWORD_BLADE[1]);
-        g.addColorStop(1, CONFIG.COLORS.SWORD_BLADE[2]);
-        ctx.fillStyle = g;
+        
+        // THÂN KIẾM: Điều chỉnh tỷ lệ để mũi kiếm chiếm khoảng 15-20% tổng chiều dài
+        const baseWid = 9 * scaleFactor; 
+        const tipWid = 5 * scaleFactor;  // Độ rộng tại điểm bắt đầu vát mũi
+        const bladeBodyLen = sLen * 0.85; // Thân chiếm 85% chiều dài
+        const swordTipLen = sLen;         // Mũi nhọn kết thúc tại 100% chiều dài
+
+        // 1. VẼ LƯỠI KIẾM (Gồm thân và mũi nhọn)
+        const bladeGrd = ctx.createLinearGradient(-baseWid/2, 0, baseWid/2, 0);
+        bladeGrd.addColorStop(0, CONFIG.COLORS.SWORD_GOLD_MID);
+        bladeGrd.addColorStop(0.3, CONFIG.COLORS.SWORD_BAMBOO_DARK);
+        bladeGrd.addColorStop(0.5, CONFIG.COLORS.SWORD_BAMBOO_GREEN);
+        bladeGrd.addColorStop(0.7, CONFIG.COLORS.SWORD_BAMBOO_DARK);
+        bladeGrd.addColorStop(1, CONFIG.COLORS.SWORD_GOLD_MID);
+
+        ctx.save();
+        ctx.shadowColor = CONFIG.COLORS.SWORD_BAMBOO_GREEN;
+        ctx.shadowBlur = 10 * scaleFactor;
+        ctx.fillStyle = bladeGrd;
+        
         ctx.beginPath();
-        ctx.moveTo(-sWid / 2, 0);
-        ctx.lineTo(-sWid / 2, -sLen);
-        ctx.quadraticCurveTo(0, -sLen - 10 * scaleFactor, sWid / 2, -sLen);
-        ctx.lineTo(sWid / 2, 0);
+        ctx.moveTo(-baseWid / 2, 0);                // Gốc trái
+        ctx.lineTo(baseWid / 2, 0);                 // Gốc phải
+        ctx.lineTo(tipWid / 2, -bladeBodyLen);      // Điểm bắt đầu vát bên phải
+        ctx.lineTo(0, -swordTipLen);                // Đỉnh mũi kiếm nhọn (hội tụ tại tâm)
+        ctx.lineTo(-tipWid / 2, -bladeBodyLen);     // Điểm bắt đầu vát bên trái
+        ctx.closePath();
         ctx.fill();
-        ctx.shadowColor = CONFIG.COLORS.SWORD_GLOW_INNER;
-        ctx.fillStyle = CONFIG.COLORS.SWORD_FRAGMENT;
+        ctx.restore();
+
+        // 2. VẼ 10 ĐỐT TRÚC (Nằm gọn bên trong phần THÂN lưỡi)
+        ctx.save();
+        ctx.strokeStyle = CONFIG.COLORS.SWORD_NODE;
+        ctx.lineWidth = 1.2 * scaleFactor;
+        ctx.globalAlpha = 0.4;
+        const nodeCount = 10;
+        // Chỉ vẽ đốt trong phạm vi thân kiếm để không bị lòi ra ngoài mũi nhọn
+        const nodeSpacing = bladeBodyLen / (nodeCount + 1); 
+        
+        for (let i = 1; i <= nodeCount; i++) {
+            const y = -i * nodeSpacing;
+            // Tính toán độ rộng tại vị trí y để đốt trúc không tràn ra khỏi cạnh kiếm
+            const currentHalfWidth = (baseWid / 2) - (Math.abs(y) / bladeBodyLen) * ((baseWid - tipWid) / 2);
+            const nodeMargin = 2 * scaleFactor; 
+            
+            ctx.beginPath();
+            ctx.moveTo(-currentHalfWidth + nodeMargin, y);
+            ctx.lineTo(currentHalfWidth - nodeMargin, y);
+            ctx.stroke();
+        }
+        ctx.restore();
+
+        // 3. THANH CHẮN TAY (Giữ nguyên logic của bạn)
+        ctx.save();
+        const gWidthTop = 13 * scaleFactor;    
+        const gWidthBottom = 16 * scaleFactor; 
+        const layerHeight = 1.5 * scaleFactor;
+        const drawTrapezoid = (y, widthTop, widthBottom, height) => {
+            ctx.beginPath();
+            ctx.moveTo(-widthTop / 2, y);
+            ctx.lineTo(widthTop / 2, y);
+            ctx.lineTo(widthBottom / 2, y + height);
+            ctx.lineTo(-widthBottom / 2, y + height);
+            ctx.closePath();
+            ctx.fill();
+        };
+        ctx.fillStyle = CONFIG.COLORS.SWORD_BAMBOO_DARK;
+        drawTrapezoid(-2.5 * scaleFactor, gWidthTop, gWidthTop + 0.8, layerHeight);
+        
+        const goldGrd = ctx.createLinearGradient(-gWidthBottom/2, 0, gWidthBottom/2, 0);
+        goldGrd.addColorStop(0.5, CONFIG.COLORS.SWORD_GOLD_LIGHT);
+        ctx.fillStyle = goldGrd;
+        drawTrapezoid(-2.5 * scaleFactor + layerHeight, gWidthTop + 0.8, gWidthBottom - 0.8, layerHeight);
+        
+        ctx.fillStyle = CONFIG.COLORS.SWORD_BAMBOO_DARK;
+        drawTrapezoid(-2.5 * scaleFactor + (layerHeight * 2), gWidthBottom - 0.8, gWidthBottom, layerHeight);
+        ctx.restore();
+
+        // 4. CHUÔI KIẾM (Giữ nguyên logic của bạn)
+        const hiltLen = 20 * scaleFactor;
+        const hiltWidTop = 4 * scaleFactor;
+        const hiltWidBottom = 6.5 * scaleFactor;
+        
+        const hiltGrd = ctx.createLinearGradient(0, layerHeight, 0, hiltLen);
+        hiltGrd.addColorStop(0, CONFIG.COLORS.SWORD_BAMBOO_DARK);
+        hiltGrd.addColorStop(0.8, CONFIG.COLORS.SWORD_BAMBOO_GREEN);
+        hiltGrd.addColorStop(1, "#90EE90");
+
+        ctx.save();
+        ctx.fillStyle = hiltGrd;
         ctx.beginPath();
-        ctx.roundRect(-7 * scaleFactor, -1.2 * scaleFactor, 14 * scaleFactor, 2.4 * scaleFactor, 2.4 * scaleFactor);
+        ctx.moveTo(-hiltWidTop / 2, layerHeight);
+        ctx.lineTo(hiltWidTop / 2, layerHeight);
+        ctx.quadraticCurveTo(hiltWidTop / 2, hiltLen * 0.7, hiltWidBottom / 2, hiltLen);
+        ctx.lineTo(-hiltWidBottom / 2, hiltLen);
+        ctx.quadraticCurveTo(-hiltWidTop / 2, hiltLen * 0.7, -hiltWidTop / 2, layerHeight);
+        ctx.closePath();
         ctx.fill();
-        ctx.fillStyle = CONFIG.COLORS.SWORD_HANDLE;
-        ctx.beginPath();
-        ctx.moveTo(-3 * scaleFactor, 0);
-        ctx.lineTo(-2 * scaleFactor, 14 * scaleFactor);
-        ctx.lineTo(2 * scaleFactor, 14 * scaleFactor);
-        ctx.lineTo(3 * scaleFactor, 0);
-        ctx.fill();
+
+        ctx.fillStyle = CONFIG.COLORS.SWORD_BAMBOO_DARK;
+        ctx.fillRect(-hiltWidBottom / 2, hiltLen, hiltWidBottom, 1.5 * scaleFactor);
+        ctx.restore();
     }
 }
 

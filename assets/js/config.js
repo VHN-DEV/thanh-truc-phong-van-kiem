@@ -27,13 +27,14 @@ const CONFIG = {
         RESPAWN_DELAY_MS: 1500, // Thời gian hồi phục sau khi kiếm bị vỡ
         DEATH_WAIT_MS: 2000,    // Thời gian thanh kiếm nằm lại hiện trường trước khi biến mất hẳn
         SPEED_MULT: 90,         // Hệ số nhân tốc độ quay chung toàn hệ thống
+        IS_PAUSED: false,          // Trạng thái tạm dừng
         BREATH_SPEED: { MIN: 0.015, MAX: 0.025 }, // Tốc độ hiệu ứng "nhịp thở" (co giãn vòng kiếm)
         FLOW_OFFSET: { MIN: 40, MAX: 100 },       // Biên độ dao động xa gần của kiếm khi bay
         ATTACK_DELAY_VAR: { BASE: 6, RAND: 10 },  // Độ trễ ngẫu nhiên giữa các lần phóng kiếm
         FRAGMENTS: {            // Hiệu ứng mảnh vỡ khi kiếm gãy
             LIFE_TIME: 2000,    // Thời gian tồn tại của mảnh vỡ
             FADE_TIME: 1000     // Thời gian mờ dần trước khi mất tích
-        }
+        },
     },
     INPUT: {
         DOUBLE_TAP_DELAY: 300   // Khoảng cách tối đa giữa 2 lần chạm để tính là double tap
@@ -47,6 +48,12 @@ const CONFIG = {
         SWORD_GLOW_INNER: "#9fffe6",    // Màu hào quang lõi kiếm
         SWORD_FRAGMENT: "#2a5a4d",      // Màu các mảnh vỡ
         SWORD_AURA_SHADOW: "#fffaa0",   // Màu bóng đổ của linh khí
+        SWORD_BAMBOO_GREEN: '#4FE3C1', // Màu xanh trúc chính
+        SWORD_BAMBOO_DARK: '#1FAF9A',  // Màu xanh đậm
+        SWORD_GOLD_LIGHT: '#FFF2C2',   // Vàng kim sáng
+        SWORD_GOLD_MID: '#E6C87A',    // Vàng kim vừa
+        SWORD_GOLD_DARK: '#B8944E',    // Vàng đồng
+        SWORD_NODE: '#7FFFE6',         // Màu đốt trúc sáng
         ENEMY_PARTICLE: "#8cf0ff",      // Màu hạt hiệu ứng từ quái vật
         ENEMY_SHADOW_SHIELD: "#00ffff", // Màu bóng của khiên bảo vệ quái
         SHIELD_GLOW: "rgba(0, 255, 255, 0.8)",  // Độ rực sáng của khiên
