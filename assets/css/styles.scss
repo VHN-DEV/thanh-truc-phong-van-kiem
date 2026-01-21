@@ -612,18 +612,42 @@ canvas {
     }
 }
 
-.btn-save {
-    width: 100%;
-    padding: 12px;
-    background: $primary-color;
-    border: none;
-    color: #000;
-    font-weight: bold;
-    border-radius: 0 0 12px 12px;
-    cursor: pointer;
+.popup-footer {
+    display: flex;
+    gap: 0; // Để sát nhau hoặc để 2px nếu muốn có khoảng cách
+    border-top: 1px solid rgba($primary-color, 0.2);
 
-    &:active {
-        filter: brightness(1.2);
+    .btn-reset, .btn-save {
+        flex: 1;
+        padding: 10px;
+        font-weight: bold;
+        cursor: pointer;
+        border: none;
+        transition: all 0.2s;
+        text-transform: uppercase;
+        font-size: 14px;
+    }
+
+    .btn-reset {
+        background: #333; // Màu xám tối cho nút Reset
+        color: #aaa;
+        border-bottom-left-radius: 12px;
+
+        &:hover {
+            background: #444;
+            color: #fff;
+        }
+    }
+
+    .btn-save {
+        background: $primary-color;
+        color: #000;
+        border-bottom-right-radius: 12px;
+
+        &:hover {
+            filter: brightness(1.1);
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.2);
+        }
     }
 }
 

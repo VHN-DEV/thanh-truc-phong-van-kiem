@@ -556,6 +556,7 @@ const SettingsUI = {
     btnOpen: document.getElementById('btn-settings'),
     btnClose: document.getElementById('close-settings'),
     btnSave: document.getElementById('save-settings'),
+    btnReset: document.getElementById('reset-settings'),
 
     init() {
         if (!this.overlay || !this.btnOpen) return;
@@ -600,6 +601,16 @@ const SettingsUI = {
                 this.close();
             }
         });
+
+        // 6. Sự kiện nút Khôi Phục
+        if (this.btnReset) {
+            this.btnReset.addEventListener('pointerdown', (e) => {
+                e.stopPropagation();
+                if (confirm("Ngươi chắc chắn muốn khôi phục toàn bộ quy tắc Thiên Đạo về mặc định?")) {
+                    this.reset();
+                }
+            });
+        }
     },
 
     /**
@@ -762,6 +773,13 @@ const SettingsUI = {
         } catch (e) {
             console.error("Lỗi khi ghi chép Thiên Thư:", e);
         }
+    },
+
+    reset() {
+        localStorage.removeItem('thanh_truc_settings');
+        showNotify("Thiên đạo đã quy hồi nguyên trạng!", "#ffcc00");
+        this.close();
+        location.reload();
     }
 };
 
