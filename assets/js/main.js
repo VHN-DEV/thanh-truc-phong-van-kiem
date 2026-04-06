@@ -100,6 +100,64 @@ function escapeHtml(value) {
         .replace(/'/g, '&#39;');
 }
 
+function normalizeSearchText(value) {
+    return String(value || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .trim();
+}
+
+function getQualityLabel(quality) {
+    const labels = {
+        LOW: 'Hạ phẩm',
+        MEDIUM: 'Trung phẩm',
+        HIGH: 'Thượng phẩm',
+        SUPREME: 'Cực phẩm'
+    };
+
+    return labels[quality] || quality;
+}
+
+function getStartingSpiritStoneCounts() {
+    const source = CONFIG.SPIRIT_STONE?.STARTING_COUNTS || {};
+
+    return {
+        LOW: Math.max(0, Math.floor(source.LOW || 0)),
+        MEDIUM: Math.max(0, Math.floor(source.MEDIUM || 0)),
+        HIGH: Math.max(0, Math.floor(source.HIGH || 0)),
+        SUPREME: Math.max(0, Math.floor(source.SUPREME || 0))
+    };
+}
+
+function buildPillVisualMarkup(item, qualityConfig) {
+    const visualMap = {
+        EXP: { className: 'is-exp', aura: 'rgba(105, 240, 203, 0.32)' },
+        BREAKTHROUGH: { className: 'is-breakthrough', aura: 'rgba(120, 168, 255, 0.32)' },
+        ATTACK: { className: 'is-attack', aura: 'rgba(255, 160, 109, 0.34)' },
+        BERSERK: { className: 'is-berserk', aura: 'rgba(255, 75, 93, 0.34)' },
+        RAGE: { className: 'is-rage', aura: 'rgba(255, 112, 70, 0.34)' },
+        MANA: { className: 'is-mana', aura: 'rgba(87, 200, 255, 0.30)' },
+        MAX_MANA: { className: 'is-max-mana', aura: 'rgba(164, 121, 255, 0.30)' },
+        SPEED: { className: 'is-speed', aura: 'rgba(149, 255, 186, 0.30)' }
+    };
+
+    const visual = visualMap[item.category] || visualMap.EXP;
+
+    return `
+        <div class="pill-visual ${visual.className}" style="--pill-accent:${qualityConfig.color};--pill-aura:${visual.aura}" aria-hidden="true">
+            <span class="pill-visual__backdrop"></span>
+            <span class="pill-visual__orbit pill-visual__orbit--outer"></span>
+            <span class="pill-visual__orbit pill-visual__orbit--inner"></span>
+            <span class="pill-visual__spark pill-visual__spark--1"></span>
+            <span class="pill-visual__spark pill-visual__spark--2"></span>
+            <span class="pill-visual__spark pill-visual__spark--3"></span>
+            <span class="pill-visual__core"></span>
+            <span class="pill-visual__sigil"></span>
+        </div>
+    `;
+}
+
 const Input = {
     screenX: width / 2, screenY: height / 2,
     x: width / 2, y: height / 2,
@@ -118,12 +176,7 @@ const Input = {
     exp: 0,
     rankIndex: 0, // Vị trí hiện tại trong mảng RANKS
     inventory: {},
-    spiritStones: {
-        LOW: 0,
-        MEDIUM: 0,
-        HIGH: 0,
-        SUPREME: 0
-    },
+    spiritStones: getStartingSpiritStoneCounts(),
     bonusStats: {
         attackPct: 0,
         maxManaFlat: 0,
@@ -1679,6 +1732,13 @@ ShopUI = {
     btnClose: document.getElementById('close-shop'),
     list: document.getElementById('shop-items'),
     wallet: document.getElementById('shop-wallet'),
+    toolbar: document.getElementById('shop-toolbar'),
+    pagination: document.getElementById('shop-pagination'),
+    searchQuery: '',
+    categoryFilter: 'ALL',
+    qualityFilter: 'ALL',
+    currentPage: 1,
+    lastPageSize: 0,
 
     init() {
         if (!this.overlay || !this.btnOpen) return;
@@ -1710,36 +1770,280 @@ ShopUI = {
             });
         }
 
+        this.overlay.addEventListener('input', (e) => {
+            if (e.target.id !== 'shop-search') return;
+
+            e.stopPropagation();
+            this.searchQuery = e.target.value || '';
+            this.currentPage = 1;
+            this.render();
+        });
+
+        this.overlay.addEventListener('change', (e) => {
+            if (e.target.id === 'shop-filter-category') {
+                this.categoryFilter = e.target.value || 'ALL';
+                this.currentPage = 1;
+                this.render();
+                return;
+            }
+
+            if (e.target.id === 'shop-filter-quality') {
+                this.qualityFilter = e.target.value || 'ALL';
+                this.currentPage = 1;
+                this.render();
+            }
+        });
+
+        if (this.pagination) {
+            this.pagination.addEventListener('pointerdown', (e) => {
+                const pageBtn = e.target.closest('[data-shop-page-target]');
+                if (!pageBtn) return;
+
+                e.stopPropagation();
+                const targetPage = parseInt(pageBtn.getAttribute('data-shop-page-target'), 10);
+                if (!Number.isNaN(targetPage)) {
+                    this.currentPage = targetPage;
+                    this.render();
+                }
+            });
+        }
+
+        if (this.toolbar) {
+            this.toolbar.addEventListener('pointerdown', (e) => {
+                const resetBtn = e.target.closest('[data-shop-action="reset-filters"]');
+                if (!resetBtn) return;
+
+                e.stopPropagation();
+                this.searchQuery = '';
+                this.categoryFilter = 'ALL';
+                this.qualityFilter = 'ALL';
+                this.currentPage = 1;
+                this.render();
+            });
+        }
+
         this.overlay.addEventListener('pointerdown', (e) => {
             if (e.target === this.overlay) this.close();
         });
+
+        window.addEventListener('resize', () => {
+            if (!this.overlay.classList.contains('show')) return;
+
+            const nextPageSize = this.getPageSize();
+            if (nextPageSize !== this.lastPageSize) {
+                this.render();
+            }
+        });
     },
 
-    render() {
-        if (!this.wallet || !this.list) return;
+    getPageSize() {
+        return window.innerWidth <= 720 ? 4 : 8;
+    },
 
-        this.wallet.innerHTML = buildWalletMarkup();
+    getCategoryOptions() {
+        return ['ALL', 'EXP', 'ATTACK', 'BERSERK', 'RAGE', 'MANA', 'MAX_MANA', 'SPEED', 'BREAKTHROUGH'];
+    },
+
+    ensureToolbar() {
+        if (!this.toolbar || this.toolbar.dataset.ready === 'true') return;
+
+        const categoryOptions = this.getCategoryOptions().map(category => {
+            const label = category === 'ALL' ? 'Tất cả loại' : Input.getItemCategoryLabel({ category });
+            return `<option value="${category}">${escapeHtml(label)}</option>`;
+        }).join('');
+
+        const qualityOptions = ['ALL', ...QUALITY_ORDER].map(quality => {
+            const label = quality === 'ALL' ? 'Tất cả phẩm chất' : getQualityLabel(quality);
+            return `<option value="${quality}">${escapeHtml(label)}</option>`;
+        }).join('');
+
+        this.toolbar.innerHTML = `
+            <div class="shop-tip" id="shop-tip"></div>
+            <div class="shop-toolbar-row">
+                <label class="shop-field shop-field-search">
+                    <span>Tìm kiếm</span>
+                    <input id="shop-search" class="shop-control-input" type="search" placeholder="Tên đan, công dụng, phẩm chất...">
+                </label>
+                <div class="shop-filter-group">
+                    <label class="shop-field">
+                        <span>Loại</span>
+                        <select id="shop-filter-category" class="shop-control-input">${categoryOptions}</select>
+                    </label>
+                    <label class="shop-field">
+                        <span>Phẩm chất</span>
+                        <select id="shop-filter-quality" class="shop-control-input">${qualityOptions}</select>
+                    </label>
+                </div>
+            </div>
+            <div class="shop-toolbar-meta">
+                <div id="shop-summary" class="shop-summary"></div>
+                <button type="button" class="btn-shop-reset" data-shop-action="reset-filters">Xóa lọc</button>
+            </div>
+        `;
+
+        this.toolbar.dataset.ready = 'true';
+    },
+
+    syncToolbar(totalCount, filteredCount) {
+        if (!this.toolbar) return;
+
         const nextRealm = Input.getNextMajorRealmInfo();
         const tip = nextRealm
-            ? `<div class="shop-tip">Đang bày bán đan tăng tu vi và ${escapeHtml(nextRealm.name)} đan để chuẩn bị cho lần đột phá kế tiếp.</div>`
-            : `<div class="shop-tip">Đã ở cảnh giới tối cao, cửa hàng chỉ còn bày bán đan tăng tu vi.</div>`;
+            ? `Đang bày bán đan tăng tu vi và ${escapeHtml(nextRealm.name)} đan để chuẩn bị cho lần đột phá kế tiếp.`
+            : 'Đã ở cảnh giới tối cao, cửa hàng chỉ còn bày bán đan tăng tu vi.';
 
-        const cards = Input.getShopItems().map(item => {
+        const tipEl = this.toolbar.querySelector('#shop-tip');
+        const searchEl = this.toolbar.querySelector('#shop-search');
+        const categoryEl = this.toolbar.querySelector('#shop-filter-category');
+        const qualityEl = this.toolbar.querySelector('#shop-filter-quality');
+        const summaryEl = this.toolbar.querySelector('#shop-summary');
+        const resetBtn = this.toolbar.querySelector('[data-shop-action="reset-filters"]');
+
+        if (tipEl) tipEl.innerHTML = tip;
+        if (searchEl && searchEl.value !== this.searchQuery) searchEl.value = this.searchQuery;
+        if (categoryEl && categoryEl.value !== this.categoryFilter) categoryEl.value = this.categoryFilter;
+        if (qualityEl && qualityEl.value !== this.qualityFilter) qualityEl.value = this.qualityFilter;
+        if (summaryEl) {
+            summaryEl.innerHTML = `Hiển thị <strong>${formatNumber(filteredCount)}</strong> / ${formatNumber(totalCount)} loại đan`;
+        }
+        if (resetBtn) {
+            resetBtn.disabled = !this.searchQuery && this.categoryFilter === 'ALL' && this.qualityFilter === 'ALL';
+        }
+    },
+
+    filterItems(items) {
+        const query = normalizeSearchText(this.searchQuery);
+
+        return items.filter(item => {
+            if (this.categoryFilter !== 'ALL' && item.category !== this.categoryFilter) {
+                return false;
+            }
+
+            if (this.qualityFilter !== 'ALL' && item.quality !== this.qualityFilter) {
+                return false;
+            }
+
+            if (!query) return true;
+
+            const haystack = normalizeSearchText([
+                Input.getItemDisplayName(item),
+                Input.getItemDescription(item),
+                Input.getItemCategoryLabel(item),
+                getQualityLabel(item.quality),
+                item.realmName || ''
+            ].join(' '));
+
+            return haystack.includes(query);
+        });
+    },
+
+    buildPaginationTargets(totalPages) {
+        const pages = [];
+
+        for (let page = 1; page <= totalPages; page++) {
+            const isEdge = page === 1 || page === totalPages;
+            const isNearCurrent = Math.abs(page - this.currentPage) <= 1;
+            if (totalPages <= 5 || isEdge || isNearCurrent) {
+                pages.push(page);
+            }
+        }
+
+        return pages.filter((page, index) => pages.indexOf(page) === index)
+            .sort((a, b) => a - b);
+    },
+
+    renderPagination(totalItems, totalPages) {
+        if (!this.pagination) return;
+
+        if (!totalItems) {
+            this.pagination.innerHTML = '';
+            return;
+        }
+
+        const pages = this.buildPaginationTargets(totalPages);
+        const pageButtons = [];
+
+        pages.forEach((page, index) => {
+            const prevPage = pages[index - 1];
+            if (index > 0 && page - prevPage > 1) {
+                pageButtons.push('<span class="shop-page-gap">...</span>');
+            }
+
+            pageButtons.push(`
+                <button
+                    type="button"
+                    class="btn-shop-page ${page === this.currentPage ? 'is-active' : ''}"
+                    data-shop-page-target="${page}"
+                    ${page === this.currentPage ? 'disabled' : ''}
+                >${page}</button>
+            `);
+        });
+
+        this.pagination.innerHTML = `
+            <button
+                type="button"
+                class="btn-shop-page btn-shop-page-nav"
+                data-shop-page-target="${Math.max(1, this.currentPage - 1)}"
+                ${this.currentPage === 1 ? 'disabled' : ''}
+            >Trước</button>
+            <div class="shop-page-list">${pageButtons.join('')}</div>
+            <div class="shop-page-status">Trang ${this.currentPage}/${totalPages}</div>
+            <button
+                type="button"
+                class="btn-shop-page btn-shop-page-nav"
+                data-shop-page-target="${Math.min(totalPages, this.currentPage + 1)}"
+                ${this.currentPage === totalPages ? 'disabled' : ''}
+            >Sau</button>
+        `;
+    },
+
+    renderItems(items) {
+        if (!this.list) return;
+
+        if (!items.length) {
+            this.list.innerHTML = '<div class="shop-empty">Không tìm thấy đan dược phù hợp với bộ lọc hiện tại.</div>';
+            return;
+        }
+
+        const cards = items.map(item => {
             const qualityConfig = Input.getItemQualityConfig(item);
             const canAfford = Input.canAffordLowStoneCost(item.priceLowStone);
 
             return `
-                <article class="shop-card" style="--slot-accent:${qualityConfig.color}">
+                <article class="shop-card has-pill-art" style="--slot-accent:${qualityConfig.color}">
                     <div class="slot-badge">${escapeHtml(Input.getItemCategoryLabel(item))}</div>
+                    ${buildPillVisualMarkup(item, qualityConfig)}
                     <h4>${escapeHtml(Input.getItemDisplayName(item))}</h4>
                     <p>${escapeHtml(Input.getItemDescription(item))}</p>
-                    <div class="slot-meta">Giá: ${formatNumber(item.priceLowStone)} hạ phẩm</div>
+                    <div class="slot-meta">Giá: ${formatNumber(item.priceLowStone)} hạ phẩm linh thạch</div>
                     <button class="btn-slot-action" data-shop-id="${escapeHtml(item.id)}" ${canAfford ? '' : 'disabled'}>Mua</button>
                 </article>
             `;
         }).join('');
 
-        this.list.innerHTML = tip + cards;
+        this.list.innerHTML = cards;
+    },
+
+    render() {
+        if (!this.wallet || !this.list || !this.toolbar || !this.pagination) return;
+
+        this.wallet.innerHTML = buildWalletMarkup();
+        this.ensureToolbar();
+
+        const allItems = Input.getShopItems();
+        const filteredItems = this.filterItems(allItems);
+        const pageSize = this.getPageSize();
+        const totalPages = Math.max(1, Math.ceil(filteredItems.length / pageSize));
+
+        this.lastPageSize = pageSize;
+        this.currentPage = Math.min(Math.max(1, this.currentPage), totalPages);
+
+        const startIndex = (this.currentPage - 1) * pageSize;
+        const pagedItems = filteredItems.slice(startIndex, startIndex + pageSize);
+
+        this.syncToolbar(allItems.length, filteredItems.length);
+        this.renderItems(pagedItems);
+        this.renderPagination(filteredItems.length, totalPages);
     },
 
     open() {
@@ -1817,11 +2121,12 @@ InventoryUI = {
                 : 'Dùng';
 
             return `
-                <article class="inventory-slot" style="--slot-accent:${qualityConfig.color}">
+                <article class="inventory-slot has-pill-art" style="--slot-accent:${qualityConfig.color}">
                     <div class="slot-badge">${formatNumber(item.count)}x</div>
+                    ${buildPillVisualMarkup(item, qualityConfig)}
                     <h4>${escapeHtml(Input.getItemDisplayName(item))}</h4>
                     <p>${escapeHtml(Input.getItemDescription(item))}</p>
-                    <div class="slot-meta">Bán lại: ${formatNumber(sellPrice)} hạ phẩm</div>
+                    <div class="slot-meta">Bán lại: ${formatNumber(sellPrice)} hạ phẩm linh thạch</div>
                     <div class="slot-actions">
                         <button class="btn-slot-action" data-action="use" data-item-key="${escapeHtml(item.key)}" ${usable ? '' : 'disabled'}>${escapeHtml(label)}</button>
                         <button class="btn-slot-action is-secondary" data-action="sell" data-item-key="${escapeHtml(item.key)}">Bán</button>
@@ -1945,10 +2250,11 @@ function init() {
     Input.mana = Input.maxMana;
     Input.syncDerivedStats();
 
+    SettingsUI.init();
+    Input.spiritStones = getStartingSpiritStoneCounts();
     Input.renderManaUI();
     Input.renderExpUI();
     Input.renderRageUI();
-    SettingsUI.init();
     if (ShopUI) ShopUI.init();
     if (InventoryUI) InventoryUI.init();
     starField = new StarField(CONFIG.BG.STAR_COUNT, width, height);
