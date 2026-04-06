@@ -100,6 +100,10 @@ function escapeHtml(value) {
         .replace(/'/g, '&#39;');
 }
 
+function hslaColor(h, s, l, a = 1) {
+    return `hsla(${Math.round(h)}, ${Math.round(s)}%, ${Math.round(l)}%, ${a})`;
+}
+
 function normalizeSearchText(value) {
     return String(value || '')
         .normalize('NFD')
@@ -133,16 +137,23 @@ function getStartingSpiritStoneCounts() {
 function buildPillVisualMarkup(item, qualityConfig) {
     const visualMap = {
         EXP: { className: 'is-exp', aura: 'rgba(105, 240, 203, 0.32)' },
+        INSIGHT: { className: 'is-insight', aura: 'rgba(208, 255, 124, 0.34)' },
         BREAKTHROUGH: { className: 'is-breakthrough', aura: 'rgba(120, 168, 255, 0.32)' },
         ATTACK: { className: 'is-attack', aura: 'rgba(255, 160, 109, 0.34)' },
+        SHIELD_BREAK: { className: 'is-shield-break', aura: 'rgba(111, 187, 255, 0.34)' },
         BERSERK: { className: 'is-berserk', aura: 'rgba(255, 75, 93, 0.34)' },
         RAGE: { className: 'is-rage', aura: 'rgba(255, 112, 70, 0.34)' },
         MANA: { className: 'is-mana', aura: 'rgba(87, 200, 255, 0.30)' },
         MAX_MANA: { className: 'is-max-mana', aura: 'rgba(164, 121, 255, 0.30)' },
-        SPEED: { className: 'is-speed', aura: 'rgba(149, 255, 186, 0.30)' }
+        REGEN: { className: 'is-regen', aura: 'rgba(89, 226, 219, 0.30)' },
+        SPEED: { className: 'is-speed', aura: 'rgba(149, 255, 186, 0.30)' },
+        FORTUNE: { className: 'is-fortune', aura: 'rgba(255, 214, 102, 0.32)' },
+        CHUNG_CUC_DAO_NGUYEN_DAN: { className: 'is-special-rainbow', aura: 'rgba(255, 255, 255, 0.40)' },
+        TAN_DAO_DIET_NGUYEN_DAN: { className: 'is-special-void', aura: 'rgba(84, 42, 115, 0.44)' }
     };
 
-    const visual = visualMap[item.category] || visualMap.EXP;
+    const visualKey = item.specialKey || item.category;
+    const visual = visualMap[visualKey] || visualMap.EXP;
 
     return `
         <div class="pill-visual ${visual.className}" style="--pill-accent:${qualityConfig.color};--pill-aura:${visual.aura}" aria-hidden="true">
@@ -192,11 +203,20 @@ const Input = {
     bonusStats: {
         attackPct: 0,
         maxManaFlat: 0,
-        speedPct: 0
+        speedPct: 0,
+        expGainPct: 0,
+        manaRegenPct: 0,
+        shieldBreakPct: 0,
+        dropRatePct: 0
     },
     activeEffects: [],
     breakthroughBonus: 0,
     isReadyToBreak: false, // Thêm biến trạng thái này
+    specialAuraMode: null,
+    specialAuraExpiresAt: 0,
+    temporaryAscensionOrigin: null,
+    voidCollapseTimeoutId: null,
+    isVoidCollapsed: false,
     combo: 0,
     rage: 0,
     maxRage: CONFIG.ULTIMATE.MAX_RAGE || 100,
@@ -261,6 +281,122 @@ const Input = {
         return this.ultimatePhase !== 'idle';
     },
 
+    getMaxRankIndex() {
+        return Math.max(0, CONFIG.CULTIVATION.RANKS.length - 1);
+    },
+
+    setSpecialAura(mode, durationMs = null) {
+        this.specialAuraMode = mode || null;
+        if (!mode) {
+            this.specialAuraExpiresAt = 0;
+            return;
+        }
+
+        this.specialAuraExpiresAt = durationMs == null
+            ? Number.POSITIVE_INFINITY
+            : performance.now() + Math.max(0, durationMs);
+    },
+
+    clearSpecialPillState({ keepAura = false } = {}) {
+        if (this.voidCollapseTimeoutId) {
+            clearTimeout(this.voidCollapseTimeoutId);
+            this.voidCollapseTimeoutId = null;
+        }
+
+        this.temporaryAscensionOrigin = null;
+        this.isVoidCollapsed = false;
+
+        if (!keepAura) {
+            this.setSpecialAura(null);
+        }
+    },
+
+    ascendToUltimateRank() {
+        const maxRankIndex = this.getMaxRankIndex();
+        const maxRank = CONFIG.CULTIVATION.RANKS[maxRankIndex];
+        if (!maxRank) return null;
+
+        this.rankIndex = maxRankIndex;
+        this.exp = maxRank.exp;
+        this.isReadyToBreak = false;
+        this.breakthroughBonus = 0;
+        this.syncDerivedStats();
+        this.mana = this.maxMana;
+        this.renderManaUI();
+        this.renderExpUI();
+        return maxRank;
+    },
+
+    applyChungCucDaoNguyenDan(item, qualityConfig) {
+        this.clearSpecialPillState();
+        const maxRank = this.ascendToUltimateRank();
+        if (!maxRank) return false;
+
+        this.setSpecialAura(qualityConfig.auraMode || 'rainbow');
+        showNotify(`Dùng ${this.getItemDisplayName(item)}: trực tiếp bước vào ${maxRank.name}`, qualityConfig.color);
+        return true;
+    },
+
+    enterVoidCollapse() {
+        if (this.voidCollapseTimeoutId) {
+            clearTimeout(this.voidCollapseTimeoutId);
+            this.voidCollapseTimeoutId = null;
+        }
+
+        if (this.ultTimeoutId) {
+            clearTimeout(this.ultTimeoutId);
+            this.ultTimeoutId = null;
+        }
+
+        const origin = this.temporaryAscensionOrigin;
+        if (origin) {
+            this.rankIndex = origin.rankIndex;
+            this.exp = origin.exp;
+            this.isReadyToBreak = origin.isReadyToBreak;
+            this.breakthroughBonus = origin.breakthroughBonus;
+        }
+
+        this.temporaryAscensionOrigin = null;
+        this.isVoidCollapsed = true;
+        this.isAttacking = false;
+        this.stopAttackJoystick();
+        this.activeEffects = [];
+        this.isUltMode = false;
+        this.ultimatePhase = 'idle';
+        this.ultimatePhaseStartedAt = 0;
+        this.ultimateCoreIndex = -1;
+        this.rage = 0;
+        this.mana = 0;
+        this.setSpecialAura('void');
+        this.syncDerivedStats();
+        this.refreshResourceUI();
+        this.renderManaUI();
+        this.renderRageUI();
+        showNotify('Tẫn Đạo Diệt Nguyên Đan phản phệ: thân thể tan vào hư vô, cần reload web để hồi phục', '#a778ff');
+    },
+
+    applyTanDaoDietNguyenDan(item, qualityConfig) {
+        this.clearSpecialPillState();
+        this.temporaryAscensionOrigin = {
+            rankIndex: this.rankIndex,
+            exp: this.exp,
+            isReadyToBreak: this.isReadyToBreak,
+            breakthroughBonus: this.breakthroughBonus
+        };
+
+        const maxRank = this.ascendToUltimateRank();
+        if (!maxRank) return false;
+
+        this.setSpecialAura(qualityConfig.auraMode || 'void', qualityConfig.durationMs || 1000);
+        showNotify(`Dùng ${this.getItemDisplayName(item)}: cưỡng mở ${maxRank.name} trong ${Math.max(1, Math.round((qualityConfig.durationMs || 1000) / 1000))} giây`, qualityConfig.color);
+
+        this.voidCollapseTimeoutId = setTimeout(() => {
+            this.enterVoidCollapse();
+        }, qualityConfig.durationMs || 1000);
+
+        return true;
+    },
+
     getUltimateTransitionDuration() {
         return Math.max(100, parseInt(CONFIG.ULTIMATE.TRANSITION_MS, 10) || 100);
     },
@@ -282,6 +418,11 @@ const Input = {
     },
 
     startUltimate() {
+        if (this.isVoidCollapsed) {
+            showNotify('Thân thể đã tan vào hư vô, hãy reload web để hồi phục', '#a778ff');
+            return false;
+        }
+
         if (this.isUltimateBusy() || this.rage < this.maxRage) return false;
 
         if (this.ultTimeoutId) {
@@ -397,6 +538,8 @@ const Input = {
     },
 
     regenMana() {
+        if (this.isVoidCollapsed) return;
+
         const now = performance.now();
         const elapsed = now - this.lastManaRegenTick;
 
@@ -406,7 +549,7 @@ const Input = {
 
             if (ticks > 0) {
                 // Sử dụng REGEN_PER_SEC thay vì REGEN_PER_MIN
-                this.updateMana(ticks * CONFIG.MANA.REGEN_PER_SEC);
+                this.updateMana(ticks * CONFIG.MANA.REGEN_PER_SEC * this.getManaRegenMultiplier());
                 this.lastManaRegenTick = now - (elapsed % CONFIG.MANA.REGEN_INTERVAL_MS);
             }
         }
@@ -587,7 +730,7 @@ const Input = {
 
         // 3. Ẩn/Hiện nút đột phá
         if (breakthroughGroup) {
-            if (this.isReadyToBreak) breakthroughGroup.classList.add('is-active');
+            if (this.isReadyToBreak && !this.isVoidCollapsed) breakthroughGroup.classList.add('is-active');
             else breakthroughGroup.classList.remove('is-active');
         }
 
@@ -685,12 +828,33 @@ const Input = {
         });
     },
 
+    getExpGainMultiplier() {
+        if (this.isVoidCollapsed) return 0;
+        return Math.max(0, 1 + this.bonusStats.expGainPct);
+    },
+
+    getManaRegenMultiplier() {
+        if (this.isVoidCollapsed) return 0;
+        return Math.max(0, 1 + this.bonusStats.manaRegenPct);
+    },
+
+    getShieldBreakMultiplier() {
+        if (this.isVoidCollapsed) return 0;
+        return Math.max(0, 1 + this.bonusStats.shieldBreakPct);
+    },
+
+    getDropRateMultiplier() {
+        return Math.max(0, 1 + this.bonusStats.dropRatePct);
+    },
+
     getAttackMultiplier() {
+        if (this.isVoidCollapsed) return 0;
         const active = this.getActiveEffectModifiers();
         return Math.max(0.2, 1 + this.bonusStats.attackPct + active.attackPct);
     },
 
     getSpeedMultiplier() {
+        if (this.isVoidCollapsed) return 0;
         const active = this.getActiveEffectModifiers();
         return Math.max(0.35, 1 + this.bonusStats.speedPct + active.speedPct);
     },
@@ -782,6 +946,36 @@ const Input = {
     },
 
     getAuraPalette() {
+        const now = performance.now();
+        if (this.specialAuraMode && this.specialAuraExpiresAt !== Number.POSITIVE_INFINITY && this.specialAuraExpiresAt <= now) {
+            this.setSpecialAura(null);
+        }
+
+        if (this.isVoidCollapsed || this.specialAuraMode === 'void') {
+            return {
+                shadowColor: "#2f103f",
+                particleColor: "rgba(140, 92, 255, 0.42)",
+                layers: [
+                    { w: 15, h: 28, color: "rgba(8, 4, 16, 0.82)", f: 0.75 },
+                    { w: 10, h: 19, color: "rgba(56, 17, 83, 0.92)", f: 1.1 },
+                    { w: 6, h: 12, color: "rgba(26, 3, 35, 0.98)", f: 1.65 }
+                ]
+            };
+        }
+
+        if (this.specialAuraMode === 'rainbow') {
+            const hue = (now * 0.06) % 360;
+            return {
+                shadowColor: hslaColor(hue, 100, 68, 1),
+                particleColor: hslaColor((hue + 60) % 360, 100, 76, 0.56),
+                layers: [
+                    { w: 15, h: 28, color: hslaColor(hue, 100, 60, 0.30), f: 0.8 },
+                    { w: 10, h: 20, color: hslaColor((hue + 120) % 360, 100, 64, 0.86), f: 1.2 },
+                    { w: 6, h: 12, color: hslaColor((hue + 240) % 360, 100, 82, 0.96), f: 1.75 }
+                ]
+            };
+        }
+
         const berserkEffect = this.activeEffects.find(effect => effect.auraMode === 'berserk');
         if (!berserkEffect) {
             return {
@@ -913,6 +1107,7 @@ const Input = {
             spec.quality || 'LOW'
         ];
 
+        if (spec.specialKey) parts.push(spec.specialKey);
         if (spec.realmKey) parts.push(spec.realmKey);
         return parts.join('|');
     },
@@ -920,14 +1115,22 @@ const Input = {
     getItemQualityConfig(item) {
         const categoryMap = {
             EXP: CONFIG.PILL.EXP_QUALITIES,
+            INSIGHT: CONFIG.PILL.INSIGHT_QUALITIES,
             BREAKTHROUGH: CONFIG.PILL.BREAKTHROUGH_QUALITIES,
             ATTACK: CONFIG.PILL.ATTACK_QUALITIES,
+            SHIELD_BREAK: CONFIG.PILL.SHIELD_BREAK_QUALITIES,
             BERSERK: CONFIG.PILL.BERSERK_QUALITIES,
             RAGE: CONFIG.PILL.RAGE_QUALITIES,
             MANA: CONFIG.PILL.MANA_QUALITIES,
             MAX_MANA: CONFIG.PILL.MAX_MANA_QUALITIES,
-            SPEED: CONFIG.PILL.SPEED_QUALITIES
+            REGEN: CONFIG.PILL.REGEN_QUALITIES,
+            SPEED: CONFIG.PILL.SPEED_QUALITIES,
+            FORTUNE: CONFIG.PILL.FORTUNE_QUALITIES
         };
+
+        if (item.specialKey) {
+            return CONFIG.PILL.SPECIAL_ITEMS[item.specialKey] || CONFIG.PILL.EXP_QUALITIES.LOW;
+        }
 
         const defs = categoryMap[item.category] || CONFIG.PILL.EXP_QUALITIES;
         return defs[item.quality] || defs.LOW;
@@ -935,6 +1138,10 @@ const Input = {
 
     getItemDisplayName(item) {
         const qualityConfig = this.getItemQualityConfig(item);
+        if (item.specialKey) {
+            return qualityConfig.fullName;
+        }
+
         if (item.category === 'BREAKTHROUGH') {
             const realmName = item.realmName || this.getNextMajorRealmInfo()?.name || "đột phá";
             return `${qualityConfig.label} ${realmName} đan`;
@@ -946,13 +1153,18 @@ const Input = {
     getItemCategoryLabel(item) {
         const labels = {
             EXP: 'Tu vi',
+            INSIGHT: 'Ngộ đạo',
             BREAKTHROUGH: 'Đột phá',
             ATTACK: 'Công phạt',
+            SHIELD_BREAK: 'Phá khiên',
             BERSERK: 'Cuồng bạo',
             RAGE: 'Nộ',
             MANA: 'Hồi linh',
             MAX_MANA: 'Khai hải',
-            SPEED: 'Thân pháp'
+            REGEN: 'Hồi nguyên',
+            SPEED: 'Thân pháp',
+            FORTUNE: 'Vận khí',
+            SPECIAL: 'Cấm kị'
         };
 
         return labels[item.category] || 'Đan dược';
@@ -960,13 +1172,25 @@ const Input = {
 
     getItemDescription(item) {
         const qualityConfig = this.getItemQualityConfig(item);
+        if (item.specialKey === 'CHUNG_CUC_DAO_NGUYEN_DAN') {
+            return 'Cực phẩm đạo đan bảy sắc, lập tức đưa tu vi lên cảnh giới cao nhất Chân tiên đại viên mãn và lưu lại hào quang 7 sắc.';
+        }
+
+        if (item.specialKey === 'TAN_DAO_DIET_NGUYEN_DAN') {
+            return 'Cấm kị hắc đan, cưỡng ép bước vào Chân tiên đại viên mãn trong 1 giây rồi tan vào hư vô. Chỉ có thể hồi phục khi reload web.';
+        }
+
         switch (item.category) {
+            case 'INSIGHT':
+                return `Tăng vĩnh viễn ${Math.round((qualityConfig.expGainPct || 0) * 100)}% tu vi nhận từ chiến đấu và đan tu vi.`;
             case 'BREAKTHROUGH': {
                 const realmName = item.realmName || "cảnh giới kế tiếp";
                 return `Tăng ${Math.round(qualityConfig.breakthroughBoost * 100)}% tỉ lệ đột phá tới ${realmName}.`;
             }
             case 'ATTACK':
                 return `Tăng vĩnh viễn ${Math.round((qualityConfig.attackPct || 0) * 100)}% lực công kích.`;
+            case 'SHIELD_BREAK':
+                return `Tăng vĩnh viễn ${Math.round((qualityConfig.shieldBreakPct || 0) * 100)}% sát lực lên khiên địch.`;
             case 'BERSERK': {
                 const sideEffects = [];
                 if (qualityConfig.sideManaLoss) sideEffects.push(`hao ${qualityConfig.sideManaLoss} linh lực`);
@@ -983,8 +1207,12 @@ const Input = {
                 return `Hồi ngay ${Math.round(qualityConfig.manaRestore || 0)} linh lực.`;
             case 'MAX_MANA':
                 return `Tăng vĩnh viễn ${Math.round(qualityConfig.maxManaFlat || 0)} giới hạn linh lực.`;
+            case 'REGEN':
+                return `Tăng vĩnh viễn ${Math.round((qualityConfig.manaRegenPct || 0) * 100)}% tốc độ hồi linh lực.`;
             case 'SPEED':
                 return `Tăng vĩnh viễn ${Math.round((qualityConfig.speedPct || 0) * 100)}% tốc độ vận chuyển kiếm trận.`;
+            case 'FORTUNE':
+                return `Tăng vĩnh viễn ${Math.round((qualityConfig.dropRatePct || 0) * 100)}% tỉ lệ rơi đan dược và linh thạch.`;
             case 'EXP':
             default:
                 return `Tăng ${Math.round(qualityConfig.expFactor * 100)}% tu vi của cảnh giới hiện tại.`;
@@ -999,6 +1227,7 @@ const Input = {
                 kind: spec.kind || 'PILL',
                 category: spec.category || 'EXP',
                 quality: spec.quality || 'LOW',
+                specialKey: spec.specialKey || null,
                 realmKey: spec.realmKey || null,
                 realmName: spec.realmName || null,
                 count: 0
@@ -1026,7 +1255,9 @@ const Input = {
     },
 
     isInventoryItemUsable(item) {
+        if (this.isVoidCollapsed) return false;
         if (item.category === 'EXP') return true;
+        if (item.category !== 'BREAKTHROUGH') return true;
 
         const nextRealm = this.getNextMajorRealmInfo();
         return Boolean(nextRealm && item.realmKey === nextRealm.key);
@@ -1054,7 +1285,7 @@ const Input = {
 
         return {
             kind: 'PILL',
-            category: 'EXP',
+            category,
             quality
         };
     },
@@ -1068,7 +1299,7 @@ const Input = {
     },
 
     getShopItems() {
-        const shopCategories = ['EXP', 'ATTACK', 'BERSERK', 'RAGE', 'MANA', 'MAX_MANA', 'SPEED'];
+        const shopCategories = ['EXP', 'INSIGHT', 'ATTACK', 'SHIELD_BREAK', 'BERSERK', 'RAGE', 'MANA', 'MAX_MANA', 'REGEN', 'SPEED', 'FORTUNE'];
         const items = [];
 
         shopCategories.forEach(category => {
@@ -1098,6 +1329,17 @@ const Input = {
                 });
             });
         }
+
+        Object.entries(CONFIG.PILL.SPECIAL_ITEMS || {}).forEach(([specialKey, specialConfig]) => {
+            items.push({
+                id: `SPECIAL:${specialKey}`,
+                kind: 'PILL',
+                category: 'SPECIAL',
+                quality: specialConfig.quality || 'SUPREME',
+                specialKey,
+                priceLowStone: specialConfig.buyPriceLowStone || 0
+            });
+        });
 
         return items;
     },
@@ -1131,6 +1373,11 @@ const Input = {
     },
 
     buyShopItem(itemId) {
+        if (this.isVoidCollapsed) {
+            showNotify('Thân thể đã tan vào hư vô, cần reload web để hồi phục', '#a778ff');
+            return false;
+        }
+
         const item = this.getShopItems().find(entry => entry.id === itemId);
         if (!item) return false;
 
@@ -1175,6 +1422,11 @@ const Input = {
         const item = this.inventory[itemKey];
         if (!item || item.count <= 0) return false;
 
+        if (this.isVoidCollapsed) {
+            showNotify('Thân thể đã tan vào hư vô, cần reload web để hồi phục', '#a778ff');
+            return false;
+        }
+
         const qualityConfig = this.getItemQualityConfig(item);
 
         if (item.category === 'BREAKTHROUGH' && !this.isInventoryItemUsable(item)) {
@@ -1189,7 +1441,7 @@ const Input = {
             const rank = this.getCurrentRank();
             if (!rank) return false;
 
-            const expGain = Math.max(1, Math.round(rank.exp * qualityConfig.expFactor));
+            const expGain = Math.max(1, Math.round(rank.exp * qualityConfig.expFactor * this.getExpGainMultiplier()));
             this.updateExp(expGain);
             showNotify(`Dùng ${this.getItemDisplayName(item)}: +${formatNumber(expGain)} tu vi`, qualityConfig.color);
             this.refreshResourceUI();
@@ -1219,9 +1471,17 @@ const Input = {
         }
 
         switch (item.category) {
+            case 'INSIGHT':
+                this.bonusStats.expGainPct += qualityConfig.expGainPct || 0;
+                showNotify(`Dùng ${this.getItemDisplayName(item)}: +${Math.round((qualityConfig.expGainPct || 0) * 100)}% tu vi thu hoạch`, qualityConfig.color);
+                break;
             case 'ATTACK':
                 this.bonusStats.attackPct += qualityConfig.attackPct || 0;
                 showNotify(`Dùng ${this.getItemDisplayName(item)}: +${Math.round((qualityConfig.attackPct || 0) * 100)}% công kích`, qualityConfig.color);
+                break;
+            case 'SHIELD_BREAK':
+                this.bonusStats.shieldBreakPct += qualityConfig.shieldBreakPct || 0;
+                showNotify(`Dùng ${this.getItemDisplayName(item)}: +${Math.round((qualityConfig.shieldBreakPct || 0) * 100)}% phá khiên`, qualityConfig.color);
                 break;
             case 'BERSERK':
                 this.consumeBerserkPill(item, qualityConfig);
@@ -1240,9 +1500,33 @@ const Input = {
                 this.updateMana(qualityConfig.maxManaFlat || 0);
                 showNotify(`Dùng ${this.getItemDisplayName(item)}: +${Math.round(qualityConfig.maxManaFlat || 0)} giới hạn linh lực`, qualityConfig.color);
                 break;
+            case 'REGEN':
+                this.bonusStats.manaRegenPct += qualityConfig.manaRegenPct || 0;
+                showNotify(`Dùng ${this.getItemDisplayName(item)}: +${Math.round((qualityConfig.manaRegenPct || 0) * 100)}% hồi linh`, qualityConfig.color);
+                break;
             case 'SPEED':
                 this.bonusStats.speedPct += qualityConfig.speedPct || 0;
                 showNotify(`Dùng ${this.getItemDisplayName(item)}: +${Math.round((qualityConfig.speedPct || 0) * 100)}% tốc độ`, qualityConfig.color);
+                break;
+            case 'FORTUNE':
+                this.bonusStats.dropRatePct += qualityConfig.dropRatePct || 0;
+                showNotify(`Dùng ${this.getItemDisplayName(item)}: +${Math.round((qualityConfig.dropRatePct || 0) * 100)}% vận khí`, qualityConfig.color);
+                break;
+            case 'SPECIAL':
+                if (item.specialKey === 'CHUNG_CUC_DAO_NGUYEN_DAN') {
+                    if (!this.applyChungCucDaoNguyenDan(item, qualityConfig)) {
+                        this.addInventoryItem(item, 1);
+                        return false;
+                    }
+                } else if (item.specialKey === 'TAN_DAO_DIET_NGUYEN_DAN') {
+                    if (!this.applyTanDaoDietNguyenDan(item, qualityConfig)) {
+                        this.addInventoryItem(item, 1);
+                        return false;
+                    }
+                } else {
+                    this.addInventoryItem(item, 1);
+                    return false;
+                }
                 break;
             default:
                 this.addInventoryItem(item, 1);
@@ -1254,6 +1538,11 @@ const Input = {
     },
 
     executeBreakthrough(isForced = false) {
+        if (this.isVoidCollapsed) {
+            showNotify('Thân thể đã tan vào hư vô, cần reload web để hồi phục', '#a778ff');
+            return;
+        }
+
         const currentRank = this.getCurrentRank();
         if (!currentRank) return;
 
@@ -1317,7 +1606,9 @@ const Input = {
         const totalPercent = Math.round(totalChance * 100);
 
         if (textExp) {
-            const statusText = this.isReadyToBreak ?
+            const statusText = this.isVoidCollapsed
+                ? `<span style="color:#b48cff; font-weight:bold;">THÂN THỂ ĐÃ TAN VÀO HƯ VÔ - RELOAD WEB ĐỂ HỒI PHỤC</span>`
+                : this.isReadyToBreak ?
                 `<span style="color:#ffcc00; font-weight:bold;">SẴN SÀNG ĐỘT PHÁ</span>` :
                 `Tu vi: ${formatNumber(this.exp)}/${formatNumber(rank.exp)}`;
 
@@ -1362,6 +1653,12 @@ const Input = {
         this.updateUltimateState();
         this.updateActiveEffects();
 
+        if (this.isVoidCollapsed) {
+            this.isAttacking = false;
+            this.stopAttackJoystick();
+            return;
+        }
+
         const joystickTarget = this.getAttackJoystickTarget();
         if (joystickTarget) {
             this.x = joystickTarget.x;
@@ -1381,6 +1678,7 @@ const Input = {
     },
 
     handleMove(e) {
+        if (this.isVoidCollapsed) return;
         if (e.target.closest('.btn')) return;
 
         // Pointermove hoạt động cho cả chuột và touch di chuyển
@@ -1390,6 +1688,7 @@ const Input = {
     },
 
     handleDown(e) {
+        if (this.isVoidCollapsed) return;
         if (e.target.closest('.btn')) return;
 
         // LOGIC MỚI: Nếu là mobile, chạm màn hình KHÔNG kích hoạt tấn công
@@ -1403,6 +1702,7 @@ const Input = {
     },
 
     handleUp(e) {
+        if (this.isVoidCollapsed) return;
         // Chỉ xử lý handleUp cho chuột trên desktop
         if (!this.isTouchDevice) {
             this.isAttacking = false;
@@ -1945,7 +2245,7 @@ ShopUI = {
     },
 
     getCategoryOptions() {
-        return ['ALL', 'EXP', 'ATTACK', 'BERSERK', 'RAGE', 'MANA', 'MAX_MANA', 'SPEED', 'BREAKTHROUGH'];
+        return ['ALL', 'EXP', 'INSIGHT', 'ATTACK', 'SHIELD_BREAK', 'BERSERK', 'RAGE', 'MANA', 'MAX_MANA', 'REGEN', 'SPEED', 'FORTUNE', 'BREAKTHROUGH', 'SPECIAL'];
     },
 
     ensureToolbar() {
@@ -1993,8 +2293,8 @@ ShopUI = {
 
         const nextRealm = Input.getNextMajorRealmInfo();
         const tip = nextRealm
-            ? `Đang bày bán đan tăng tu vi và ${escapeHtml(nextRealm.name)} đan để chuẩn bị cho lần đột phá kế tiếp.`
-            : 'Đã ở cảnh giới tối cao, cửa hàng chỉ còn bày bán đan tăng tu vi.';
+            ? `Đang bày bán đủ loại đan tu vi, cường hóa, vận khí và cả ${escapeHtml(nextRealm.name)} đan cho lần đột phá kế tiếp.`
+            : 'Đã ở cảnh giới tối cao, cửa hàng vẫn còn nhiều đan cường hóa và hai viên cấm kị đặc biệt.';
 
         const tipEl = this.toolbar.querySelector('#shop-tip');
         const searchEl = this.toolbar.querySelector('#shop-search');
@@ -2111,7 +2411,7 @@ ShopUI = {
 
         const cards = items.map(item => {
             const qualityConfig = Input.getItemQualityConfig(item);
-            const canAfford = Input.canAffordLowStoneCost(item.priceLowStone);
+            const canAfford = !Input.isVoidCollapsed && Input.canAffordLowStoneCost(item.priceLowStone);
 
             return `
                 <article class="shop-card has-pill-art" style="--slot-accent:${qualityConfig.color}">
@@ -2273,6 +2573,11 @@ document.getElementById('btn-form').addEventListener('pointerdown', (e) => {
     e.stopPropagation();
     e.preventDefault();
 
+    if (Input.isVoidCollapsed) {
+        showNotify('Thân thể đã tan vào hư vô, cần reload web để hồi phục', '#a778ff');
+        return;
+    }
+
     // --- LOGIC MỚI: KIỂM TRA MANA ---
     const cost = CONFIG.MANA.COST_CHANGE_FORM;
 
@@ -2310,6 +2615,12 @@ const attackBtn = document.getElementById('btn-attack');
 const startAttack = (e) => {
     e.stopPropagation();
     e.preventDefault();
+
+    if (Input.isVoidCollapsed) {
+        showNotify('Thân thể đã tan vào hư vô, cần reload web để hồi phục', '#a778ff');
+        Input.isAttacking = false;
+        return false;
+    }
 
     // 1. Kiểm tra xem còn thanh kiếm nào còn sống (hp > 0) không
     const aliveSwords = swords.filter(s => !s.isDead).length;

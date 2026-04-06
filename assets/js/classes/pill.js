@@ -30,15 +30,23 @@ class Pill {
             return CONFIG.SPIRIT_STONE.TYPES[this.dropSpec.quality] || CONFIG.SPIRIT_STONE.TYPES.LOW;
         }
 
+        if (this.dropSpec.specialKey) {
+            return CONFIG.PILL.SPECIAL_ITEMS[this.dropSpec.specialKey] || CONFIG.PILL.EXP_QUALITIES.LOW;
+        }
+
         const categoryMap = {
             EXP: CONFIG.PILL.EXP_QUALITIES,
+            INSIGHT: CONFIG.PILL.INSIGHT_QUALITIES,
             BREAKTHROUGH: CONFIG.PILL.BREAKTHROUGH_QUALITIES,
             ATTACK: CONFIG.PILL.ATTACK_QUALITIES,
+            SHIELD_BREAK: CONFIG.PILL.SHIELD_BREAK_QUALITIES,
             BERSERK: CONFIG.PILL.BERSERK_QUALITIES,
             RAGE: CONFIG.PILL.RAGE_QUALITIES,
             MANA: CONFIG.PILL.MANA_QUALITIES,
             MAX_MANA: CONFIG.PILL.MAX_MANA_QUALITIES,
-            SPEED: CONFIG.PILL.SPEED_QUALITIES
+            REGEN: CONFIG.PILL.REGEN_QUALITIES,
+            SPEED: CONFIG.PILL.SPEED_QUALITIES,
+            FORTUNE: CONFIG.PILL.FORTUNE_QUALITIES
         };
 
         const categoryDefs = categoryMap[this.dropSpec.category];

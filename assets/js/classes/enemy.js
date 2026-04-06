@@ -235,7 +235,9 @@ class Enemy {
 
         // --- 4. XỬ LÝ KHIÊN ---
         if (this.hasShield && this.shieldHp > 0) {
-            this.shieldHp -= damage;
+            const shieldBreakMultiplier = Input?.getShieldBreakMultiplier ? Input.getShieldBreakMultiplier() : 1;
+            const shieldDamage = damage > 0 ? Math.max(1, Math.ceil(damage * shieldBreakMultiplier)) : 0;
+            this.shieldHp -= shieldDamage;
             
             let currentLevel = Math.floor(((this.maxShieldHp - this.shieldHp) / this.maxShieldHp) * 5);
             if (currentLevel > this.shieldLevel) {
@@ -257,7 +259,9 @@ class Enemy {
 
         if (this.hp <= 0) {
             const rewardMult = this.isElite ? CONFIG.ENEMY.ELITE_MULT : 1;
-            let expGain = (this.rankData.expGive || 1) * rewardMult;
+            const expGainMultiplier = Input?.getExpGainMultiplier ? Input.getExpGainMultiplier() : 1;
+            const dropRateMultiplier = Input?.getDropRateMultiplier ? Input.getDropRateMultiplier() : 1;
+            let expGain = Math.max(1, Math.round((this.rankData.expGive || 1) * rewardMult * expGainMultiplier));
             let manaGain = CONFIG.MANA.GAIN_KILL * rewardMult;
 
             if (this.isElite) showNotify("DIỆT TINH ANH: THU HOẠCH LỚN!", "#ffcc00");
@@ -266,7 +270,7 @@ class Enemy {
             Input.updateExp(expGain);
             Input.updateMana(manaGain);
 
-            const pillDropChance = this.isElite ? CONFIG.PILL.ELITE_CHANCE : CONFIG.PILL.CHANCE;
+            const pillDropChance = Math.min(1, (this.isElite ? CONFIG.PILL.ELITE_CHANCE : CONFIG.PILL.CHANCE) * dropRateMultiplier);
             const pillDropCount = this.isElite ? CONFIG.PILL.DROP_COUNT.ELITE : CONFIG.PILL.DROP_COUNT.NORMAL;
 
             if (Math.random() < pillDropChance) {
@@ -275,7 +279,7 @@ class Enemy {
                 }
             }
 
-            const stoneDropChance = this.isElite ? CONFIG.SPIRIT_STONE.ELITE_CHANCE : CONFIG.SPIRIT_STONE.CHANCE;
+            const stoneDropChance = Math.min(1, (this.isElite ? CONFIG.SPIRIT_STONE.ELITE_CHANCE : CONFIG.SPIRIT_STONE.CHANCE) * dropRateMultiplier);
             const stoneDropCount = this.isElite ? CONFIG.SPIRIT_STONE.DROP_COUNT.ELITE : CONFIG.SPIRIT_STONE.DROP_COUNT.NORMAL;
 
             if (Math.random() < stoneDropChance) {
