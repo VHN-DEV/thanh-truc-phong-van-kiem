@@ -213,7 +213,8 @@ class Enemy {
         const currentRank = CONFIG.CULTIVATION.RANKS[playerRankIndex];
         const baseDamage = currentRank ? currentRank.damage : 1;
         const swordMultiplier = sword?.getDamageMultiplier ? sword.getDamageMultiplier() : (sword?.powerPenalty || 1);
-        let damage = Math.ceil(baseDamage * swordMultiplier);
+        const playerAttackMultiplier = Input?.getAttackMultiplier ? Input.getAttackMultiplier() : 1;
+        let damage = Math.ceil(baseDamage * swordMultiplier * playerAttackMultiplier);
 
         // --- 3. ÁP DỤNG LOGIC BẤT TỬ / GIẢM SÁT THƯƠNG ---
         if (rankDiff >= CONFIG.ENEMY.MAJOR_RANK_DIFF) {
@@ -264,6 +265,27 @@ class Enemy {
             Input.updateCombo();
             Input.updateExp(expGain);
             Input.updateMana(manaGain);
+
+            const pillDropChance = this.isElite ? CONFIG.PILL.ELITE_CHANCE : CONFIG.PILL.CHANCE;
+            const pillDropCount = this.isElite ? CONFIG.PILL.DROP_COUNT.ELITE : CONFIG.PILL.DROP_COUNT.NORMAL;
+
+            if (Math.random() < pillDropChance) {
+                for (let i = 0; i < pillDropCount; i++) {
+                    pills.push(new Pill(this.x, this.y, Input.createRandomPillDropSpec(this.isElite)));
+                }
+            }
+
+            const stoneDropChance = this.isElite ? CONFIG.SPIRIT_STONE.ELITE_CHANCE : CONFIG.SPIRIT_STONE.CHANCE;
+            const stoneDropCount = this.isElite ? CONFIG.SPIRIT_STONE.DROP_COUNT.ELITE : CONFIG.SPIRIT_STONE.DROP_COUNT.NORMAL;
+
+            if (Math.random() < stoneDropChance) {
+                for (let i = 0; i < stoneDropCount; i++) {
+                    pills.push(new Pill(this.x, this.y, Input.createRandomSpiritStoneDropSpec(this.isElite)));
+                }
+            }
+
+            this.respawn();
+            return "killed";
 
             // XỬ LÝ RƠI LINH ĐAN
             const pillCfg = CONFIG.PILL;

@@ -66,6 +66,40 @@ function resize() {
 window.addEventListener("resize", resize);
 resize();
 
+const QUALITY_ORDER = ['LOW', 'MEDIUM', 'HIGH', 'SUPREME'];
+const STONE_ORDER = ['SUPREME', 'HIGH', 'MEDIUM', 'LOW'];
+const numberFormatter = new Intl.NumberFormat('vi-VN');
+let ShopUI = null;
+let InventoryUI = null;
+
+function pickWeightedKey(rates, fallbackKey = null) {
+    const entries = Object.entries(rates || {});
+    if (!entries.length) return fallbackKey;
+
+    const roll = Math.random();
+    let cursor = 0;
+
+    for (const [key, weight] of entries) {
+        cursor += weight;
+        if (roll <= cursor) return key;
+    }
+
+    return fallbackKey || entries[entries.length - 1][0];
+}
+
+function formatNumber(value) {
+    return numberFormatter.format(Math.floor(value));
+}
+
+function escapeHtml(value) {
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 const Input = {
     screenX: width / 2, screenY: height / 2,
     x: width / 2, y: height / 2,
@@ -83,11 +117,20 @@ const Input = {
     lastFrameTime: performance.now(),
     exp: 0,
     rankIndex: 0, // Vị trí hiện tại trong mảng RANKS
-    pills: {
+    inventory: {},
+    spiritStones: {
         LOW: 0,
         MEDIUM: 0,
-        HIGH: 0
+        HIGH: 0,
+        SUPREME: 0
     },
+    bonusStats: {
+        attackPct: 0,
+        maxManaFlat: 0,
+        speedPct: 0
+    },
+    activeEffects: [],
+    breakthroughBonus: 0,
     isReadyToBreak: false, // Thêm biến trạng thái này
     combo: 0,
     rage: 0,
@@ -504,6 +547,660 @@ const Input = {
         }
     },
 
+    calculateTotalPillBoost() {
+        return this.breakthroughBonus;
+    },
+
+    getCurrentRank() {
+        return CONFIG.CULTIVATION.RANKS[this.rankIndex] || null;
+    },
+
+    getCurrentMajorRealmInfo() {
+        const rank = this.getCurrentRank();
+        if (!rank) return null;
+
+        return CONFIG.CULTIVATION.MAJOR_REALMS.find(realm =>
+            rank.id >= realm.startId && rank.id <= realm.endId
+        ) || null;
+    },
+
+    getNextMajorRealmInfo() {
+        const currentRealm = this.getCurrentMajorRealmInfo();
+        if (!currentRealm || !currentRealm.nextKey || !currentRealm.nextName) return null;
+
+        return {
+            key: currentRealm.nextKey,
+            name: currentRealm.nextName
+        };
+    },
+
+    getActiveEffectModifiers() {
+        return this.activeEffects.reduce((acc, effect) => {
+            acc.attackPct += effect.attackPct || 0;
+            acc.speedPct += effect.speedPct || 0;
+            acc.maxManaFlat += effect.maxManaFlat || 0;
+            return acc;
+        }, { attackPct: 0, speedPct: 0, maxManaFlat: 0 });
+    },
+
+    syncDerivedStats() {
+        const rank = this.getCurrentRank();
+        const baseMaxMana = rank?.maxMana || CONFIG.MANA.MAX || 100;
+        const active = this.getActiveEffectModifiers();
+        const prevMaxMana = this.maxMana;
+        const prevMana = this.mana;
+        const nextMaxMana = Math.max(1, Math.round(baseMaxMana + this.bonusStats.maxManaFlat + active.maxManaFlat));
+
+        this.maxMana = nextMaxMana;
+        this.mana = Math.max(0, Math.min(this.mana, this.maxMana));
+
+        if ((prevMaxMana !== this.maxMana || prevMana !== this.mana) && typeof document !== 'undefined') {
+            this.renderManaUI();
+        }
+    },
+
+    updateActiveEffects() {
+        if (!this.activeEffects.length) {
+            this.syncDerivedStats();
+            return;
+        }
+
+        const now = performance.now();
+        const expired = [];
+        this.activeEffects = this.activeEffects.filter(effect => {
+            const isAlive = effect.expiresAt > now;
+            if (!isAlive) expired.push(effect);
+            return isAlive;
+        });
+
+        this.syncDerivedStats();
+
+        expired.forEach(effect => {
+            showNotify(`${effect.name} đã tan hết dược lực`, effect.endColor || "#ffd36b");
+        });
+    },
+
+    getAttackMultiplier() {
+        const active = this.getActiveEffectModifiers();
+        return Math.max(0.2, 1 + this.bonusStats.attackPct + active.attackPct);
+    },
+
+    getSpeedMultiplier() {
+        const active = this.getActiveEffectModifiers();
+        return Math.max(0.35, 1 + this.bonusStats.speedPct + active.speedPct);
+    },
+
+    getAuraPalette() {
+        const berserkEffect = this.activeEffects.find(effect => effect.auraMode === 'berserk');
+        if (!berserkEffect) {
+            return {
+                shadowColor: "#00ffff",
+                particleColor: "rgba(150, 255, 255, 0.5)",
+                layers: [
+                    { w: 12, h: 22, color: "rgba(0, 102, 255, 0.3)", f: 0.8 },
+                    { w: 8, h: 16, color: "#00d9ff", f: 1.2 },
+                    { w: 5, h: 10, color: "#e0ffff", f: 1.8 }
+                ]
+            };
+        }
+
+        return {
+            shadowColor: "#ff4d4f",
+            particleColor: "rgba(255, 180, 120, 0.65)",
+            layers: [
+                { w: 14, h: 26, color: "rgba(120, 0, 0, 0.28)", f: 0.8 },
+                { w: 10, h: 19, color: "#ff5b47", f: 1.25 },
+                { w: 6, h: 12, color: "#ffe5b4", f: 1.85 }
+            ]
+        };
+    },
+
+    addRage(amount) {
+        const safeAmount = Math.max(0, Math.round(amount || 0));
+        this.rage = Math.min(this.maxRage, this.rage + safeAmount);
+        this.renderRageUI();
+    },
+
+    applyExpPenalty(ratio) {
+        const safeRatio = Math.max(0, Math.min(1, ratio || 0));
+        if (safeRatio <= 0) return 0;
+
+        const loss = Math.floor(this.exp * safeRatio);
+        this.exp = Math.max(0, this.exp - loss);
+        if (this.getCurrentRank() && this.exp < this.getCurrentRank().exp) {
+            this.isReadyToBreak = false;
+        }
+        return loss;
+    },
+
+    consumeBerserkPill(item, qualityConfig) {
+        this.activeEffects = this.activeEffects.filter(effect => effect.group !== 'BERSERK');
+
+        this.activeEffects.push({
+            id: item.key,
+            name: this.getItemDisplayName(item),
+            group: 'BERSERK',
+            expiresAt: performance.now() + (qualityConfig.durationMs || 10000),
+            attackPct: qualityConfig.attackPct || 0,
+            speedPct: qualityConfig.sideSpeedPct || 0,
+            maxManaFlat: qualityConfig.sideMaxManaFlat || 0,
+            auraMode: qualityConfig.auraMode || null,
+            endColor: qualityConfig.color
+        });
+
+        const sideEffects = [];
+
+        if (qualityConfig.sideManaLoss) {
+            const manaLoss = Math.min(this.mana, qualityConfig.sideManaLoss);
+            this.updateMana(-manaLoss);
+            sideEffects.push(`hao ${formatNumber(manaLoss)} linh lực`);
+        }
+
+        if (qualityConfig.sideExpLossRatio) {
+            const expLoss = this.applyExpPenalty(qualityConfig.sideExpLossRatio);
+            if (expLoss > 0) sideEffects.push(`tổn ${formatNumber(expLoss)} tu vi`);
+        }
+
+        if (qualityConfig.sideMaxManaFlat) {
+            sideEffects.push(`tạm giảm ${Math.abs(qualityConfig.sideMaxManaFlat)} giới hạn linh lực`);
+        }
+
+        if (qualityConfig.sideSpeedPct) {
+            sideEffects.push(`tạm giảm ${Math.round(Math.abs(qualityConfig.sideSpeedPct) * 100)}% tốc độ`);
+        }
+
+        this.syncDerivedStats();
+
+        const sideText = sideEffects.length ? `, đổi lại ${sideEffects.join(', ')}` : '';
+        showNotify(`Dùng ${this.getItemDisplayName(item)}: cuồng hóa ${Math.round((qualityConfig.attackPct || 0) * 100)}%${sideText}`, qualityConfig.color);
+    },
+
+    getSpiritStoneType(quality) {
+        return CONFIG.SPIRIT_STONE.TYPES[quality] || CONFIG.SPIRIT_STONE.TYPES.LOW;
+    },
+
+    getSpiritStoneTotalValue() {
+        return Object.entries(this.spiritStones).reduce((total, [quality, count]) => {
+            return total + (count * this.getSpiritStoneType(quality).value);
+        }, 0);
+    },
+
+    setSpiritStoneTotalValue(totalLowValue) {
+        let remaining = Math.max(0, Math.floor(totalLowValue));
+        const nextWallet = { LOW: 0, MEDIUM: 0, HIGH: 0, SUPREME: 0 };
+
+        STONE_ORDER.forEach(quality => {
+            const type = this.getSpiritStoneType(quality);
+            nextWallet[quality] = Math.floor(remaining / type.value);
+            remaining %= type.value;
+        });
+
+        this.spiritStones = nextWallet;
+    },
+
+    addSpiritStone(quality, count = 1) {
+        const type = this.getSpiritStoneType(quality);
+        this.setSpiritStoneTotalValue(this.getSpiritStoneTotalValue() + (type.value * count));
+    },
+
+    canAffordLowStoneCost(costLowStone) {
+        return this.getSpiritStoneTotalValue() >= Math.max(0, costLowStone);
+    },
+
+    spendSpiritStones(costLowStone) {
+        const safeCost = Math.max(0, Math.floor(costLowStone));
+        if (!this.canAffordLowStoneCost(safeCost)) return false;
+
+        this.setSpiritStoneTotalValue(this.getSpiritStoneTotalValue() - safeCost);
+        return true;
+    },
+
+    buildInventoryKey(spec) {
+        const parts = [
+            spec.kind || 'PILL',
+            spec.category || 'EXP',
+            spec.quality || 'LOW'
+        ];
+
+        if (spec.realmKey) parts.push(spec.realmKey);
+        return parts.join('|');
+    },
+
+    getItemQualityConfig(item) {
+        const categoryMap = {
+            EXP: CONFIG.PILL.EXP_QUALITIES,
+            BREAKTHROUGH: CONFIG.PILL.BREAKTHROUGH_QUALITIES,
+            ATTACK: CONFIG.PILL.ATTACK_QUALITIES,
+            BERSERK: CONFIG.PILL.BERSERK_QUALITIES,
+            RAGE: CONFIG.PILL.RAGE_QUALITIES,
+            MANA: CONFIG.PILL.MANA_QUALITIES,
+            MAX_MANA: CONFIG.PILL.MAX_MANA_QUALITIES,
+            SPEED: CONFIG.PILL.SPEED_QUALITIES
+        };
+
+        const defs = categoryMap[item.category] || CONFIG.PILL.EXP_QUALITIES;
+        return defs[item.quality] || defs.LOW;
+    },
+
+    getItemDisplayName(item) {
+        const qualityConfig = this.getItemQualityConfig(item);
+        if (item.category === 'BREAKTHROUGH') {
+            const realmName = item.realmName || this.getNextMajorRealmInfo()?.name || "đột phá";
+            return `${qualityConfig.label} ${realmName} đan`;
+        }
+
+        return qualityConfig.fullName;
+    },
+
+    getItemCategoryLabel(item) {
+        const labels = {
+            EXP: 'Tu vi',
+            BREAKTHROUGH: 'Đột phá',
+            ATTACK: 'Công phạt',
+            BERSERK: 'Cuồng bạo',
+            RAGE: 'Nộ',
+            MANA: 'Hồi linh',
+            MAX_MANA: 'Khai hải',
+            SPEED: 'Thân pháp'
+        };
+
+        return labels[item.category] || 'Đan dược';
+    },
+
+    getItemDescription(item) {
+        const qualityConfig = this.getItemQualityConfig(item);
+        switch (item.category) {
+            case 'BREAKTHROUGH': {
+                const realmName = item.realmName || "cảnh giới kế tiếp";
+                return `Tăng ${Math.round(qualityConfig.breakthroughBoost * 100)}% tỉ lệ đột phá tới ${realmName}.`;
+            }
+            case 'ATTACK':
+                return `Tăng vĩnh viễn ${Math.round((qualityConfig.attackPct || 0) * 100)}% lực công kích.`;
+            case 'BERSERK': {
+                const sideEffects = [];
+                if (qualityConfig.sideManaLoss) sideEffects.push(`hao ${qualityConfig.sideManaLoss} linh lực`);
+                if (qualityConfig.sideMaxManaFlat) sideEffects.push(`giảm ${Math.abs(qualityConfig.sideMaxManaFlat)} giới hạn linh lực`);
+                if (qualityConfig.sideSpeedPct) sideEffects.push(`giảm ${Math.round(Math.abs(qualityConfig.sideSpeedPct) * 100)}% tốc độ`);
+                if (qualityConfig.sideExpLossRatio) sideEffects.push(`tổn ${Math.round(qualityConfig.sideExpLossRatio * 100)}% tu vi hiện có`);
+
+                const sideText = sideEffects.length ? ` Tác dụng phụ: ${sideEffects.join(', ')}.` : '';
+                return `Cuồng hóa ${Math.round((qualityConfig.attackPct || 0) * 100)}% lực công kích trong ${Math.round((qualityConfig.durationMs || 0) / 1000)} giây.${sideText}`;
+            }
+            case 'RAGE':
+                return `Tăng ngay ${Math.round(qualityConfig.rageGain || 0)} nộ kiếm.`;
+            case 'MANA':
+                return `Hồi ngay ${Math.round(qualityConfig.manaRestore || 0)} linh lực.`;
+            case 'MAX_MANA':
+                return `Tăng vĩnh viễn ${Math.round(qualityConfig.maxManaFlat || 0)} giới hạn linh lực.`;
+            case 'SPEED':
+                return `Tăng vĩnh viễn ${Math.round((qualityConfig.speedPct || 0) * 100)}% tốc độ vận chuyển kiếm trận.`;
+            case 'EXP':
+            default:
+                return `Tăng ${Math.round(qualityConfig.expFactor * 100)}% tu vi của cảnh giới hiện tại.`;
+        }
+    },
+
+    addInventoryItem(spec, count = 1) {
+        const itemKey = this.buildInventoryKey(spec);
+        if (!this.inventory[itemKey]) {
+            this.inventory[itemKey] = {
+                key: itemKey,
+                kind: spec.kind || 'PILL',
+                category: spec.category || 'EXP',
+                quality: spec.quality || 'LOW',
+                realmKey: spec.realmKey || null,
+                realmName: spec.realmName || null,
+                count: 0
+            };
+        }
+
+        this.inventory[itemKey].count += count;
+        return this.inventory[itemKey];
+    },
+
+    getInventoryEntries() {
+        const categoryOrder = CONFIG.PILL.CATEGORY_SORT || {};
+
+        return Object.values(this.inventory)
+            .filter(item => item.count > 0)
+            .sort((a, b) => {
+                const categoryDiff = (categoryOrder[a.category] ?? 99) - (categoryOrder[b.category] ?? 99);
+                if (categoryDiff !== 0) return categoryDiff;
+
+                const qualityDiff = QUALITY_ORDER.indexOf(b.quality) - QUALITY_ORDER.indexOf(a.quality);
+                if (qualityDiff !== 0) return qualityDiff;
+
+                return (a.realmName || '').localeCompare(b.realmName || '', 'vi');
+            });
+    },
+
+    isInventoryItemUsable(item) {
+        if (item.category === 'EXP') return true;
+
+        const nextRealm = this.getNextMajorRealmInfo();
+        return Boolean(nextRealm && item.realmKey === nextRealm.key);
+    },
+
+    createRandomPillDropSpec(isElite = false) {
+        const categoryRates = CONFIG.PILL.CATEGORY_RATES[isElite ? 'ELITE' : 'NORMAL'];
+        const qualityRates = CONFIG.PILL.QUALITY_RATES[isElite ? 'ELITE' : 'NORMAL'];
+        let category = pickWeightedKey(categoryRates, 'EXP');
+        const quality = pickWeightedKey(qualityRates, 'LOW');
+
+        if (category === 'BREAKTHROUGH') {
+            const nextRealm = this.getNextMajorRealmInfo();
+            if (!nextRealm) category = 'EXP';
+            else {
+                return {
+                    kind: 'PILL',
+                    category,
+                    quality,
+                    realmKey: nextRealm.key,
+                    realmName: nextRealm.name
+                };
+            }
+        }
+
+        return {
+            kind: 'PILL',
+            category: 'EXP',
+            quality
+        };
+    },
+
+    createRandomSpiritStoneDropSpec(isElite = false) {
+        const qualityRates = CONFIG.SPIRIT_STONE.QUALITY_RATES[isElite ? 'ELITE' : 'NORMAL'];
+        return {
+            kind: 'STONE',
+            quality: pickWeightedKey(qualityRates, 'LOW')
+        };
+    },
+
+    getShopItems() {
+        const shopCategories = ['EXP', 'ATTACK', 'BERSERK', 'RAGE', 'MANA', 'MAX_MANA', 'SPEED'];
+        const items = [];
+
+        shopCategories.forEach(category => {
+            QUALITY_ORDER.forEach(quality => {
+                const qualityConfig = this.getItemQualityConfig({ category, quality });
+                items.push({
+                    id: `${category}:${quality}`,
+                    kind: 'PILL',
+                    category,
+                    quality,
+                    priceLowStone: qualityConfig.buyPriceLowStone
+                });
+            });
+        });
+
+        const nextRealm = this.getNextMajorRealmInfo();
+        if (nextRealm) {
+            QUALITY_ORDER.forEach(quality => {
+                items.push({
+                    id: `BREAKTHROUGH:${quality}:${nextRealm.key}`,
+                    kind: 'PILL',
+                    category: 'BREAKTHROUGH',
+                    quality,
+                    realmKey: nextRealm.key,
+                    realmName: nextRealm.name,
+                    priceLowStone: CONFIG.PILL.BREAKTHROUGH_QUALITIES[quality].buyPriceLowStone
+                });
+            });
+        }
+
+        return items;
+    },
+
+    collectDrop(dropSpec) {
+        if (!dropSpec) return;
+
+        if (dropSpec.kind === 'STONE') {
+            const stoneType = this.getSpiritStoneType(dropSpec.quality);
+            this.addSpiritStone(dropSpec.quality, 1);
+            showNotify(`+1 ${stoneType.label}`, stoneType.color);
+        } else {
+            const item = this.addInventoryItem(dropSpec, 1);
+            const qualityConfig = this.getItemQualityConfig(item);
+            showNotify(`+1 ${this.getItemDisplayName(item)}`, qualityConfig.color);
+        }
+
+        this.refreshResourceUI();
+    },
+
+    refreshResourceUI() {
+        this.renderExpUI();
+
+        if (ShopUI && typeof ShopUI.render === 'function') {
+            ShopUI.render();
+        }
+
+        if (InventoryUI && typeof InventoryUI.render === 'function') {
+            InventoryUI.render();
+        }
+    },
+
+    buyShopItem(itemId) {
+        const item = this.getShopItems().find(entry => entry.id === itemId);
+        if (!item) return false;
+
+        if (!this.spendSpiritStones(item.priceLowStone)) {
+            showNotify("Linh thạch không đủ để giao dịch", "#ff8a80");
+            return false;
+        }
+
+        const addedItem = this.addInventoryItem(item, 1);
+        showNotify(`Đã mua ${this.getItemDisplayName(addedItem)}`, this.getItemQualityConfig(addedItem).color);
+        this.refreshResourceUI();
+        return true;
+    },
+
+    getInventorySellPrice(item) {
+        if (!item) return 0;
+
+        const qualityConfig = this.getItemQualityConfig(item);
+        const buyPrice = Math.max(0, qualityConfig.buyPriceLowStone || 0);
+        const ratio = Math.max(0, parseFloat(CONFIG.ITEMS.SELLBACK_RATIO) || 0);
+
+        return Math.max(1, Math.floor(buyPrice * ratio));
+    },
+
+    sellInventoryItem(itemKey) {
+        const item = this.inventory[itemKey];
+        if (!item || item.count <= 0) return false;
+
+        const sellPrice = this.getInventorySellPrice(item);
+        if (sellPrice <= 0) return false;
+
+        item.count--;
+        if (item.count <= 0) delete this.inventory[itemKey];
+
+        this.setSpiritStoneTotalValue(this.getSpiritStoneTotalValue() + sellPrice);
+        showNotify(`Bán ${this.getItemDisplayName(item)}: +${formatNumber(sellPrice)} hạ phẩm linh thạch`, this.getItemQualityConfig(item).color);
+        this.refreshResourceUI();
+        return true;
+    },
+
+    useInventoryItem(itemKey) {
+        const item = this.inventory[itemKey];
+        if (!item || item.count <= 0) return false;
+
+        const qualityConfig = this.getItemQualityConfig(item);
+
+        if (item.category === 'BREAKTHROUGH' && !this.isInventoryItemUsable(item)) {
+            showNotify(`Đan này chỉ hợp để đột phá ${item.realmName}`, "#ffd36b");
+            return false;
+        }
+
+        item.count--;
+        if (item.count <= 0) delete this.inventory[itemKey];
+
+        if (item.category === 'EXP') {
+            const rank = this.getCurrentRank();
+            if (!rank) return false;
+
+            const expGain = Math.max(1, Math.round(rank.exp * qualityConfig.expFactor));
+            this.updateExp(expGain);
+            showNotify(`Dùng ${this.getItemDisplayName(item)}: +${formatNumber(expGain)} tu vi`, qualityConfig.color);
+            this.refreshResourceUI();
+            return true;
+        }
+
+        if (item.category === 'BREAKTHROUGH') {
+            const rank = this.getCurrentRank();
+            if (!rank) return false;
+
+            const maxAllowed = CONFIG.CULTIVATION.MAX_BREAKTHROUGH_CHANCE || 0.99;
+            const currentTotal = Math.min(maxAllowed, rank.chance + this.breakthroughBonus);
+            const maxBonus = Math.max(0, maxAllowed - rank.chance);
+            const nextBonus = Math.min(maxBonus, this.breakthroughBonus + qualityConfig.breakthroughBoost);
+            const appliedBoost = Math.min(maxAllowed, rank.chance + nextBonus) - currentTotal;
+
+            if (appliedBoost <= 0) {
+                this.addInventoryItem(item, 1);
+                showNotify("Dược lực đã chạm giới hạn đột phá", "#ffd36b");
+                return false;
+            }
+
+            this.breakthroughBonus = nextBonus;
+            showNotify(`Dùng ${this.getItemDisplayName(item)}: +${Math.round(appliedBoost * 100)}% tỉ lệ đột phá`, qualityConfig.color);
+            this.refreshResourceUI();
+            return true;
+        }
+
+        switch (item.category) {
+            case 'ATTACK':
+                this.bonusStats.attackPct += qualityConfig.attackPct || 0;
+                showNotify(`Dùng ${this.getItemDisplayName(item)}: +${Math.round((qualityConfig.attackPct || 0) * 100)}% công kích`, qualityConfig.color);
+                break;
+            case 'BERSERK':
+                this.consumeBerserkPill(item, qualityConfig);
+                break;
+            case 'RAGE':
+                this.addRage(qualityConfig.rageGain || 0);
+                showNotify(`Dùng ${this.getItemDisplayName(item)}: +${Math.round(qualityConfig.rageGain || 0)} nộ`, qualityConfig.color);
+                break;
+            case 'MANA':
+                this.updateMana(qualityConfig.manaRestore || 0);
+                showNotify(`Dùng ${this.getItemDisplayName(item)}: hồi ${Math.round(qualityConfig.manaRestore || 0)} linh lực`, qualityConfig.color);
+                break;
+            case 'MAX_MANA':
+                this.bonusStats.maxManaFlat += qualityConfig.maxManaFlat || 0;
+                this.syncDerivedStats();
+                this.updateMana(qualityConfig.maxManaFlat || 0);
+                showNotify(`Dùng ${this.getItemDisplayName(item)}: +${Math.round(qualityConfig.maxManaFlat || 0)} giới hạn linh lực`, qualityConfig.color);
+                break;
+            case 'SPEED':
+                this.bonusStats.speedPct += qualityConfig.speedPct || 0;
+                showNotify(`Dùng ${this.getItemDisplayName(item)}: +${Math.round((qualityConfig.speedPct || 0) * 100)}% tốc độ`, qualityConfig.color);
+                break;
+            default:
+                this.addInventoryItem(item, 1);
+                return false;
+        }
+
+        this.refreshResourceUI();
+        return true;
+    },
+
+    executeBreakthrough(isForced = false) {
+        const currentRank = this.getCurrentRank();
+        if (!currentRank) return;
+
+        const pillBoost = this.calculateTotalPillBoost();
+        let totalChance = currentRank.chance + pillBoost;
+
+        const maxAllowed = CONFIG.CULTIVATION.MAX_BREAKTHROUGH_CHANCE || 0.95;
+        totalChance = Math.min(maxAllowed, totalChance);
+
+        if (Math.random() <= totalChance) {
+            this.exp = 0;
+            this.rankIndex++;
+            this.isReadyToBreak = false;
+            this.breakthroughBonus = 0;
+
+            const nextRank = CONFIG.CULTIVATION.RANKS[this.rankIndex];
+            if (nextRank) {
+                this.syncDerivedStats();
+
+                if (isForced) {
+                    showNotify(`CƯỜNG ÉP ĐỘT PHÁ THÀNH CÔNG: ${nextRank.name.toUpperCase()}`, "#ff8800");
+                } else {
+                    this.mana = this.maxMana;
+                    showNotify(`ĐỘT PHÁ THÀNH CÔNG: ${nextRank.name.toUpperCase()}`, "#ffcc00");
+                }
+            }
+            this.createLevelUpExplosion(this.x, this.y, currentRank.color);
+        } else {
+            const penaltyFactor = CONFIG.CULTIVATION.BREAKTHROUGH_PENALTY_FACTOR;
+            const penalty = Math.floor(this.exp * penaltyFactor);
+
+            this.exp -= penalty;
+            this.isReadyToBreak = false;
+            this.breakthroughBonus *= 0.5;
+
+            const penaltyPercent = Math.round(penaltyFactor * 100);
+            showNotify(`ĐỘT PHÁ THẤT BẠI! Tâm ma phản phệ (-${penaltyPercent}% tu vi)`, "#ff4444");
+            this.triggerExpError();
+        }
+
+        this.refreshResourceUI();
+        this.renderManaUI();
+    },
+
+    renderExpUI() {
+        const rank = this.getCurrentRank();
+        if (!rank) return;
+
+        this.syncDerivedStats();
+
+        const barExp = document.getElementById('exp-bar');
+        const textExp = document.getElementById('exp-text');
+        const rankText = document.getElementById('cultivation-rank');
+        const breakthroughGroup = document.querySelector('.breakthrough-group');
+
+        const pillBoost = this.calculateTotalPillBoost();
+        const maxAllowed = CONFIG.CULTIVATION.MAX_BREAKTHROUGH_CHANCE || 0.99;
+        const totalChance = Math.min(maxAllowed, rank.chance + pillBoost);
+        const basePercent = Math.round(rank.chance * 100);
+        const bonusPercent = Math.round(pillBoost * 100);
+        const totalPercent = Math.round(totalChance * 100);
+
+        if (textExp) {
+            const statusText = this.isReadyToBreak ?
+                `<span style="color:#ffcc00; font-weight:bold;">SẴN SÀNG ĐỘT PHÁ</span>` :
+                `Tu vi: ${formatNumber(this.exp)}/${formatNumber(rank.exp)}`;
+
+            textExp.innerHTML = `${statusText} | ` +
+                `<span style="color:#86fff0">Cơ sở: ${basePercent}%</span> | ` +
+                `<span style="color:#ffd36b">Đan trợ lực: +${bonusPercent}%</span> | ` +
+                `<span style="color:#ff9ef7">Tổng TL: ${totalPercent}%</span>`;
+        }
+
+        if (breakthroughGroup) {
+            if (this.isReadyToBreak) breakthroughGroup.classList.add('is-active');
+            else breakthroughGroup.classList.remove('is-active');
+        }
+
+        const percentage = (this.exp / rank.exp) * 100;
+        if (barExp) {
+            barExp.style.width = Math.min(100, percentage) + '%';
+            barExp.style.background = `linear-gradient(90deg, ${rank.lightColor}, ${rank.color})`;
+
+            if (this.isReadyToBreak) {
+                barExp.style.boxShadow = `0 0 15px #fff, 0 0 5px ${rank.color}`;
+                barExp.classList.add('exp-full-glow');
+            } else {
+                barExp.style.boxShadow = `0 0 10px ${rank.lightColor}`;
+                barExp.classList.remove('exp-full-glow');
+            }
+        }
+
+        if (rankText) {
+            rankText.innerText = `Cảnh giới: ${rank.name}`;
+            rankText.style.color = rank.color;
+        }
+    },
+
     triggerExpError() {
         const el = document.getElementById('exp-container');
         el.classList.add('shake-red');
@@ -512,6 +1209,7 @@ const Input = {
 
     update(dt) { // Nhận thêm tham số dt
         this.updateUltimateState();
+        this.updateActiveEffects();
 
         const worldPos = Camera.screenToWorld(this.screenX, this.screenY);
         this.x = worldPos.x;
@@ -577,23 +1275,20 @@ const Input = {
 
     drawFlame(ctx, scaleFactor) {
         const time = performance.now() * 0.003;
+        const aura = this.getAuraPalette();
         ctx.save();
         ctx.translate(this.x, this.y);
 
         // 1. Quầng sáng lạnh (Aura Băng Diễm)
         // Càng Lam Băng Diễm có đặc điểm tỏa ra hàn khí màu xanh lam nhạt
         ctx.shadowBlur = 20 * scaleFactor;
-        ctx.shadowColor = "#00ffff"; // Màu Cyan cực sáng
+        ctx.shadowColor = aura.shadowColor;
 
         // 2. Định nghĩa các lớp màu "Càng Lam"
         // Lớp 1: Lam đậm (viền ngoài)
         // Lớp 2: Lam băng (thân lửa)
         // Lớp 3: Thiên lam trắng (lõi hỏa rực cháy)
-        const layers = [
-            { w: 12, h: 22, color: "rgba(0, 102, 255, 0.3)", f: 0.8 }, // Royal Blue mờ
-            { w: 8,  h: 16, color: "#00d9ff", f: 1.2 },               // Electric Blue
-            { w: 5,  h: 10, color: "#e0ffff", f: 1.8 }                // Lõi trắng xanh
-        ];
+        const layers = aura.layers;
 
         layers.forEach((layer, i) => {
             const flicker = Math.sin(time * layer.f + i) * 3;
@@ -619,7 +1314,7 @@ const Input = {
 
             ctx.beginPath();
             ctx.arc(px, py, Math.max(0, pr), 0, Math.PI * 2);
-            ctx.fillStyle = "rgba(150, 255, 255, 0.5)";
+            ctx.fillStyle = aura.particleColor;
             ctx.fill();
         }
 
@@ -753,11 +1448,14 @@ const SettingsUI = {
                 if (parsed.ENEMY) Object.assign(CONFIG.ENEMY, parsed.ENEMY);
                 if (parsed.MANA) Object.assign(CONFIG.MANA, parsed.MANA);
                 if (parsed.PILL) Object.assign(CONFIG.PILL, parsed.PILL);
+                if (parsed.SPIRIT_STONE) Object.assign(CONFIG.SPIRIT_STONE, parsed.SPIRIT_STONE);
                 if (parsed.ULTIMATE) Object.assign(CONFIG.ULTIMATE, parsed.ULTIMATE);
                 if (parsed.CULTIVATION) Object.assign(CONFIG.CULTIVATION, parsed.CULTIVATION);
 
                 Input.maxRage = Math.max(1, parseInt(CONFIG.ULTIMATE.MAX_RAGE, 10) || 100);
                 Input.rage = Math.min(Input.rage, Input.maxRage);
+                Input.syncDerivedStats();
+                Input.renderManaUI();
                 Input.renderRageUI();
                 
                 console.log("Thiên Thư đã được phục hồi từ LocalStorage.");
@@ -817,6 +1515,7 @@ const SettingsUI = {
             'cfg-sw-gain-kill': CONFIG.MANA.GAIN_KILL,
 
             'cfg-pi-chance': CONFIG.PILL.CHANCE,
+            'cfg-st-chance': CONFIG.SPIRIT_STONE.CHANCE,
             'cfg-pi-magnet': CONFIG.PILL.MAGNET_SPEED,
             'cfg-pi-trail': CONFIG.PILL.TRAIL_LENGTH,
             'cfg-ul-max-rage': CONFIG.ULTIMATE.MAX_RAGE,
@@ -881,6 +1580,7 @@ const SettingsUI = {
             CONFIG.MANA.GAIN_KILL = parseFloat(document.getElementById('cfg-sw-gain-kill').value);
             
             CONFIG.PILL.CHANCE = parseFloat(document.getElementById('cfg-pi-chance').value);
+            CONFIG.SPIRIT_STONE.CHANCE = parseFloat(document.getElementById('cfg-st-chance').value);
             CONFIG.PILL.MAGNET_SPEED = parseInt(document.getElementById('cfg-pi-magnet').value);
             CONFIG.PILL.TRAIL_LENGTH = parseInt(document.getElementById('cfg-pi-trail').value);
             CONFIG.ULTIMATE.MAX_RAGE = Math.max(1, parseInt(document.getElementById('cfg-ul-max-rage').value, 10) || 1);
@@ -930,6 +1630,236 @@ const SettingsUI = {
 };
 
 // 2. Nút Đổi Hình Thái (Change Form)
+function buildWalletMarkup() {
+    const totalLowValue = Input.getSpiritStoneTotalValue();
+    const rows = STONE_ORDER.map(quality => {
+        const stoneType = Input.getSpiritStoneType(quality);
+        const count = Input.spiritStones[quality] || 0;
+
+        return `
+            <div class="wallet-chip" style="--wallet-accent:${stoneType.color}">
+                <span>${escapeHtml(stoneType.label)}</span>
+                <strong>${formatNumber(count)}</strong>
+            </div>
+        `;
+    }).join('');
+
+    return `
+        <div class="resource-wallet">
+            <div class="wallet-total">
+                <span>Tổng quy đổi</span>
+                <strong>${formatNumber(totalLowValue)} hạ phẩm linh thạch</strong>
+            </div>
+            <div class="wallet-grid">${rows}</div>
+        </div>
+    `;
+}
+
+function openPopup(overlay) {
+    if (!overlay) return;
+    document.body.style.cursor = 'default';
+    overlay.style.display = 'flex';
+    setTimeout(() => overlay.classList.add('show'), 10);
+}
+
+function closePopup(overlay) {
+    if (!overlay) return;
+    overlay.classList.remove('show');
+    setTimeout(() => {
+        if (!overlay.classList.contains('show')) {
+            overlay.style.display = 'none';
+        }
+    }, 300);
+    document.body.style.cursor = 'none';
+}
+
+ShopUI = {
+    overlay: document.getElementById('shop-popup'),
+    btnOpen: document.getElementById('btn-shop'),
+    btnClose: document.getElementById('close-shop'),
+    list: document.getElementById('shop-items'),
+    wallet: document.getElementById('shop-wallet'),
+
+    init() {
+        if (!this.overlay || !this.btnOpen) return;
+
+        const content = this.overlay.querySelector('.popup-content');
+        if (content) {
+            content.addEventListener('pointerdown', (e) => e.stopPropagation());
+        }
+
+        this.btnOpen.addEventListener('pointerdown', (e) => {
+            e.stopPropagation();
+            this.open();
+        });
+
+        if (this.btnClose) {
+            this.btnClose.addEventListener('pointerdown', (e) => {
+                e.stopPropagation();
+                this.close();
+            });
+        }
+
+        if (this.list) {
+            this.list.addEventListener('pointerdown', (e) => {
+                const actionBtn = e.target.closest('[data-shop-id]');
+                if (!actionBtn) return;
+
+                e.stopPropagation();
+                Input.buyShopItem(actionBtn.getAttribute('data-shop-id'));
+            });
+        }
+
+        this.overlay.addEventListener('pointerdown', (e) => {
+            if (e.target === this.overlay) this.close();
+        });
+    },
+
+    render() {
+        if (!this.wallet || !this.list) return;
+
+        this.wallet.innerHTML = buildWalletMarkup();
+        const nextRealm = Input.getNextMajorRealmInfo();
+        const tip = nextRealm
+            ? `<div class="shop-tip">Đang bày bán đan tăng tu vi và ${escapeHtml(nextRealm.name)} đan để chuẩn bị cho lần đột phá kế tiếp.</div>`
+            : `<div class="shop-tip">Đã ở cảnh giới tối cao, cửa hàng chỉ còn bày bán đan tăng tu vi.</div>`;
+
+        const cards = Input.getShopItems().map(item => {
+            const qualityConfig = Input.getItemQualityConfig(item);
+            const canAfford = Input.canAffordLowStoneCost(item.priceLowStone);
+
+            return `
+                <article class="shop-card" style="--slot-accent:${qualityConfig.color}">
+                    <div class="slot-badge">${escapeHtml(Input.getItemCategoryLabel(item))}</div>
+                    <h4>${escapeHtml(Input.getItemDisplayName(item))}</h4>
+                    <p>${escapeHtml(Input.getItemDescription(item))}</p>
+                    <div class="slot-meta">Giá: ${formatNumber(item.priceLowStone)} hạ phẩm</div>
+                    <button class="btn-slot-action" data-shop-id="${escapeHtml(item.id)}" ${canAfford ? '' : 'disabled'}>Mua</button>
+                </article>
+            `;
+        }).join('');
+
+        this.list.innerHTML = tip + cards;
+    },
+
+    open() {
+        this.render();
+        openPopup(this.overlay);
+    },
+
+    close() {
+        closePopup(this.overlay);
+    }
+};
+
+InventoryUI = {
+    overlay: document.getElementById('inventory-popup'),
+    btnOpen: document.getElementById('btn-inventory'),
+    btnClose: document.getElementById('close-inventory'),
+    wallet: document.getElementById('inventory-wallet'),
+    pillGrid: document.getElementById('inventory-pill-grid'),
+    stoneGrid: document.getElementById('inventory-stone-grid'),
+
+    init() {
+        if (!this.overlay || !this.btnOpen) return;
+
+        const content = this.overlay.querySelector('.popup-content');
+        if (content) {
+            content.addEventListener('pointerdown', (e) => e.stopPropagation());
+        }
+
+        this.btnOpen.addEventListener('pointerdown', (e) => {
+            e.stopPropagation();
+            this.open();
+        });
+
+        if (this.btnClose) {
+            this.btnClose.addEventListener('pointerdown', (e) => {
+                e.stopPropagation();
+                this.close();
+            });
+        }
+
+        if (this.pillGrid) {
+            this.pillGrid.addEventListener('pointerdown', (e) => {
+                const actionBtn = e.target.closest('[data-item-key]');
+                if (!actionBtn) return;
+
+                e.stopPropagation();
+                const itemKey = actionBtn.getAttribute('data-item-key');
+                const action = actionBtn.getAttribute('data-action') || 'use';
+
+                if (action === 'sell') {
+                    Input.sellInventoryItem(itemKey);
+                } else {
+                    Input.useInventoryItem(itemKey);
+                }
+            });
+        }
+
+        this.overlay.addEventListener('pointerdown', (e) => {
+            if (e.target === this.overlay) this.close();
+        });
+    },
+
+    render() {
+        if (!this.wallet || !this.pillGrid || !this.stoneGrid) return;
+
+        this.wallet.innerHTML = buildWalletMarkup();
+
+        const entries = Input.getInventoryEntries();
+        const cards = entries.map(item => {
+            const qualityConfig = Input.getItemQualityConfig(item);
+            const usable = Input.isInventoryItemUsable(item);
+            const sellPrice = Input.getInventorySellPrice(item);
+            const label = item.category === 'BREAKTHROUGH' && !usable
+                ? `Chờ ${item.realmName}`
+                : 'Dùng';
+
+            return `
+                <article class="inventory-slot" style="--slot-accent:${qualityConfig.color}">
+                    <div class="slot-badge">${formatNumber(item.count)}x</div>
+                    <h4>${escapeHtml(Input.getItemDisplayName(item))}</h4>
+                    <p>${escapeHtml(Input.getItemDescription(item))}</p>
+                    <div class="slot-meta">Bán lại: ${formatNumber(sellPrice)} hạ phẩm</div>
+                    <div class="slot-actions">
+                        <button class="btn-slot-action" data-action="use" data-item-key="${escapeHtml(item.key)}" ${usable ? '' : 'disabled'}>${escapeHtml(label)}</button>
+                        <button class="btn-slot-action is-secondary" data-action="sell" data-item-key="${escapeHtml(item.key)}">Bán</button>
+                    </div>
+                </article>
+            `;
+        });
+
+        const emptySlotCount = Math.max(0, CONFIG.ITEMS.INVENTORY_MIN_SLOTS - cards.length);
+        for (let i = 0; i < emptySlotCount; i++) {
+            cards.push(`<article class="inventory-slot is-empty"><span>Ô trống</span></article>`);
+        }
+        this.pillGrid.innerHTML = cards.join('');
+
+        this.stoneGrid.innerHTML = STONE_ORDER.map(quality => {
+            const stoneType = Input.getSpiritStoneType(quality);
+
+            return `
+                <article class="inventory-slot stone-slot" style="--slot-accent:${stoneType.color}">
+                    <div class="slot-badge">Linh thạch</div>
+                    <h4>${escapeHtml(stoneType.label)}</h4>
+                    <p>Quy đổi: ${formatNumber(stoneType.value)} hạ phẩm linh thạch.</p>
+                    <div class="slot-count">${formatNumber(Input.spiritStones[quality] || 0)}</div>
+                </article>
+            `;
+        }).join('');
+    },
+
+    open() {
+        this.render();
+        openPopup(this.overlay);
+    },
+
+    close() {
+        closePopup(this.overlay);
+    }
+};
+
 document.getElementById('btn-form').addEventListener('pointerdown', (e) => {
     e.stopPropagation();
     e.preventDefault();
@@ -1013,11 +1943,14 @@ function init() {
     const startingRank = CONFIG.CULTIVATION.RANKS[Input.rankIndex];
     Input.maxMana = startingRank.maxMana || CONFIG.MANA.MAX;
     Input.mana = Input.maxMana;
+    Input.syncDerivedStats();
 
     Input.renderManaUI();
     Input.renderExpUI();
     Input.renderRageUI();
     SettingsUI.init();
+    if (ShopUI) ShopUI.init();
+    if (InventoryUI) InventoryUI.init();
     starField = new StarField(CONFIG.BG.STAR_COUNT, width, height);
     for (let i = 0; i < CONFIG.ENEMY.SPAWN_COUNT; i++) enemies.push(new Enemy());
     for (let i = 0; i < CONFIG.SWORD.COUNT; i++) swords.push(new Sword(i, scaleFactor));
@@ -1044,10 +1977,11 @@ function updatePhysics(dt) {
     Camera.update();
     Input.update(dt);
     Input.regenMana();
+    const speedMult = Input.getSpeedMultiplier();
     let dx = Input.x - guardCenter.x;
     let dy = Input.y - guardCenter.y;
-    guardCenter.vx += dx * 0.04;
-    guardCenter.vy += dy * 0.04;
+    guardCenter.vx += dx * 0.04 * speedMult;
+    guardCenter.vy += dy * 0.04 * speedMult;
     guardCenter.vx *= 0.82;
     guardCenter.vy *= 0.82;
     guardCenter.x += guardCenter.vx;
@@ -1102,6 +2036,8 @@ function animate() {
         const collected = pill.update(guardCenter.x, guardCenter.y);
 
         if (collected) {
+            Input.collectDrop(collected);
+            return false;
             // Cộng vào đúng loại đan trong Input
             Input.pills[pill.typeKey]++;
 

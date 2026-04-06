@@ -37,6 +37,12 @@
             <div id="btn-settings" class="btn btn-setting">
                 <img src="./assets/images/setting.svg" class="sword-icon" alt="Settings">
             </div>
+            <div id="btn-shop" class="btn btn-setting btn-shop">
+                <img src="./assets/images/cart.svg" class="sword-icon" alt="Shop">
+            </div>
+            <div id="btn-inventory" class="btn btn-setting btn-inventory">
+                <img src="./assets/images/bag.svg" class="sword-icon" alt="Inventory">
+            </div>
         </div>
 
         <div class="breakthrough-group">
@@ -119,6 +125,7 @@
                         <div class="input-group"><label>Tiêu tốn đổi trạng thái hộ thể (ratio):</label><input type="number" step="0.1" id="cfg-sw-change-form"></div>
                         <div class="input-group"><label>Hồi mana khi tiêu diệt:</label><input type="number" step="1" id="cfg-sw-gain-kill"></div>
                         <div class="input-group"><label>Tỉ lệ rơi đan:</label><input type="number" step="0.05" id="cfg-pi-chance"></div>
+                        <div class="input-group"><label>Tỉ lệ rơi linh thạch:</label><input type="number" step="0.05" id="cfg-st-chance"></div>
                         <div class="input-group"><label>Tốc độ hút đan:</label><input type="number" id="cfg-pi-magnet"></div>
                         <div class="input-group"><label>Độ dài vệt đan:</label><input type="number" id="cfg-pi-trail"></div>
                         <div class="input-group"><label>Phạt đột phá (ratio):</label><input type="number" step="0.1" id="cfg-cu-penalty"></div>
@@ -140,6 +147,41 @@
             <div class="popup-footer">
                 <button id="reset-settings" class="btn-reset">KHÔI PHỤC</button>
                 <button id="save-settings" class="btn-save">XÁC NHẬN</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="shop-popup" class="popup-overlay">
+        <div class="popup-content popup-content-wide">
+            <div class="popup-header">
+                <h3>LINH THỊ CỬA HÀNG</h3>
+                <span id="close-shop" class="close-btn">&times;</span>
+            </div>
+            <div class="popup-body popup-panel-body">
+                <div id="shop-wallet"></div>
+                <div id="shop-items" class="shop-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="inventory-popup" class="popup-overlay">
+        <div class="popup-content popup-content-wide">
+            <div class="popup-header">
+                <h3>TÚI KHÔNG GIAN TRỮ VẬT</h3>
+                <span id="close-inventory" class="close-btn">&times;</span>
+            </div>
+            <div class="popup-body popup-panel-body">
+                <div id="inventory-wallet"></div>
+
+                <div class="panel-section">
+                    <h4>Đan dược</h4>
+                    <div id="inventory-pill-grid" class="inventory-grid"></div>
+                </div>
+
+                <div class="panel-section">
+                    <h4>Linh thạch</h4>
+                    <div id="inventory-stone-grid" class="inventory-grid inventory-grid-stone"></div>
+                </div>
             </div>
         </div>
     </div>

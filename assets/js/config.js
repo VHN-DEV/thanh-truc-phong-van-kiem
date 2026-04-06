@@ -38,7 +38,7 @@ const CONFIG = {
     },
     ULTIMATE: {
         MAX_RAGE: 100,      // Giới hạn nộ đầy
-        GAIN_PER_KILL: 100,   // Lượng nộ nhận được mỗi khi hạ 1 quái
+        GAIN_PER_KILL: 2,   // Lượng nộ nhận được mỗi khi hạ 1 quái
         DURATION_MS: 10000, // Thời gian duy trì trạng thái ultimate
         TRANSITION_MS: 1000, // Thời gian hợp kiếm hoặc tách kiếm
         CHARGE_STEPS: 10,   // Số nấc hiển thị tiến độ nộ trên nút ultimate
@@ -147,7 +147,8 @@ const CONFIG = {
         ]
     },
     ITEMS: {
-        PILL_BOOST: 0.05        // Mỗi viên Đan dược cộng thêm 5% tỉ lệ đột phá thành công
+        INVENTORY_MIN_SLOTS: 16, // Số ô tối thiểu luôn hiển thị trong Túi không gian
+        SELLBACK_RATIO: 0.5
     },
     MANA: {
         // Lưu ý: MAX giờ đây sẽ được ghi đè bởi giá trị trong CULTIVATION.RANKS
@@ -165,6 +166,17 @@ const CONFIG = {
         MAX_BREAKTHROUGH_CHANCE: 0.99, // Tỉ lệ đột phá tối đa tôi đang để là 99% (luôn có 1% rủi ro để tăng độ kịch tính)
         BREAKTHROUGH_PENALTY_FACTOR: 0.4, // Hệ số mất tu vi khi đột phá thất bại (40%)
         OVERFLOW_LIMIT: 1.2,              // Giới hạn tràn exp (120% lượng exp cần thiết)
+        MAJOR_REALMS: [
+            { key: "LUYEN_KHI", name: "Luyện khí", startId: 1, endId: 13, nextKey: "TRUC_CO", nextName: "Trúc cơ" },
+            { key: "TRUC_CO", name: "Trúc cơ", startId: 14, endId: 17, nextKey: "KET_DAN", nextName: "Kết đan" },
+            { key: "KET_DAN", name: "Kết đan", startId: 18, endId: 21, nextKey: "NGUYEN_ANH", nextName: "Nguyên anh" },
+            { key: "NGUYEN_ANH", name: "Nguyên anh", startId: 22, endId: 25, nextKey: "HOA_THAN", nextName: "Hóa thần" },
+            { key: "HOA_THAN", name: "Hóa thần", startId: 26, endId: 29, nextKey: "LUYEN_HU", nextName: "Luyện hư" },
+            { key: "LUYEN_HU", name: "Luyện hư", startId: 30, endId: 33, nextKey: "HOP_THE", nextName: "Hợp thể" },
+            { key: "HOP_THE", name: "Hợp thể", startId: 34, endId: 37, nextKey: "DAI_THUA", nextName: "Đại thừa" },
+            { key: "DAI_THUA", name: "Đại thừa", startId: 38, endId: 41, nextKey: "CHAN_TIEN", nextName: "Chân tiên" },
+            { key: "CHAN_TIEN", name: "Chân tiên", startId: 42, endId: 45, nextKey: null, nextName: null }
+        ],
         RANKS: [
             // --- NHÂN GIỚI ---
             // Luyện Khí Kỳ (Xanh lá)
@@ -253,5 +265,103 @@ const CONFIG = {
             HIGH: { name: "Thượng phẩm", boost: 0.12, color: "#ffcc00", radius: 7.5 }
         },
     },
+    PILL: {
+        CHANCE: 0.08,
+        ELITE_CHANCE: 0.65,
+        COLLECT_DELAY_MS: 600,
+        MAGNET_SPEED: 14,
+        TRAIL_LENGTH: 15,
+        DROP_COUNT: {
+            NORMAL: 1,
+            ELITE: 2
+        },
+        CATEGORY_SORT: {
+            EXP: 0,
+            ATTACK: 1,
+            BERSERK: 2,
+            RAGE: 3,
+            MANA: 4,
+            MAX_MANA: 5,
+            SPEED: 6,
+            BREAKTHROUGH: 7
+        },
+        CATEGORY_RATES: {
+            NORMAL: { EXP: 0.24, BREAKTHROUGH: 0.12, ATTACK: 0.14, BERSERK: 0.08, RAGE: 0.12, MANA: 0.12, MAX_MANA: 0.08, SPEED: 0.10 },
+            ELITE: { EXP: 0.16, BREAKTHROUGH: 0.16, ATTACK: 0.18, BERSERK: 0.12, RAGE: 0.10, MANA: 0.10, MAX_MANA: 0.08, SPEED: 0.10 }
+        },
+        QUALITY_RATES: {
+            NORMAL: { LOW: 0.72, MEDIUM: 0.20, HIGH: 0.07, SUPREME: 0.01 },
+            ELITE: { LOW: 0.28, MEDIUM: 0.42, HIGH: 0.22, SUPREME: 0.08 }
+        },
+        EXP_QUALITIES: {
+            LOW: { label: "Hạ phẩm", fullName: "Thanh Linh Tụ Khí Đan", expFactor: 0.05, color: "#69f0cb", radius: 4.5, buyPriceLowStone: 30 },
+            MEDIUM: { label: "Trung phẩm", fullName: "Bích Hải Tụ Linh Đan", expFactor: 0.12, color: "#53b9ff", radius: 5.5, buyPriceLowStone: 140 },
+            HIGH: { label: "Thượng phẩm", fullName: "Kim Tủy Dưỡng Nguyên Đan", expFactor: 0.24, color: "#ffd86b", radius: 6.5, buyPriceLowStone: 900 },
+            SUPREME: { label: "Cực phẩm", fullName: "Thiên Hoa Uẩn Mạch Đan", expFactor: 0.40, color: "#ff7ad9", radius: 7.5, buyPriceLowStone: 5600 }
+        },
+        BREAKTHROUGH_QUALITIES: {
+            LOW: { label: "Hạ phẩm", breakthroughBoost: 0.03, color: "#78f2ff", radius: 4.5, buyPriceLowStone: 80 },
+            MEDIUM: { label: "Trung phẩm", breakthroughBoost: 0.07, color: "#79a8ff", radius: 5.5, buyPriceLowStone: 450 },
+            HIGH: { label: "Thượng phẩm", breakthroughBoost: 0.13, color: "#c88fff", radius: 6.5, buyPriceLowStone: 2600 },
+            SUPREME: { label: "Cực phẩm", breakthroughBoost: 0.22, color: "#ffe08f", radius: 7.5, buyPriceLowStone: 16000 }
+        },
+        ATTACK_QUALITIES: {
+            LOW: { fullName: "Thanh Mộc Trảm Linh Đan", attackPct: 0.06, color: "#7fffd4", radius: 4.5, buyPriceLowStone: 90 },
+            MEDIUM: { fullName: "Kim Tủy Phạt Mạch Đan", attackPct: 0.12, color: "#7dc7ff", radius: 5.5, buyPriceLowStone: 480 },
+            HIGH: { fullName: "Liệt Dương Bá Thể Đan", attackPct: 0.22, color: "#ff9d6d", radius: 6.5, buyPriceLowStone: 2800 },
+            SUPREME: { fullName: "Thái Huyền Tru Ma Đan", attackPct: 0.38, color: "#ffd36b", radius: 7.5, buyPriceLowStone: 16800 }
+        },
+        BERSERK_QUALITIES: {
+            LOW: { fullName: "Nhiên Huyết Cuồng Sát Đan", attackPct: 1.2, durationMs: 12000, auraMode: "berserk", sideManaLoss: 25, color: "#ff6b6b", radius: 5.2, buyPriceLowStone: 260 },
+            MEDIUM: { fullName: "Phệ Linh Bạo Khí Đan", attackPct: 1.55, durationMs: 14000, auraMode: "berserk", sideMaxManaFlat: -15, color: "#ff7f50", radius: 6.0, buyPriceLowStone: 760 },
+            HIGH: { fullName: "Trầm Mạch Thiên Sát Đan", attackPct: 1.9, durationMs: 16000, auraMode: "berserk", sideSpeedPct: -0.22, color: "#ff5349", radius: 6.8, buyPriceLowStone: 2100 },
+            SUPREME: { fullName: "Nghịch Nguyên Thiêu Huyết Đan", attackPct: 2.35, durationMs: 18000, auraMode: "berserk", sideExpLossRatio: 0.18, color: "#ff2d55", radius: 7.8, buyPriceLowStone: 4800 }
+        },
+        RAGE_QUALITIES: {
+            LOW: { fullName: "Chiến Ý Ngưng Hỏa Đan", rageGain: 25, color: "#ff9f43", radius: 4.5, buyPriceLowStone: 60 },
+            MEDIUM: { fullName: "Liệt Tâm Nhiên Mạch Đan", rageGain: 50, color: "#ff7f50", radius: 5.5, buyPriceLowStone: 220 },
+            HIGH: { fullName: "Sát Phạt Tụ Ý Đan", rageGain: 80, color: "#ff5b6e", radius: 6.5, buyPriceLowStone: 980 },
+            SUPREME: { fullName: "Thiên Ma Chiến Hồn Đan", rageGain: 100, color: "#ff3366", radius: 7.5, buyPriceLowStone: 2800 }
+        },
+        MANA_QUALITIES: {
+            LOW: { fullName: "Hồi Nguyên Bổ Khí Đan", manaRestore: 20, color: "#6de0ff", radius: 4.5, buyPriceLowStone: 40 },
+            MEDIUM: { fullName: "Bích Lộ Hồi Linh Đan", manaRestore: 45, color: "#4fc3f7", radius: 5.5, buyPriceLowStone: 170 },
+            HIGH: { fullName: "Kim Tủy Hoàn Linh Đan", manaRestore: 80, color: "#29b6f6", radius: 6.5, buyPriceLowStone: 720 },
+            SUPREME: { fullName: "Thái Ất Quy Nguyên Đan", manaRestore: 140, color: "#00e5ff", radius: 7.5, buyPriceLowStone: 2200 }
+        },
+        MAX_MANA_QUALITIES: {
+            LOW: { fullName: "Uẩn Hải Khai Mạch Đan", maxManaFlat: 5, color: "#9c88ff", radius: 4.5, buyPriceLowStone: 95 },
+            MEDIUM: { fullName: "Tử Hà Dưỡng Phủ Đan", maxManaFlat: 10, color: "#8c7ae6", radius: 5.5, buyPriceLowStone: 420 },
+            HIGH: { fullName: "Thiên Tuyền Khuyết Hải Đan", maxManaFlat: 18, color: "#7158e2", radius: 6.5, buyPriceLowStone: 1900 },
+            SUPREME: { fullName: "Hư Thiên Nạp Linh Đan", maxManaFlat: 30, color: "#5f27cd", radius: 7.5, buyPriceLowStone: 9800 }
+        },
+        SPEED_QUALITIES: {
+            LOW: { fullName: "Ngự Phong Khinh Thân Đan", speedPct: 0.08, color: "#7bed9f", radius: 4.5, buyPriceLowStone: 85 },
+            MEDIUM: { fullName: "Lưu Vân Thuấn Ảnh Đan", speedPct: 0.15, color: "#2ed573", radius: 5.5, buyPriceLowStone: 360 },
+            HIGH: { fullName: "Thiên La Tật Ảnh Đan", speedPct: 0.24, color: "#1dd1a1", radius: 6.5, buyPriceLowStone: 1600 },
+            SUPREME: { fullName: "Kim Bằng Phá Hư Đan", speedPct: 0.36, color: "#10ac84", radius: 7.5, buyPriceLowStone: 8400 }
+        }
+    },
+    SPIRIT_STONE: {
+        CHANCE: 0.35,
+        ELITE_CHANCE: 1.0,
+        COLLECT_DELAY_MS: 500,
+        MAGNET_SPEED: 16,
+        TRAIL_LENGTH: 12,
+        DROP_COUNT: {
+            NORMAL: 1,
+            ELITE: 3
+        },
+        QUALITY_RATES: {
+            NORMAL: { LOW: 0.88, MEDIUM: 0.10, HIGH: 0.019, SUPREME: 0.001 },
+            ELITE: { LOW: 0.50, MEDIUM: 0.34, HIGH: 0.13, SUPREME: 0.03 }
+        },
+        TYPES: {
+            LOW: { label: "Hạ phẩm linh thạch", shortLabel: "Hạ phẩm", value: 1, color: "#62f0d9", radius: 4.5 },
+            MEDIUM: { label: "Trung phẩm linh thạch", shortLabel: "Trung phẩm", value: 100, color: "#59b6ff", radius: 5.5 },
+            HIGH: { label: "Thượng phẩm linh thạch", shortLabel: "Thượng phẩm", value: 10000, color: "#b78cff", radius: 6.5 },
+            SUPREME: { label: "Cực phẩm linh thạch", shortLabel: "Cực phẩm", value: 1000000, color: "#ffd76f", radius: 7.5 }
+        }
+    }
 };
 // <!-- Create By: Vũ Hoài Nam -->

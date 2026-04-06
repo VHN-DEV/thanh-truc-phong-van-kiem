@@ -254,6 +254,7 @@ class Sword {
     }
 
     updateGuardMode(guardCenter, r, Input, scaleFactor) {
+        const speedMult = Input?.getSpeedMultiplier ? Input.getSpeedMultiplier() : 1;
         // Thu nhỏ lại nếu trước đó đang phóng to
         if (this.isEnlarged) {
             this.isEnlarged = false;
@@ -293,15 +294,15 @@ class Sword {
 
         // DI CHUYỂN VẬT LÝ (Dùng nội suy để mượt hơn khi nhập thể)
         // Tăng followStiffness khi Ulti để kiếm "nhập" vào nhau nhanh hơn
-        const followStiffness = Input.isUltMode ? 0.3 : 0.35;
+        const followStiffness = (Input.isUltMode ? 0.3 : 0.35) * speedMult;
 
         const dx = tx - this.x;
         const dy = ty - this.y;
         const distance = Math.hypot(dx, dy);
 
         if (Input.speed > 1.5 || (distance > 100 && !Input.isUltMode)) {
-            this.vx += (dx / (distance || 1)) * Math.min(distance * 0.05, 6 * scaleFactor);
-            this.vy += (dy / (distance || 1)) * Math.min(distance * 0.05, 6 * scaleFactor);
+            this.vx += (dx / (distance || 1)) * Math.min(distance * 0.05, 6 * scaleFactor * speedMult);
+            this.vy += (dy / (distance || 1)) * Math.min(distance * 0.05, 6 * scaleFactor * speedMult);
             this.vx *= 0.9; 
             this.vy *= 0.9;
             this.x += this.vx; this.y += this.vy;
@@ -325,6 +326,7 @@ class Sword {
     }
 
     updateAttackMode(enemies, Input, scaleFactor) {
+        const speedMult = Input?.getSpeedMultiplier ? Input.getSpeedMultiplier() : 1;
         this.attackFrame++;
         const requiredAttackDelay = (Input.isUltMode && this.isUltimateCore()) ? 1 : this.attackDelay;
         if (this.attackFrame < requiredAttackDelay) return;
@@ -352,7 +354,7 @@ class Sword {
             const d = Math.hypot(dx, dy) || 1;
 
             // Tốc độ bay (nhanh hơn khi đang Ult)
-            const flySpeed = (Input.isUltMode ? 22 : 10) * scaleFactor;
+            const flySpeed = (Input.isUltMode ? 22 : 10) * scaleFactor * speedMult;
             this.vx += (dx / d) * flySpeed;
             this.vy += (dy / d) * flySpeed;
             this.vx *= 0.92; this.vy *= 0.92;

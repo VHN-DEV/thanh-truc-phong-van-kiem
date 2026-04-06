@@ -1,23 +1,57 @@
 class Pill {
-    constructor(x, y, typeKey = 'LOW') {
+    constructor(x, y, dropSpec = { kind: 'PILL', category: 'EXP', quality: 'LOW' }) {
         this.x = x;
         this.y = y;
-        this.typeKey = typeKey; // Lưu lại để khi thu thập biết là loại nào
+        this.dropSpec = {
+            kind: 'PILL',
+            category: 'EXP',
+            quality: 'LOW',
+            ...dropSpec
+        };
 
-        const typeData = CONFIG.PILL.TYPES[typeKey];
-        this.r = typeData.radius;
-        this.color = typeData.color;
+        const appearance = this.getAppearance();
+        this.r = appearance.radius;
+        this.color = appearance.color;
 
         this.state = 0;
         this.velocity = { x: (Math.random() - 0.5) * 12, y: (Math.random() - 0.5) * 12 };
         this.friction = 0.96;
         this.spawnTime = Date.now();
         this.history = [];
-        this.maxHistory = CONFIG.PILL.TRAIL_LENGTH;
+        this.maxHistory = this.getConfig().TRAIL_LENGTH;
+    }
+
+    getConfig() {
+        return this.dropSpec.kind === 'STONE' ? CONFIG.SPIRIT_STONE : CONFIG.PILL;
+    }
+
+    getAppearance() {
+        if (this.dropSpec.kind === 'STONE') {
+            return CONFIG.SPIRIT_STONE.TYPES[this.dropSpec.quality] || CONFIG.SPIRIT_STONE.TYPES.LOW;
+        }
+
+        const categoryMap = {
+            EXP: CONFIG.PILL.EXP_QUALITIES,
+            BREAKTHROUGH: CONFIG.PILL.BREAKTHROUGH_QUALITIES,
+            ATTACK: CONFIG.PILL.ATTACK_QUALITIES,
+            BERSERK: CONFIG.PILL.BERSERK_QUALITIES,
+            RAGE: CONFIG.PILL.RAGE_QUALITIES,
+            MANA: CONFIG.PILL.MANA_QUALITIES,
+            MAX_MANA: CONFIG.PILL.MAX_MANA_QUALITIES,
+            SPEED: CONFIG.PILL.SPEED_QUALITIES
+        };
+
+        const categoryDefs = categoryMap[this.dropSpec.category];
+        if (categoryDefs) {
+            return categoryDefs[this.dropSpec.quality] || categoryDefs.LOW;
+        }
+
+        return CONFIG.PILL.EXP_QUALITIES[this.dropSpec.quality] || CONFIG.PILL.EXP_QUALITIES.LOW;
     }
 
     update(playerX, playerY) {
-        const cfg = CONFIG.PILL;
+        const cfg = this.getConfig();
+        this.maxHistory = cfg.TRAIL_LENGTH;
         this.history.push({ x: this.x, y: this.y });
         if (this.history.length > this.maxHistory) this.history.shift();
 
@@ -31,46 +65,84 @@ class Pill {
         } else {
             const dx = playerX - this.x;
             const dy = playerY - this.y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
+            const dist = Math.max(0.001, Math.sqrt(dx * dx + dy * dy));
 
-            // Dùng tốc độ từ CONFIG
             this.x += (dx / dist) * cfg.MAGNET_SPEED;
             this.y += (dy / dist) * cfg.MAGNET_SPEED;
 
-            if (dist < 20) return true;
+            if (dist < 20) return this.dropSpec;
         }
-        return false;
+        return null;
     }
 
-    draw(ctx) {
-        ctx.save();
+    drawTrail(ctx) {
+        if (this.history.length < 2) return;
 
-        // 1. VẼ VỆT SÁNG (TRAIL)
-        if (this.history.length > 1) {
-            ctx.beginPath();
-            ctx.moveTo(this.history[0].x, this.history[0].y);
-            for (let i = 1; i < this.history.length; i++) {
-                ctx.lineTo(this.history[i].x, this.history[i].y);
-            }
-            ctx.strokeStyle = this.color;
-            ctx.lineWidth = this.r * 0.8;
-            ctx.lineCap = "round";
-            ctx.globalAlpha = 0.3; // Đuôi mờ dần
-            ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(this.history[0].x, this.history[0].y);
+        for (let i = 1; i < this.history.length; i++) {
+            ctx.lineTo(this.history[i].x, this.history[i].y);
         }
+        ctx.strokeStyle = this.color;
+        ctx.lineWidth = this.r * 0.8;
+        ctx.lineCap = "round";
+        ctx.globalAlpha = 0.28;
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+    }
 
-        // 2. VẼ VIÊN LINH ĐAN
+    drawPill(ctx) {
         ctx.shadowBlur = 20;
         ctx.shadowColor = this.color;
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
 
         const grad = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.r);
-        grad.addColorStop(0, "#fff");
-        grad.addColorStop(1, this.color);
+        grad.addColorStop(0, "#ffffff");
+        grad.addColorStop(0.35, this.color);
+        grad.addColorStop(1, "rgba(0, 0, 0, 0.2)");
 
         ctx.fillStyle = grad;
         ctx.fill();
+    }
+
+    drawStone(ctx) {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(Math.PI / 4);
+        ctx.shadowBlur = 18;
+        ctx.shadowColor = this.color;
+
+        const size = this.r * 1.7;
+        const grad = ctx.createLinearGradient(-size, -size, size, size);
+        grad.addColorStop(0, "#ffffff");
+        grad.addColorStop(0.45, this.color);
+        grad.addColorStop(1, "rgba(20, 35, 60, 0.35)");
+
+        ctx.fillStyle = grad;
+        ctx.strokeStyle = "rgba(255,255,255,0.55)";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, -size);
+        ctx.lineTo(size * 0.9, 0);
+        ctx.lineTo(0, size);
+        ctx.lineTo(-size * 0.9, 0);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+    }
+
+    draw(ctx) {
+        ctx.save();
+        this.drawTrail(ctx);
+
+        if (this.dropSpec.kind === 'STONE') {
+            this.drawStone(ctx);
+        } else {
+            this.drawPill(ctx);
+        }
+
         ctx.restore();
     }
 }
