@@ -11,7 +11,7 @@
 
 <body>
     <canvas id="c"></canvas>
-    <div id="instructions" class="game-ui">Hold Button: Attack</div>
+    <div id="instructions" class="game-ui">Di chuột để di chuyển, giữ Attack để công kích</div>
 
     <div id="mana-container" class="game-ui">
         <div id="cultivation-rank">Cảnh giới: Luyện khí sơ kỳ (Tầng 1)</div>
@@ -48,6 +48,12 @@
         <div class="breakthrough-group">
             <div id="btn-breakthrough" class="btn btn-breakthrough">
                 <img src="./assets/images/angel-wings.svg" class="sword-icon" alt="Breakthrough">
+            </div>
+        </div>
+
+        <div class="move-group">
+            <div id="btn-move" class="btn btn-move" aria-label="Joystick di chuyển">
+                <span class="move-stick" aria-hidden="true"></span>
             </div>
         </div>
 

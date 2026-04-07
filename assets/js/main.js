@@ -188,16 +188,16 @@ const Input = {
     rankIndex: 0, // Vị trí hiện tại trong mảng RANKS
     inventory: {},
     spiritStones: getStartingSpiritStoneCounts(),
-    attackJoystick: {
+    moveJoystick: {
         active: false,
         pointerId: null,
         centerX: 0,
         centerY: 0,
         offsetX: 0,
         offsetY: 0,
-        maxRadius: 28,
-        deadZone: 8,
-        aimDistance: 320,
+        maxRadius: 32,
+        deadZone: 10,
+        aimDistance: 180,
         button: null
     },
     bonusStats: {
@@ -359,7 +359,7 @@ const Input = {
         this.temporaryAscensionOrigin = null;
         this.isVoidCollapsed = true;
         this.isAttacking = false;
-        this.stopAttackJoystick();
+        this.stopMoveJoystick();
         this.activeEffects = [];
         this.isUltMode = false;
         this.ultimatePhase = 'idle';
@@ -859,43 +859,42 @@ const Input = {
         return Math.max(0.35, 1 + this.bonusStats.speedPct + active.speedPct);
     },
 
-    updateAttackJoystickVisual() {
-        const button = this.attackJoystick.button || document.getElementById('btn-attack');
+    updateMoveJoystickVisual() {
+        const button = this.moveJoystick.button || document.getElementById('btn-move');
         if (!button) return;
 
-        const distance = Math.hypot(this.attackJoystick.offsetX, this.attackJoystick.offsetY);
-        const maxRadius = Math.max(1, this.attackJoystick.maxRadius || 1);
+        const distance = Math.hypot(this.moveJoystick.offsetX, this.moveJoystick.offsetY);
+        const maxRadius = Math.max(1, this.moveJoystick.maxRadius || 1);
         const dragRatio = Math.max(0, Math.min(1, distance / maxRadius));
 
-        button.style.setProperty('--attack-stick-x', `${this.attackJoystick.offsetX}px`);
-        button.style.setProperty('--attack-stick-y', `${this.attackJoystick.offsetY}px`);
-        button.style.setProperty('--attack-drag-ratio', dragRatio.toFixed(3));
-        button.classList.toggle('is-joystick-active', this.attackJoystick.active);
+        button.style.setProperty('--move-stick-x', `${this.moveJoystick.offsetX}px`);
+        button.style.setProperty('--move-stick-y', `${this.moveJoystick.offsetY}px`);
+        button.style.setProperty('--move-drag-ratio', dragRatio.toFixed(3));
+        button.classList.toggle('is-joystick-active', this.moveJoystick.active);
     },
 
-    startAttackJoystick(pointerId, button, clientX, clientY) {
+    startMoveJoystick(pointerId, button, clientX, clientY) {
         if (!this.isTouchDevice || !button) return false;
 
         const rect = button.getBoundingClientRect();
-        this.attackJoystick.active = true;
-        this.attackJoystick.pointerId = pointerId;
-        this.attackJoystick.centerX = rect.left + (rect.width / 2);
-        this.attackJoystick.centerY = rect.top + (rect.height / 2);
-        this.attackJoystick.maxRadius = Math.max(24, rect.width * 0.42);
-        this.attackJoystick.button = button;
-        this.isAttacking = true;
+        this.moveJoystick.active = true;
+        this.moveJoystick.pointerId = pointerId;
+        this.moveJoystick.centerX = rect.left + (rect.width / 2);
+        this.moveJoystick.centerY = rect.top + (rect.height / 2);
+        this.moveJoystick.maxRadius = Math.max(28, rect.width * 0.34);
+        this.moveJoystick.button = button;
 
-        this.updateAttackJoystick(clientX, clientY);
+        this.updateMoveJoystick(clientX, clientY);
         return true;
     },
 
-    updateAttackJoystick(clientX, clientY) {
-        if (!this.attackJoystick.active) return;
+    updateMoveJoystick(clientX, clientY) {
+        if (!this.moveJoystick.active) return;
 
-        let offsetX = clientX - this.attackJoystick.centerX;
-        let offsetY = clientY - this.attackJoystick.centerY;
+        let offsetX = clientX - this.moveJoystick.centerX;
+        let offsetY = clientY - this.moveJoystick.centerY;
         const distance = Math.hypot(offsetX, offsetY);
-        const maxRadius = Math.max(1, this.attackJoystick.maxRadius || 1);
+        const maxRadius = Math.max(1, this.moveJoystick.maxRadius || 1);
 
         if (distance > maxRadius) {
             const clampRatio = maxRadius / distance;
@@ -903,41 +902,40 @@ const Input = {
             offsetY *= clampRatio;
         }
 
-        this.attackJoystick.offsetX = offsetX;
-        this.attackJoystick.offsetY = offsetY;
-        this.updateAttackJoystickVisual();
+        this.moveJoystick.offsetX = offsetX;
+        this.moveJoystick.offsetY = offsetY;
+        this.updateMoveJoystickVisual();
     },
 
-    stopAttackJoystick(pointerId = null) {
-        if (!this.attackJoystick.active) return;
-        if (pointerId !== null && this.attackJoystick.pointerId !== pointerId) return;
+    stopMoveJoystick(pointerId = null) {
+        if (!this.moveJoystick.active) return;
+        if (pointerId !== null && this.moveJoystick.pointerId !== pointerId) return;
 
-        this.attackJoystick.active = false;
-        this.attackJoystick.pointerId = null;
-        this.attackJoystick.centerX = 0;
-        this.attackJoystick.centerY = 0;
-        this.attackJoystick.offsetX = 0;
-        this.attackJoystick.offsetY = 0;
-        this.attackJoystick.button = null;
-        this.isAttacking = false;
-        this.updateAttackJoystickVisual();
+        this.moveJoystick.active = false;
+        this.moveJoystick.pointerId = null;
+        this.moveJoystick.centerX = 0;
+        this.moveJoystick.centerY = 0;
+        this.moveJoystick.offsetX = 0;
+        this.moveJoystick.offsetY = 0;
+        this.moveJoystick.button = null;
+        this.updateMoveJoystickVisual();
     },
 
-    getAttackJoystickTarget() {
-        if (!this.attackJoystick.active) return null;
+    getMoveJoystickTarget() {
+        if (!this.moveJoystick.active) return null;
 
-        const distance = Math.hypot(this.attackJoystick.offsetX, this.attackJoystick.offsetY);
-        const maxRadius = Math.max(1, this.attackJoystick.maxRadius || 1);
-        const deadZone = Math.max(0, this.attackJoystick.deadZone || 0);
+        const distance = Math.hypot(this.moveJoystick.offsetX, this.moveJoystick.offsetY);
+        const maxRadius = Math.max(1, this.moveJoystick.maxRadius || 1);
+        const deadZone = Math.max(0, this.moveJoystick.deadZone || 0);
         const effectiveRatio = Math.max(0, Math.min(1, (distance - deadZone) / Math.max(1, maxRadius - deadZone)));
 
         if (effectiveRatio <= 0) {
             return { x: guardCenter.x, y: guardCenter.y };
         }
 
-        const normX = this.attackJoystick.offsetX / distance;
-        const normY = this.attackJoystick.offsetY / distance;
-        const worldDistance = (this.attackJoystick.aimDistance * effectiveRatio) / Math.max(0.001, Camera.currentZoom || 1);
+        const normX = this.moveJoystick.offsetX / distance;
+        const normY = this.moveJoystick.offsetY / distance;
+        const worldDistance = (this.moveJoystick.aimDistance * effectiveRatio) / Math.max(0.001, Camera.currentZoom || 1);
 
         return {
             x: guardCenter.x + (normX * worldDistance),
@@ -1655,14 +1653,17 @@ const Input = {
 
         if (this.isVoidCollapsed) {
             this.isAttacking = false;
-            this.stopAttackJoystick();
+            this.stopMoveJoystick();
             return;
         }
 
-        const joystickTarget = this.getAttackJoystickTarget();
+        const joystickTarget = this.getMoveJoystickTarget();
         if (joystickTarget) {
             this.x = joystickTarget.x;
             this.y = joystickTarget.y;
+        } else if (this.isTouchDevice) {
+            this.x = guardCenter.x;
+            this.y = guardCenter.y;
         } else {
             const worldPos = Camera.screenToWorld(this.screenX, this.screenY);
             this.x = worldPos.x;
@@ -1679,6 +1680,7 @@ const Input = {
 
     handleMove(e) {
         if (this.isVoidCollapsed) return;
+        if (this.isTouchDevice) return;
         if (e.target.closest('.btn')) return;
 
         // Pointermove hoạt động cho cả chuột và touch di chuyển
@@ -2609,7 +2611,36 @@ document.getElementById('btn-ultimate').addEventListener('pointerdown', (e) => {
     Input.startUltimate();
 });
 
+const moveBtn = document.getElementById('btn-move');
 const attackBtn = document.getElementById('btn-attack');
+
+const startMoveJoystick = (e) => {
+    if (!moveBtn || !Input.isTouchDevice || e.pointerType === 'mouse') return false;
+
+    e.stopPropagation();
+    e.preventDefault();
+
+    if (Input.isVoidCollapsed) return false;
+
+    if (moveBtn.setPointerCapture) {
+        moveBtn.setPointerCapture(e.pointerId);
+    }
+
+    return Input.startMoveJoystick(e.pointerId, moveBtn, e.clientX, e.clientY);
+};
+
+const stopMoveJoystick = (e) => {
+    if (!moveBtn || !Input.moveJoystick.active || Input.moveJoystick.pointerId !== e.pointerId) return;
+
+    e.stopPropagation();
+    e.preventDefault();
+
+    if (moveBtn.hasPointerCapture && moveBtn.hasPointerCapture(e.pointerId)) {
+        moveBtn.releasePointerCapture(e.pointerId);
+    }
+
+    Input.stopMoveJoystick(e.pointerId);
+};
 
 // Xử lý riêng cho nút bấm để không bị ảnh hưởng bởi logic handleDown của hệ thống
 const startAttack = (e) => {
@@ -2643,59 +2674,62 @@ const stopAttack = (e) => {
     if (Input.attackTimer) clearTimeout(Input.attackTimer);
 };
 
+if (moveBtn) {
+    moveBtn.addEventListener('pointerdown', (e) => {
+        startMoveJoystick(e);
+    });
+
+    moveBtn.addEventListener('pointermove', (e) => {
+        if (!Input.moveJoystick.active || Input.moveJoystick.pointerId !== e.pointerId) return;
+
+        e.stopPropagation();
+        e.preventDefault();
+        Input.updateMoveJoystick(e.clientX, e.clientY);
+    });
+
+    moveBtn.addEventListener('pointerup', stopMoveJoystick);
+    moveBtn.addEventListener('pointercancel', stopMoveJoystick);
+    moveBtn.addEventListener('lostpointercapture', (e) => Input.stopMoveJoystick(e.pointerId));
+}
+
 // Sử dụng pointerdown/up để nhạy nhất trên cả mobile và desktop
 attackBtn.addEventListener('pointerdown', (e) => {
     if (Input.isTouchDevice && e.pointerType !== 'mouse') {
-        e.stopPropagation();
-        e.preventDefault();
-
         if (!startAttack(e)) return;
 
         if (attackBtn.setPointerCapture) {
             attackBtn.setPointerCapture(e.pointerId);
         }
 
-        Input.startAttackJoystick(e.pointerId, attackBtn, e.clientX, e.clientY);
         return;
     }
 
     startAttack(e);
 });
 
-attackBtn.addEventListener('pointermove', (e) => {
-    if (!Input.attackJoystick.active || Input.attackJoystick.pointerId !== e.pointerId) return;
-
-    e.stopPropagation();
-    e.preventDefault();
-    Input.updateAttackJoystick(e.clientX, e.clientY);
-});
-
-const stopAttackJoystick = (e) => {
-    if (!Input.attackJoystick.active || Input.attackJoystick.pointerId !== e.pointerId) return;
-
-    e.stopPropagation();
-    e.preventDefault();
-
+attackBtn.addEventListener('pointerup', (e) => {
     if (attackBtn.hasPointerCapture && attackBtn.hasPointerCapture(e.pointerId)) {
         attackBtn.releasePointerCapture(e.pointerId);
-    }
-
-    Input.stopAttackJoystick(e.pointerId);
-};
-
-attackBtn.addEventListener('pointerup', (e) => {
-    if (Input.attackJoystick.active && Input.attackJoystick.pointerId === e.pointerId) {
-        stopAttackJoystick(e);
-        return;
     }
 
     stopAttack(e);
 });
 
-attackBtn.addEventListener('pointercancel', stopAttackJoystick);
-attackBtn.addEventListener('lostpointercapture', (e) => Input.stopAttackJoystick(e.pointerId));
+attackBtn.addEventListener('pointercancel', (e) => {
+    if (attackBtn.hasPointerCapture && attackBtn.hasPointerCapture(e.pointerId)) {
+        attackBtn.releasePointerCapture(e.pointerId);
+    }
+
+    stopAttack(e);
+});
+
+attackBtn.addEventListener('lostpointercapture', () => {
+    Input.isAttacking = false;
+    if (Input.attackTimer) clearTimeout(Input.attackTimer);
+});
+
 attackBtn.addEventListener('pointerleave', (e) => {
-    if (Input.attackJoystick.active) return;
+    if (Input.isTouchDevice && e.pointerType !== 'mouse') return;
     stopAttack(e);
 }); // Khi kéo ngón tay ra khỏi nút
 
@@ -2716,6 +2750,14 @@ function init() {
     Input.maxMana = startingRank.maxMana || CONFIG.MANA.MAX;
     Input.mana = Input.maxMana;
     Input.syncDerivedStats();
+
+    document.body.classList.toggle('is-touch-device', Input.isTouchDevice);
+    const instructions = document.getElementById('instructions');
+    if (instructions) {
+        instructions.innerText = Input.isTouchDevice
+            ? 'Mobile: joystick trái để di chuyển, giữ Attack bên phải để công kích'
+            : 'Di chuột để di chuyển, giữ Attack để công kích';
+    }
 
     SettingsUI.init();
     Input.spiritStones = getStartingSpiritStoneCounts();

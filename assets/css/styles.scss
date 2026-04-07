@@ -292,6 +292,89 @@ canvas {
     }
 }
 
+.move-group {
+    @include abs-pos($bottom: 40px, $left: 40px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+
+    .btn-move {
+        --move-stick-x: 0px;
+        --move-stick-y: 0px;
+        --move-drag-ratio: 0;
+        width: 86px;
+        height: 86px;
+        position: relative;
+        border: 2px solid rgba($primary-color, 0.36);
+        background: radial-gradient(circle at 50% 35%, rgba(255, 255, 255, 0.14), rgba(8, 18, 20, 0.88) 72%);
+        box-shadow: 0 0 26px rgba($primary-color, 0.18), inset 0 0 18px rgba(255, 255, 255, 0.04);
+        touch-action: none;
+        top: 0;
+
+        &::before,
+        &::after {
+            content: "";
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        &::before {
+            inset: 10px;
+            border: 1px solid rgba($primary-color, 0.14);
+            box-shadow: inset 0 0 18px rgba($primary-color, 0.08);
+        }
+
+        &::after {
+            inset: 20px;
+            border: 1px dashed rgba(255, 255, 255, 0.18);
+            opacity: calc(0.28 + (var(--move-drag-ratio) * 0.4));
+            transform: scale(calc(1 + (var(--move-drag-ratio) * 0.06)));
+            transition: opacity 0.12s ease, transform 0.12s ease;
+        }
+
+        .move-stick {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            position: relative;
+            z-index: 2;
+            transform: translate(var(--move-stick-x), var(--move-stick-y));
+            background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.46), rgba($primary-color, 0.72) 55%, rgba(7, 20, 20, 0.94) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4), 0 0 14px rgba($primary-color, 0.34);
+            transition: transform 0.06s linear, box-shadow 0.12s ease;
+        }
+
+        &.is-joystick-active {
+            box-shadow: 0 0 30px rgba($primary-color, 0.26), inset 0 0 22px rgba(255, 255, 255, 0.08);
+        }
+
+        &.is-joystick-active .move-stick {
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4), 0 0 18px rgba($primary-color, 0.48);
+        }
+
+        &:active {
+            top: 0;
+            transform: none;
+            background: radial-gradient(circle at 50% 35%, rgba(255, 255, 255, 0.18), rgba(8, 18, 20, 0.92) 72%);
+        }
+    }
+}
+
+body.is-touch-device {
+    .move-group {
+        display: flex;
+    }
+
+    #instructions {
+        left: 24px;
+        bottom: 136px;
+        max-width: 170px;
+        line-height: 1.4;
+    }
+}
+
 .attack-group {
     @include abs-pos($bottom: 40px, $right: 40px);
     display: flex;
@@ -1666,6 +1749,21 @@ select.shop-control-input {
     .inventory-grid {
         grid-template-columns: 1fr;
         gap: 10px;
+    }
+
+    .move-group {
+        left: 24px;
+        bottom: 28px;
+
+        .btn-move {
+            width: 96px;
+            height: 96px;
+
+            .move-stick {
+                width: 38px;
+                height: 38px;
+            }
+        }
     }
 
     .attack-group {
