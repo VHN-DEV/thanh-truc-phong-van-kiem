@@ -513,8 +513,8 @@ body.is-touch-device {
         --ult-charge-ratio: 0;
         width: 52px;
         height: 52px;
-        right: 58px;
-        bottom: 92px;
+        right: 50px;
+        bottom: 95px;    
         overflow: hidden;
         isolation: isolate;
         background: radial-gradient(circle at 50% 12%, rgba(255, 255, 255, 0.14), rgba(8, 14, 22, 0.96) 72%) !important;
@@ -634,8 +634,8 @@ body.is-touch-device {
     .btn-form {
         width: 42px;
         height: 42px;
-        right: 112px;
-        bottom: 44px;
+        right: 100px;
+        bottom: 50px;
         background: radial-gradient(circle at 38% 30%, rgba(255, 255, 255, 0.2), rgba(9, 18, 28, 0.94) 72%);
         border: 1px solid rgba($primary-color, 0.34);
         box-shadow: 0 4px 0 rgba(0, 0, 0, 0.44), 0 0 14px rgba($primary-color, 0.2);
@@ -645,7 +645,7 @@ body.is-touch-device {
         width: 46px;
         height: 46px;
         right: -20px;
-        bottom: 100px;
+        bottom: 95px;
         background: radial-gradient(circle at 36% 28%, rgba(255, 255, 255, 0.22), rgba(10, 18, 28, 0.95) 72%);
         border: 1px solid rgba(#ffd86b, 0.34);
         box-shadow: 0 4px 0 rgba(0, 0, 0, 0.44), 0 0 16px rgba(#ffd86b, 0.16);
@@ -1675,7 +1675,23 @@ select.shop-control-input {
     font-size: 11px;
 }
 
+.beast-slot__style {
+    padding: 5px 10px;
+    width: fit-content;
+    max-width: 100%;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--slot-accent) 18%, rgba(255, 255, 255, 0.04));
+    border: 1px solid color-mix(in srgb, var(--slot-accent) 36%, rgba(255, 255, 255, 0.08));
+    color: #f8fffd;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.35;
+}
+
 .beast-card-visual {
+    --beast-secondary: var(--beast-accent);
+    --beast-aura: var(--beast-accent);
+    --beast-glow: var(--beast-aura);
     position: relative;
     width: 76px;
     height: 76px;
@@ -1683,9 +1699,9 @@ select.shop-control-input {
     border-radius: 50%;
     background:
         radial-gradient(circle at 35% 32%, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.08) 20%, transparent 26%),
-        radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--beast-accent) 64%, white 12%), rgba(10, 18, 28, 0.08) 46%, transparent 68%),
-        radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.08), transparent 70%);
-    box-shadow: 0 0 24px color-mix(in srgb, var(--beast-accent) 36%, transparent), inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+        radial-gradient(circle at 48% 52%, color-mix(in srgb, var(--beast-secondary) 64%, white 12%), rgba(10, 18, 28, 0.08) 46%, transparent 68%),
+        radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--beast-aura) 20%, rgba(255, 255, 255, 0.04)), transparent 72%);
+    box-shadow: 0 0 24px color-mix(in srgb, var(--beast-glow) 36%, transparent), inset 0 0 0 1px rgba(255, 255, 255, 0.12);
 
     &::before,
     &::after {
@@ -1693,13 +1709,14 @@ select.shop-control-input {
         position: absolute;
         inset: 14px;
         border-radius: 50%;
-        border: 1px dashed rgba(255, 255, 255, 0.16);
+        border: 1px dashed color-mix(in srgb, var(--beast-secondary) 28%, rgba(255, 255, 255, 0.14));
     }
 
     &::after {
         inset: 24px;
         border-style: solid;
         border-color: color-mix(in srgb, var(--beast-accent) 72%, transparent);
+        background: radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--beast-secondary) 26%, rgba(255, 255, 255, 0.1)), transparent 72%);
     }
 
     &--egg {
@@ -1803,7 +1820,7 @@ select.shop-control-input {
     border-radius: 18px;
     border: 1px solid color-mix(in srgb, var(--book-accent) 42%, rgba(255, 255, 255, 0.08));
     background:
-        radial-gradient(circle at top right, rgba(255, 255, 255, 0.08), transparent 32%),
+        radial-gradient(circle at top right, color-mix(in srgb, var(--book-aura, var(--book-accent)) 16%, rgba(255, 255, 255, 0.06)), transparent 38%),
         linear-gradient(180deg, rgba(14, 24, 34, 0.98), rgba(8, 13, 20, 0.94));
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 14px 24px rgba(0, 0, 0, 0.18);
 
@@ -1816,6 +1833,9 @@ select.shop-control-input {
     position: relative;
     aspect-ratio: 4 / 3;
     overflow: hidden;
+    background:
+        radial-gradient(circle at 26% 22%, color-mix(in srgb, var(--book-secondary, var(--book-accent)) 24%, rgba(255, 255, 255, 0.08)), transparent 28%),
+        linear-gradient(180deg, color-mix(in srgb, var(--book-aura, var(--book-accent)) 18%, rgba(9, 15, 22, 0.16)), rgba(8, 13, 20, 0.06));
 }
 
 .insect-book-card__image {
@@ -1823,6 +1843,598 @@ select.shop-control-input {
     height: 100%;
     object-fit: cover;
     display: block;
+    opacity: 0.94;
+}
+
+.insect-art {
+    --insect-primary: var(--book-accent, var(--beast-accent, #79ffd4));
+    --insect-secondary: var(--book-secondary, var(--beast-secondary, var(--insect-primary)));
+    --insect-aura: var(--book-aura, var(--beast-aura, var(--insect-secondary)));
+    position: absolute;
+    left: 50%;
+    top: 56%;
+    width: min(136px, calc(100% - 28px));
+    height: min(96px, calc(100% - 20px));
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    filter: drop-shadow(0 0 16px color-mix(in srgb, var(--insect-aura) 34%, transparent));
+    display: block;
+    overflow: visible;
+
+    span,
+    span::before,
+    span::after {
+        position: absolute;
+        box-sizing: border-box;
+        content: '';
+    }
+
+    .insect-art__halo {
+        inset: 6% 10%;
+        border-radius: 50%;
+        background: radial-gradient(circle, color-mix(in srgb, var(--insect-aura) 24%, transparent), transparent 72%);
+        filter: blur(4px);
+    }
+
+    .insect-art__spark {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: color-mix(in srgb, var(--insect-secondary) 72%, #ffffff);
+        box-shadow: 0 0 10px color-mix(in srgb, var(--insect-aura) 42%, transparent);
+        opacity: 0.8;
+
+        &--1 {
+            top: 16%;
+            left: 18%;
+        }
+
+        &--2 {
+            top: 24%;
+            right: 18%;
+            width: 6px;
+            height: 6px;
+        }
+
+        &--3 {
+            bottom: 18%;
+            left: 50%;
+            width: 5px;
+            height: 5px;
+            transform: translateX(-50%);
+        }
+    }
+
+    .insect-art__wing {
+        opacity: 0;
+        width: 34%;
+        height: 42%;
+        top: 20%;
+        background: linear-gradient(180deg, color-mix(in srgb, var(--insect-secondary) 54%, #ffffff), color-mix(in srgb, var(--insect-primary) 38%, transparent));
+        border: 1px solid color-mix(in srgb, var(--insect-secondary) 42%, transparent);
+        box-shadow: inset 0 0 14px rgba(255, 255, 255, 0.14);
+        backdrop-filter: blur(1px);
+
+        &--left {
+            left: 10%;
+            border-radius: 76% 22% 68% 36% / 72% 28% 74% 34%;
+            transform-origin: right center;
+        }
+
+        &--right {
+            right: 10%;
+            border-radius: 22% 76% 36% 68% / 28% 72% 34% 74%;
+            transform-origin: left center;
+        }
+    }
+
+    .insect-art__head,
+    .insect-art__body,
+    .insect-art__abdomen {
+        background: linear-gradient(180deg, color-mix(in srgb, var(--insect-secondary) 52%, #ffffff), color-mix(in srgb, var(--insect-primary) 82%, rgba(3, 10, 18, 0.5)));
+        box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.22),
+            0 0 12px color-mix(in srgb, var(--insect-aura) 28%, transparent);
+    }
+
+    .insect-art__head {
+        left: 42%;
+        top: 24%;
+        width: 16%;
+        height: 18%;
+        border-radius: 50%;
+    }
+
+    .insect-art__body {
+        left: 44%;
+        top: 40%;
+        width: 12%;
+        height: 20%;
+        border-radius: 46%;
+    }
+
+    .insect-art__abdomen {
+        left: 38%;
+        top: 54%;
+        width: 24%;
+        height: 24%;
+        border-radius: 44% 44% 52% 52% / 38% 38% 62% 62%;
+    }
+
+    .insect-art__leg {
+        opacity: 0;
+        width: 24%;
+        height: 2px;
+        top: 48%;
+        background: linear-gradient(90deg, color-mix(in srgb, var(--insect-secondary) 52%, #ffffff), color-mix(in srgb, var(--insect-primary) 68%, transparent));
+        transform-origin: center;
+
+        &--1,
+        &--2,
+        &--3 {
+            left: 16%;
+        }
+
+        &--4,
+        &--5,
+        &--6 {
+            right: 16%;
+        }
+
+        &--1 {
+            top: 40%;
+            transform: rotate(-28deg);
+        }
+
+        &--2 {
+            top: 50%;
+            transform: rotate(-6deg);
+        }
+
+        &--3 {
+            top: 60%;
+            transform: rotate(24deg);
+        }
+
+        &--4 {
+            top: 40%;
+            transform: rotate(28deg);
+        }
+
+        &--5 {
+            top: 50%;
+            transform: rotate(6deg);
+        }
+
+        &--6 {
+            top: 60%;
+            transform: rotate(-24deg);
+        }
+    }
+
+    .insect-art__tail {
+        opacity: 0;
+        left: 56%;
+        top: 16%;
+        width: 24%;
+        height: 36%;
+        border: 3px solid color-mix(in srgb, var(--insect-secondary) 52%, rgba(255, 255, 255, 0.2));
+        border-left: 0;
+        border-bottom: 0;
+        border-radius: 0 100% 0 0;
+        transform: rotate(28deg);
+
+        &::after {
+            top: -6px;
+            right: -6px;
+            width: 10px;
+            height: 10px;
+            background: color-mix(in srgb, var(--insect-secondary) 86%, #ffffff);
+            clip-path: polygon(50% 0, 100% 100%, 50% 72%, 0 100%);
+            transform: rotate(18deg);
+        }
+    }
+
+    &.is-egg {
+        top: 52%;
+        filter: drop-shadow(0 0 14px color-mix(in srgb, var(--insect-aura) 28%, transparent));
+
+        .insect-art__wing,
+        .insect-art__leg,
+        .insect-art__tail {
+            opacity: 0;
+        }
+
+        .insect-art__head {
+            left: 38%;
+            top: 18%;
+            width: 24%;
+            height: 24%;
+            border-radius: 50%;
+            opacity: 0.78;
+        }
+
+        .insect-art__body {
+            left: 28%;
+            top: 10%;
+            width: 44%;
+            height: 66%;
+            border-radius: 44% 44% 52% 52% / 32% 32% 68% 68%;
+            background: linear-gradient(180deg, color-mix(in srgb, var(--insect-secondary) 54%, #ffffff), color-mix(in srgb, var(--insect-primary) 78%, rgba(4, 12, 18, 0.46)));
+        }
+
+        .insect-art__abdomen {
+            left: 34%;
+            top: 30%;
+            width: 32%;
+            height: 22%;
+            border-radius: 50%;
+            opacity: 0.84;
+        }
+    }
+}
+
+.beast-card-visual .insect-art {
+    top: 50%;
+    width: 58px;
+    height: 48px;
+
+    .insect-art__halo {
+        inset: 4% 8%;
+    }
+}
+
+.beast-card-visual--egg .insect-art {
+    top: 52%;
+    width: 44px;
+    height: 56px;
+}
+
+.insect-art--huyen-diem-nga {
+    .insect-art__wing {
+        opacity: 1;
+        top: 16%;
+        height: 40%;
+        background: linear-gradient(180deg, color-mix(in srgb, #ffffff 18%, var(--insect-secondary)), color-mix(in srgb, var(--insect-primary) 52%, transparent));
+
+        &::after {
+            bottom: -22%;
+            width: 74%;
+            height: 62%;
+            background: linear-gradient(180deg, color-mix(in srgb, var(--insect-primary) 72%, #ffffff), color-mix(in srgb, var(--insect-secondary) 36%, transparent));
+            border: 1px solid color-mix(in srgb, var(--insect-secondary) 28%, transparent);
+            box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.1);
+        }
+    }
+
+    .insect-art__wing--left {
+        left: 8%;
+        transform: rotate(-14deg);
+
+        &::after {
+            left: 12%;
+            border-radius: 64% 34% 72% 42% / 58% 30% 74% 46%;
+        }
+    }
+
+    .insect-art__wing--right {
+        right: 8%;
+        transform: rotate(14deg);
+
+        &::after {
+            right: 12%;
+            border-radius: 34% 64% 42% 72% / 30% 58% 46% 74%;
+        }
+    }
+
+    .insect-art__head {
+        left: 46%;
+        top: 24%;
+        width: 8%;
+        height: 10%;
+    }
+
+    .insect-art__body {
+        left: 48%;
+        top: 32%;
+        width: 4%;
+        height: 28%;
+        border-radius: 999px;
+    }
+
+    .insect-art__abdomen {
+        left: 46%;
+        top: 56%;
+        width: 8%;
+        height: 16%;
+        border-radius: 999px 999px 58% 58%;
+    }
+
+    .insect-art__leg,
+    .insect-art__tail {
+        opacity: 0;
+    }
+}
+
+.insect-art--huyet-ngoc-tri-chu {
+    .insect-art__head {
+        left: 44%;
+        top: 26%;
+        width: 14%;
+        height: 14%;
+        background: linear-gradient(180deg, color-mix(in srgb, #ffffff 16%, var(--insect-secondary)), color-mix(in srgb, var(--insect-primary) 78%, rgba(10, 0, 10, 0.48)));
+    }
+
+    .insect-art__body {
+        left: 42%;
+        top: 40%;
+        width: 16%;
+        height: 16%;
+        border-radius: 48%;
+    }
+
+    .insect-art__abdomen {
+        left: 34%;
+        top: 52%;
+        width: 32%;
+        height: 24%;
+        border-radius: 48% 48% 56% 56%;
+        opacity: 0.92;
+    }
+
+    .insect-art__leg {
+        opacity: 0.92;
+        width: 30%;
+    }
+
+    .insect-art__wing,
+    .insect-art__tail {
+        opacity: 0;
+    }
+}
+
+.insect-art--phi-thien-tu-van-hat,
+.insect-art--kim-giap-hat {
+    .insect-art__head {
+        left: 42%;
+        top: 30%;
+        width: 14%;
+        height: 14%;
+    }
+
+    .insect-art__body {
+        left: 40%;
+        top: 44%;
+        width: 18%;
+        height: 18%;
+        border-radius: 42%;
+    }
+
+    .insect-art__abdomen {
+        left: 30%;
+        top: 56%;
+        width: 38%;
+        height: 18%;
+        border-radius: 999px;
+    }
+
+    .insect-art__leg {
+        opacity: 0.9;
+        width: 28%;
+    }
+
+    .insect-art__tail {
+        opacity: 1;
+    }
+}
+
+.insect-art--phi-thien-tu-van-hat {
+    .insect-art__wing {
+        opacity: 0.72;
+        top: 22%;
+        width: 28%;
+        height: 26%;
+        background: linear-gradient(180deg, color-mix(in srgb, #ffffff 22%, var(--insect-secondary)), color-mix(in srgb, var(--insect-primary) 18%, transparent));
+    }
+
+    .insect-art__wing--left {
+        left: 10%;
+        transform: rotate(-18deg);
+    }
+
+    .insect-art__wing--right {
+        right: 10%;
+        transform: rotate(18deg);
+    }
+}
+
+.insect-art--kim-giap-hat {
+    .insect-art__wing {
+        opacity: 0;
+    }
+
+    .insect-art__body,
+    .insect-art__abdomen {
+        box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.28),
+            inset 0 -4px 10px rgba(0, 0, 0, 0.16),
+            0 0 14px color-mix(in srgb, var(--insect-aura) 28%, transparent);
+    }
+}
+
+.insect-art--kien-thien-tinh,
+.insect-art--thiet-hoa-nghi,
+.insect-art--huyet-thuc-nghi {
+    .insect-art__head {
+        left: 28%;
+        top: 42%;
+        width: 12%;
+        height: 12%;
+    }
+
+    .insect-art__body {
+        left: 42%;
+        top: 42%;
+        width: 14%;
+        height: 14%;
+    }
+
+    .insect-art__abdomen {
+        left: 58%;
+        top: 38%;
+        width: 22%;
+        height: 22%;
+        border-radius: 50%;
+    }
+
+    .insect-art__leg {
+        opacity: 0.9;
+        width: 24%;
+    }
+
+    .insect-art__wing,
+    .insect-art__tail {
+        opacity: 0;
+    }
+}
+
+.insect-art--kien-thien-tinh {
+    .insect-art__spark {
+        width: 16px;
+        height: 2px;
+        border-radius: 999px;
+        background: linear-gradient(90deg, rgba(255, 255, 255, 0), color-mix(in srgb, var(--insect-secondary) 84%, #ffffff), rgba(255, 255, 255, 0));
+
+        &--1 {
+            top: 18%;
+            left: 10%;
+            transform: rotate(-18deg);
+        }
+
+        &--2 {
+            top: 30%;
+            right: 10%;
+            transform: rotate(18deg);
+        }
+
+        &--3 {
+            bottom: 18%;
+            left: 48%;
+            width: 20px;
+            transform: translateX(-50%) rotate(-12deg);
+        }
+    }
+}
+
+.insect-art--thiet-hoa-nghi,
+.insect-art--huyet-thuc-nghi {
+    .insect-art__spark {
+        box-shadow: 0 0 14px color-mix(in srgb, var(--insect-aura) 54%, transparent);
+    }
+}
+
+.insect-art--phe-kim-trung,
+.insect-art--kim-tam,
+.insect-art--bang-tam,
+.insect-art--thon-linh-trung {
+    .insect-art__wing,
+    .insect-art__leg,
+    .insect-art__tail {
+        opacity: 0;
+    }
+}
+
+.insect-art--phe-kim-trung {
+    .insect-art__head {
+        left: 20%;
+        top: 42%;
+        width: 12%;
+        height: 12%;
+    }
+
+    .insect-art__body {
+        left: 32%;
+        top: 36%;
+        width: 18%;
+        height: 20%;
+        border-radius: 999px;
+    }
+
+    .insect-art__abdomen {
+        left: 44%;
+        top: 30%;
+        width: 34%;
+        height: 28%;
+        border-radius: 999px;
+        background:
+            repeating-linear-gradient(90deg, color-mix(in srgb, var(--insect-secondary) 72%, #ffffff) 0 4px, color-mix(in srgb, var(--insect-primary) 82%, rgba(4, 8, 14, 0.42)) 4px 9px);
+    }
+}
+
+.insect-art--kim-tam,
+.insect-art--bang-tam {
+    .insect-art__head {
+        left: 28%;
+        top: 38%;
+        width: 12%;
+        height: 12%;
+    }
+
+    .insect-art__body {
+        left: 38%;
+        top: 34%;
+        width: 18%;
+        height: 20%;
+        border-radius: 999px;
+    }
+
+    .insect-art__abdomen {
+        left: 48%;
+        top: 30%;
+        width: 28%;
+        height: 28%;
+        border-radius: 999px;
+        background:
+            repeating-linear-gradient(90deg, color-mix(in srgb, var(--insect-secondary) 68%, #ffffff) 0 4px, color-mix(in srgb, var(--insect-primary) 82%, rgba(4, 8, 14, 0.38)) 4px 8px);
+    }
+}
+
+.insect-art--bang-tam {
+    .insect-art__spark {
+        background: color-mix(in srgb, #ffffff 72%, var(--insect-secondary));
+        box-shadow: 0 0 12px color-mix(in srgb, var(--insect-aura) 38%, transparent);
+    }
+}
+
+.insect-art--thon-linh-trung {
+    .insect-art__head {
+        left: 32%;
+        top: 44%;
+        width: 10%;
+        height: 10%;
+    }
+
+    .insect-art__body {
+        left: 40%;
+        top: 42%;
+        width: 12%;
+        height: 12%;
+        border-radius: 999px;
+    }
+
+    .insect-art__abdomen {
+        left: 50%;
+        top: 40%;
+        width: 20%;
+        height: 16%;
+        border-radius: 999px;
+    }
+
+    .insect-art__spark {
+        width: 6px;
+        height: 6px;
+        box-shadow: 0 0 12px color-mix(in srgb, var(--insect-aura) 56%, transparent);
+    }
 }
 
 .insect-book-card__veil,
@@ -1872,10 +2484,18 @@ select.shop-control-input {
     }
 }
 
+.insect-book-card__style {
+    color: color-mix(in srgb, var(--book-secondary, var(--book-accent)) 74%, #f8fffd);
+    font-size: 12px;
+    line-height: 1.5;
+    font-weight: 700;
+}
+
 .insect-book-card__meta {
     display: flex;
     justify-content: space-between;
     gap: 8px;
+    flex-wrap: wrap;
     color: rgba(240, 255, 249, 0.62);
     font-size: 11px;
 }
@@ -2047,18 +2667,6 @@ select.shop-control-input {
 
     &__item-icon--sword-art {
         transform: rotate(10deg) scale(1.08);
-    }
-
-    &__book-mark {
-        position: absolute;
-        z-index: 3;
-        width: 10px;
-        height: 18px;
-        top: 18px;
-        right: 18px;
-        background: linear-gradient(180deg, #ffe8a8, #ffd86b);
-        clip-path: polygon(0 0, 100% 0, 100% 78%, 50% 100%, 0 78%);
-        box-shadow: 0 0 10px rgba(#ffd86b, 0.32);
     }
 
     &__cover-seal {
