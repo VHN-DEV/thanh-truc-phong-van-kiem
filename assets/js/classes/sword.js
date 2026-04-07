@@ -80,6 +80,20 @@ class Sword {
         };
     }
 
+    getCurrentGuardTarget(guardCenter, r, Input, scaleFactor) {
+        if (Input.isUltMode && this.isUltimateCore()) {
+            return this.getMergedGuardTarget(guardCenter, scaleFactor);
+        }
+
+        return this.getNormalGuardTarget(guardCenter, r, Input);
+    }
+
+    startReturnToGuard() {
+        this.isReturning = true;
+        this.attackFrame = 0;
+        this.pierceCount = 0;
+    }
+
     getNormalGuardTarget(guardCenter, r, Input) {
         const globalRotation = !CONFIG.SWORD.IS_PAUSED
             ? (performance.now() / 1000) * this.spinSpeed * (CONFIG.SWORD.SPEED_MULT || 100)
@@ -127,6 +141,7 @@ class Sword {
         this.isStunned = false;
         this.stunTimer = 0;
         this.isEnlarged = false;
+        this.isReturning = false;
         this.powerPenalty = 1;
 
         if (phase === 'merging') {
@@ -162,6 +177,56 @@ class Sword {
         this.trail = [];
     }
 
+    updateReturnMode(guardCenter, r, Input, scaleFactor) {
+        const speedMult = Input?.getSpeedMultiplier ? Input.getSpeedMultiplier() : 1;
+        const target = this.getCurrentGuardTarget(guardCenter, r, Input, scaleFactor);
+        const followStiffness = (Input.isUltMode && this.isUltimateCore()) ? 0.22 : 0.18;
+        const returnBoost = (Input.isUltMode && this.isUltimateCore()) ? 16 : 10;
+
+        if (Input.isUltMode && this.isUltimateCore()) {
+            this.targetVisualScale = 4.8;
+        } else if (!this.isEnlarged) {
+            this.targetVisualScale = 1;
+        }
+
+        this.currentVisualScale += (this.targetVisualScale - this.currentVisualScale) * 0.14;
+
+        const dx = target.tx - this.x;
+        const dy = target.ty - this.y;
+        const distance = Math.hypot(dx, dy) || 1;
+        const pullForce = Math.min(distance * followStiffness, returnBoost * scaleFactor * speedMult);
+
+        this.vx += (dx / distance) * pullForce;
+        this.vy += (dy / distance) * pullForce;
+        this.vx *= 0.8;
+        this.vy *= 0.8;
+        this.x += this.vx;
+        this.y += this.vy;
+
+        let finalAngle = target.finalAngle;
+        if (Math.hypot(this.vx, this.vy) > 0.6) {
+            finalAngle = Math.atan2(this.vy, this.vx) + Math.PI / 2;
+        }
+
+        let diff = finalAngle - this.drawAngle;
+        while (diff < -Math.PI) diff += Math.PI * 2;
+        while (diff > Math.PI) diff -= Math.PI * 2;
+        this.drawAngle += diff * 0.24;
+
+        this.trail.push({ x: this.x, y: this.y });
+        if (this.trail.length > CONFIG.SWORD.TRAIL_LENGTH) this.trail.shift();
+
+        const snapDistance = (Input.isUltMode && this.isUltimateCore()) ? 18 : 10;
+        if (distance <= snapDistance * scaleFactor && Math.hypot(this.vx, this.vy) <= 2.2 * scaleFactor * speedMult) {
+            this.x = target.tx;
+            this.y = target.ty;
+            this.vx *= 0.2;
+            this.vy *= 0.2;
+            this.isReturning = false;
+            this.trail = [];
+        }
+    }
+
     update(guardCenter, enemies, Input, scaleFactor) {
         if (this.isDead) {
             const now = performance.now();
@@ -194,6 +259,7 @@ class Sword {
             this.isStunned = false;
             this.stunTimer = 0;
             this.isEnlarged = false;
+            this.isReturning = false;
             this.powerPenalty = 1;
             this.targetVisualScale = 0;
             this.currentVisualScale += (this.targetVisualScale - this.currentVisualScale) * 0.25;
@@ -208,6 +274,11 @@ class Sword {
 
         if (this.isStunned) {
             this.handleStun(scaleFactor);
+            return;
+        }
+
+        if (this.isReturning) {
+            this.updateReturnMode(guardCenter, currentRadius, Input, scaleFactor);
             return;
         }
 
@@ -247,6 +318,7 @@ class Sword {
         this.isStunned = false;
         this.powerPenalty = 1;
         this.isEnlarged = false;
+        this.isReturning = false;
         this.currentVisualScale = 1;
         this.targetVisualScale = 1;
         this.trail = [];
@@ -255,6 +327,7 @@ class Sword {
 
     updateGuardMode(guardCenter, r, Input, scaleFactor) {
         const speedMult = Input?.getSpeedMultiplier ? Input.getSpeedMultiplier() : 1;
+        this.isReturning = false;
         // Thu nhỏ lại nếu trước đó đang phóng to
         if (this.isEnlarged) {
             this.isEnlarged = false;
@@ -349,74 +422,80 @@ class Sword {
             if (d < minStartDist) { minStartDist = d; target = e; }
         }
 
-        if (target) {
-            const dx = target.x - this.x, dy = target.y - this.y;
-            const d = Math.hypot(dx, dy) || 1;
+        if (!target) {
+            if (Input.isUltMode && this.isUltimateCore()) {
+                this.startReturnToGuard();
+            }
+            return;
+        }
 
-            // Tốc độ bay (nhanh hơn khi đang Ult)
-            const flySpeed = (Input.isUltMode ? 22 : 10) * scaleFactor * speedMult;
-            this.vx += (dx / d) * flySpeed;
-            this.vy += (dy / d) * flySpeed;
-            this.vx *= 0.92; this.vy *= 0.92;
-            this.x += this.vx; this.y += this.vy;
+        const dx = target.x - this.x, dy = target.y - this.y;
+        const d = Math.hypot(dx, dy) || 1;
+
+        // Tốc độ bay (nhanh hơn khi đang Ult)
+        const flySpeed = (Input.isUltMode ? 22 : 10) * scaleFactor * speedMult;
+        this.vx += (dx / d) * flySpeed;
+        this.vy += (dy / d) * flySpeed;
+        this.vx *= 0.92; this.vy *= 0.92;
+        this.x += this.vx; this.y += this.vy;
+        
+        this.drawAngle = Math.atan2(this.vy, this.vx) + Math.PI / 2;
+
+        // KIỂM TRA VA CHẠM (HIT TEST)
+        const hitDistance = target.r + (target.hasShield ? 15 : 0) + (Input.isUltMode ? 26 * scaleFactor : 0);
+        if (Math.hypot(this.x - target.x, this.y - target.y) < hitDistance) {
             
-            this.drawAngle = Math.atan2(this.vy, this.vx) + Math.PI / 2;
-
-            // KIỂM TRA VA CHẠM (HIT TEST)
-            const hitDistance = target.r + (target.hasShield ? 15 : 0) + (Input.isUltMode ? 26 * scaleFactor : 0);
-            if (Math.hypot(this.x - target.x, this.y - target.y) < hitDistance) {
-                
-                // Tính toán sát thương và Enlarge
-                if (this.isEnlarged) {
-                    this.powerPenalty *= 1.5;
-                    if (typeof Input.createLevelUpExplosion === 'function') {
-                        Input.createLevelUpExplosion(target.x, target.y, "#ffcc00");
-                    }
-                    this.isEnlarged = false;
-                    this.targetVisualScale = 1;
+            // Tính toán sát thương và Enlarge
+            if (this.isEnlarged) {
+                this.powerPenalty *= 1.5;
+                if (typeof Input.createLevelUpExplosion === 'function') {
+                    Input.createLevelUpExplosion(target.x, target.y, "#ffcc00");
                 }
+                this.isEnlarged = false;
+                this.targetVisualScale = 1;
+            }
 
-                const result = target.hit(this);
+            const result = target.hit(this);
 
-                // CƠ CHẾ ĐÂM XUYÊN (PIERCE)
-                if (result !== "missed" && result !== "shielded") {
-                    if (Input.isUltMode && this.isUltimateCore()) {
-                        this.pierceCount = 0;
+            // CƠ CHẾ ĐÂM XUYÊN (PIERCE)
+            if (result !== "missed" && result !== "shielded") {
+                if (Input.isUltMode && this.isUltimateCore()) {
+                    this.pierceCount = 0;
+                } else {
+                    this.pierceCount = (this.pierceCount || 0) + 1;
+                
+                // Nếu đâm xuyên đủ 3 lần thì mới bị khựng nhẹ
+                if (this.pierceCount >= 3) {
+                    this.isStunned = true;
+                    this.stunTimer = performance.now() + 150; // Khựng ngắn hơn bình thường
+                    this.vx *= -0.5; this.vy *= -0.5;
+                    this.pierceCount = 0;
+                }
+                }
+                // Nếu chưa đủ 3 lần, kiếm tiếp tục bay xuyên qua mục tiêu (không bị Stun)
+            } 
+            else if (result === "shielded") {
+                // Đập trúng khiên thì gãy/văng ngay lập tức
+                if (Input.isUltMode && this.isUltimateCore()) {
+                    this.vx *= -0.18;
+                    this.vy *= -0.18;
+                    this.startReturnToGuard();
+                } else {
+                    this.hp -= target.isElite ? 3 : 1;
+                    if (this.hp <= 0) {
+                        this.breakSword(scaleFactor);
                     } else {
-                        this.pierceCount = (this.pierceCount || 0) + 1;
-                    
-                    // Nếu đâm xuyên đủ 3 lần thì mới bị khựng nhẹ
-                    if (this.pierceCount >= 3) {
                         this.isStunned = true;
-                        this.stunTimer = performance.now() + 150; // Khựng ngắn hơn bình thường
-                        this.vx *= -0.5; this.vy *= -0.5;
-                        this.pierceCount = 0;
-                    }
-                    }
-                    // Nếu chưa đủ 3 lần, kiếm tiếp tục bay xuyên qua mục tiêu (không bị Stun)
-                } 
-                else if (result === "shielded") {
-                    // Đập trúng khiên thì gãy/văng ngay lập tức
-                    if (Input.isUltMode && this.isUltimateCore()) {
-                        this.vx *= 0.45;
-                        this.vy *= 0.45;
-                    } else {
-                        this.hp -= target.isElite ? 3 : 1;
-                        if (this.hp <= 0) {
-                            this.breakSword(scaleFactor);
-                        } else {
-                            this.isStunned = true;
-                            this.stunTimer = performance.now() + CONFIG.SWORD.STUN_DURATION_MS;
-                            this.vx = -this.vx * 1.2; this.vy = -this.vy * 1.2;
-                        }
+                        this.stunTimer = performance.now() + CONFIG.SWORD.STUN_DURATION_MS;
+                        this.vx = -this.vx * 1.2; this.vy = -this.vy * 1.2;
                     }
                 }
             }
-
-            // Vẽ vệt kiếm
-            this.trail.push({ x: this.x, y: this.y });
-            if (this.trail.length > CONFIG.SWORD.TRAIL_LENGTH) this.trail.shift();
         }
+
+        // Vẽ vệt kiếm
+        this.trail.push({ x: this.x, y: this.y });
+        if (this.trail.length > CONFIG.SWORD.TRAIL_LENGTH) this.trail.shift();
     }
 
     breakSword(scaleFactor) {
