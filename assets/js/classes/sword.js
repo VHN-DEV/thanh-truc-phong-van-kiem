@@ -27,7 +27,7 @@ class Sword {
         this.attackDelay = this.layer * CONFIG.SWORD.ATTACK_DELAY_VAR.BASE + random(0, CONFIG.SWORD.ATTACK_DELAY_VAR.RAND);
         this.attackFrame = 0;
         this.flowNoise = Math.random() * Math.PI * 2;
-        this.flowOffsetAngle = (Math.PI * 2 / 72) * index;
+        this.flowOffsetAngle = (Math.PI * 2 / Math.max(1, CONFIG.SWORD.COUNT || 72)) * index;
         this.flowOffsetRadius = (CONFIG.SWORD.FLOW_OFFSET.MIN + Math.random() * (CONFIG.SWORD.FLOW_OFFSET.MAX - CONFIG.SWORD.FLOW_OFFSET.MIN)) * scaleFactor;
         this.isStunned = false;
         this.stunTimer = 0;
@@ -66,7 +66,10 @@ class Sword {
 
     getDamageMultiplier() {
         if (Input.isUltMode && this.isUltimateCore()) {
-            return Math.max(this.powerPenalty, Math.max(12, Math.floor(CONFIG.SWORD.COUNT / 3)));
+            const activeSwordCount = (typeof swords !== 'undefined' && Array.isArray(swords) && swords.length)
+                ? swords.length
+                : Math.max(1, CONFIG.SWORD.COUNT || 1);
+            return Math.max(this.powerPenalty, Math.max(1, Math.floor(activeSwordCount / 3)));
         }
 
         return this.powerPenalty;

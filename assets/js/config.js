@@ -16,6 +16,7 @@ const CONFIG = {
         STAR_TWINKLE_SPEED: 0.01                // Tốc độ nhấp nháy của sao
     },
     SWORD: {
+        STARTING_COUNT_BEFORE_FORMATION: 1, // Trước khi lĩnh ngộ kiếm trận chỉ vận dụng 1 kiếm bản mệnh
         COUNT: 72,              // Tổng số lượng kiếm tối đa
         BASE_RADIUS: 150,       // Khoảng cách từ tâm đến lớp kiếm đầu tiên
         LAYER_SPACING: 70,      // Khoảng cách giữa các lớp kiếm (vòng trong - vòng ngoài)
@@ -46,6 +47,14 @@ const CONFIG = {
     INPUT: {
         JOYSTICK_CURSOR_SPEED: 0.10, // Hệ số độ nhạy/tốc độ con trỏ khi điều khiển bằng joystick mobile
         DOUBLE_TAP_DELAY: 300   // Khoảng cách tối đa giữa 2 lần chạm để tính là double tap
+    },
+    CURSOR: {
+        BASE_DOT_RADIUS: 3.2,
+        BASE_RING_RADIUS: 7.5,
+        BASE_DOT_COLOR: "#f3fffd",
+        BASE_RING_COLOR: "rgba(143, 255, 224, 0.32)",
+        BASE_GLOW_COLOR: "rgba(143, 255, 224, 0.42)",
+        BASE_GLOW_BLUR: 10
     },
     COLORS: {
         BG_FADE: "rgba(0, 0, 8, 0.25)",         // Màu nền phủ (tạo hiệu ứng lưu ảnh/motion blur)
@@ -316,7 +325,9 @@ const CONFIG = {
             REGEN: 9,
             SPEED: 10,
             FORTUNE: 11,
-            SPECIAL: 12
+            SWORD_ART: 12,
+            FLAME_ART: 13,
+            SPECIAL: 14
         },
         CATEGORY_RATES: {
             NORMAL: { EXP: 0.17, INSIGHT: 0.07, BREAKTHROUGH: 0.10, ATTACK: 0.12, SHIELD_BREAK: 0.05, BERSERK: 0.06, RAGE: 0.09, MANA: 0.08, MAX_MANA: 0.07, REGEN: 0.06, SPEED: 0.08, FORTUNE: 0.05 },
@@ -415,6 +426,238 @@ const CONFIG = {
                 color: "#231130",
                 radius: 8,
                 buyPriceLowStone: 4444444
+            }
+        }
+    },
+    SECRET_ARTS: {
+        DAI_CANH_KIEM_TRAN: {
+            fullName: "Đại Canh Kiếm Trận",
+            quality: "SUPREME",
+            color: "#8fffe0",
+            buyPriceLowStone: 1000000,
+            buttonLabel: "Mua",
+            inventoryActionLabel: "Lĩnh ngộ"
+        },
+        CAN_LAM_BANG_DIEM: {
+            fullName: "Càn Lam Băng Diễm",
+            quality: "SUPREME",
+            color: "#79d9ff",
+            buyPriceLowStone: 1000000,
+            buttonLabel: "Mua",
+            inventoryActionLabel: "Luyện hóa"
+        }
+    },
+    INSECT: {
+        PLACEHOLDER_IMAGE: "./assets/images/image.jpg",
+        STARTING_BEAST_BAG_CAPACITY: 6,
+        UNIQUE_ITEMS: {
+            KHU_TRUNG_THUAT: {
+                fullName: "Khu Trùng Thuật",
+                quality: "HIGH",
+                color: "#79ffd4",
+                buyPriceLowStone: 4200,
+                buttonLabel: "Mua",
+                inventoryActionLabel: "Lĩnh ngộ"
+            },
+            KY_TRUNG_BANG: {
+                fullName: "Kỳ Trùng Bảng",
+                quality: "SUPREME",
+                color: "#ffd871",
+                buyPriceLowStone: 6800,
+                buttonLabel: "Mua"
+            }
+        },
+        BEAST_BAG: {
+            fullName: "Linh Thú Đại",
+            quality: "HIGH",
+            color: "#8ebfff",
+            capacity: 24,
+            buyPriceLowStone: 9600,
+            buttonLabel: "Mua"
+        },
+        TIERS: {
+            PHAM: { label: "Phàm Trùng", color: "#85ffb8", shortLabel: "Phàm" },
+            LINH: { label: "Linh Trùng", color: "#78d8ff", shortLabel: "Linh" },
+            HUYEN: { label: "Huyền Trùng", color: "#aa9cff", shortLabel: "Huyền" },
+            THIEN: { label: "Thiên Trùng", color: "#ffd26e", shortLabel: "Thiên" },
+            DE: { label: "Đế Trùng", color: "#ff7cc7", shortLabel: "Đế" }
+        },
+        EGG_DROP: {
+            NORMAL_CHANCE: 0.12,
+            ELITE_CHANCE: 0.34,
+            NORMAL_COUNT: 1,
+            ELITE_COUNT: 2
+        },
+        HATCH: {
+            MIN_MANA_COST: 0,
+            NOTIFY_COLOR: "#79ffd4"
+        },
+        ATTACK: {
+            HIT_INTERVAL_MS: 220,
+            TARGET_RANGE: 220,
+            BASE_DAMAGE_FACTOR: 0.45,
+            BONUS_DAMAGE_PER_5: 0.08,
+            VISUAL_LIMIT: 36,
+            VISUAL_MIN_RADIUS: 20,
+            VISUAL_MAX_RADIUS: 74,
+            VISUAL_JITTER: 14,
+            REPRODUCE_ON_KILL_CHANCE: 0.16,
+            DEATH_ON_HIT_CHANCE: 0.04,
+            DEATH_ON_SHIELD_CHANCE: 0.12
+        },
+        SPECIES: {
+            KIEN_THIEN_TINH: {
+                rank: 9,
+                name: "Kiến Thiên Tinh",
+                tier: "THIEN",
+                color: "#ffd46a",
+                eggColor: "#fff0c3",
+                image: "./assets/images/image.jpg",
+                weight: 7,
+                attackFactor: 1.28,
+                vitality: 0.84,
+                fertility: 0.68,
+                description: "Thiên trùng mang tinh quang trong giáp xác, hợp thành đàn thì công phạt đồng bộ như mưa sao sa."
+            },
+        
+            PHE_KIM_TRUNG: {
+                rank: 10,
+                name: "Phệ Kim Trùng",
+                tier: "DE",
+                color: "#ff9b38",
+                eggColor: "#ffe2b8",
+                image: "./assets/images/image.jpg",
+                weight: 3,
+                attackFactor: 1.45,
+                vitality: 0.78,
+                fertility: 0.52,
+                description: "Danh trùng hung danh hiển hách, lấy kim thạch làm thức ăn, bầy lớn đủ sức cắn xuyên linh tài và pháp bảo."
+            },
+        
+            PHI_THIEN_TU_VAN_HAT: {
+                rank: 14,
+                name: "Phi Thiên Tử Văn Hạt",
+                tier: "HUYEN",
+                color: "#b18cff",
+                eggColor: "#ebd8ff",
+                image: "./assets/images/image.jpg",
+                weight: 12,
+                attackFactor: 1.12,
+                vitality: 0.92,
+                fertility: 0.82,
+                description: "Dị hạt thân nhỏ nhưng linh mẫn dị thường, đuôi độc tím văn có thể liên tục bám theo khí cơ của con mồi."
+            },
+        
+            HUYET_NGOC_TRI_CHU: {
+                rank: 16,
+                name: "Huyết Ngọc Tri Chu",
+                tier: "LINH",
+                color: "#ff7f9f",
+                eggColor: "#ffd1d8",
+                image: "./assets/images/image.jpg",
+                weight: 18,
+                attackFactor: 1,
+                vitality: 1,
+                fertility: 0.9,
+                description: "Linh chu toàn thân đỏ như ngọc máu, giỏi dệt tơ khóa mục tiêu rồi rút sinh cơ từng chút một."
+            },
+        
+            HUYEN_DIEM_NGA: {
+                rank: 17,
+                name: "Huyễn Diệm Nga",
+                tier: "PHAM",
+                color: "#80ffd6",
+                eggColor: "#d7fff1",
+                image: "./assets/images/image.jpg",
+                weight: 24,
+                attackFactor: 0.85,
+                vitality: 1.1,
+                fertility: 1.05,
+                description: "Yêu nga cánh mỏng mang huyễn hỏa nhàn sắc, thường dùng để quấy nhiễu thần thức và bủa mây mê hoặc đối thủ."
+            },
+        
+            KIM_TAM: {
+                rank: "Không rõ",
+                name: "Kim Tằm",
+                tier: "LINH",
+                color: "#ffe066",
+                eggColor: "#fff3b0",
+                image: "./assets/images/image.jpg",
+                weight: 6,
+                attackFactor: 1.05,
+                vitality: 0.95,
+                fertility: 0.6,
+                description: "Cổ trùng dạng tằm, có thể ký sinh và âm thầm thôn phệ linh lực, cực kỳ nguy hiểm trong ám toán."
+            },
+        
+            THIET_HOA_NGHI: {
+                rank: "Không rõ",
+                name: "Thiết Hỏa Nghĩ",
+                tier: "PHAM",
+                color: "#ffb347",
+                eggColor: "#ffe0b3",
+                image: "./assets/images/image.jpg",
+                weight: 2,
+                attackFactor: 0.9,
+                vitality: 0.85,
+                fertility: 1.2,
+                description: "Kiến lửa thân kim loại, số lượng đông đảo, có thể tự bạo hoặc thiêu đốt mục tiêu."
+            },
+        
+            KIM_GIAP_HAT: {
+                rank: "Không rõ",
+                name: "Kim Giáp Hạt",
+                tier: "LINH",
+                color: "#d4af37",
+                eggColor: "#f7e7a1",
+                image: "./assets/images/image.jpg",
+                weight: 10,
+                attackFactor: 1.1,
+                vitality: 1.2,
+                fertility: 0.7,
+                description: "Bọ cạp giáp vàng, phòng ngự cực mạnh, đuôi chứa kịch độc, thiên về cận chiến."
+            },
+        
+            HUYET_THUC_NGHI: {
+                rank: "Không rõ",
+                name: "Huyết Thực Nghĩ",
+                tier: "TA",
+                color: "#b30000",
+                eggColor: "#ff6666",
+                image: "./assets/images/image.jpg",
+                weight: 3,
+                attackFactor: 1.15,
+                vitality: 0.9,
+                fertility: 1.3,
+                description: "Kiến hút máu, nuốt sinh linh để tăng trưởng, càng giết càng mạnh."
+            },
+        
+            BANG_TAM: {
+                rank: "Không rõ",
+                name: "Băng Tàm",
+                tier: "LINH",
+                color: "#aeefff",
+                eggColor: "#dff9ff",
+                image: "./assets/images/image.jpg",
+                weight: 5,
+                attackFactor: 0.95,
+                vitality: 1.05,
+                fertility: 0.75,
+                description: "Tằm mang hàn khí, có thể đóng băng linh lực và làm chậm mọi chuyển động xung quanh."
+            },
+        
+            THON_LINH_TRUNG: {
+                rank: "Không rõ",
+                name: "Thôn Linh Trùng",
+                tier: "DI",
+                color: "#cccccc",
+                eggColor: "#eeeeee",
+                image: "./assets/images/image.jpg",
+                weight: 1,
+                attackFactor: 0.8,
+                vitality: 0.7,
+                fertility: 1.4,
+                description: "Dị trùng chuyên thôn phệ linh khí, thường xuất hiện trong môi trường linh lực dày đặc."
             }
         }
     },

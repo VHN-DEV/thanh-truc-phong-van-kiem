@@ -72,6 +72,8 @@ const numberFormatter = new Intl.NumberFormat('vi-VN');
 let ShopUI = null;
 let InventoryUI = null;
 let ProfileUI = null;
+let SkillsUI = null;
+let InsectBookUI = null;
 
 function pickWeightedKey(rates, fallbackKey = null) {
     const entries = Object.entries(rates || {});
@@ -150,17 +152,44 @@ function buildPillVisualMarkup(item, qualityConfig) {
         SPEED: { className: 'is-speed', aura: 'rgba(149, 255, 186, 0.30)' },
         FORTUNE: { className: 'is-fortune', aura: 'rgba(255, 214, 102, 0.32)' },
         BAG: { className: 'is-bag', aura: 'rgba(151, 197, 255, 0.26)' },
+        SWORD_ART: { className: 'is-sword-art', aura: 'rgba(121, 255, 212, 0.32)' },
+        FLAME_ART: { className: 'is-flame-art', aura: 'rgba(104, 217, 255, 0.34)' },
+        INSECT_SKILL: { className: 'is-insect-skill', aura: 'rgba(121, 255, 212, 0.32)' },
+        INSECT_ARTIFACT: { className: 'is-insect-artifact', aura: 'rgba(255, 216, 113, 0.34)' },
+        SPIRIT_BAG: { className: 'is-spirit-bag', aura: 'rgba(142, 191, 255, 0.30)' },
         CHUNG_CUC_DAO_NGUYEN_DAN: { className: 'is-special-rainbow', aura: 'rgba(255, 255, 255, 0.40)' },
         TAN_DAO_DIET_NGUYEN_DAN: { className: 'is-special-void', aura: 'rgba(84, 42, 115, 0.44)' }
     };
 
     const visualKey = item.specialKey || item.category;
     const visual = visualMap[visualKey] || visualMap.EXP;
-    const centerMarkup = visual.className === 'is-bag'
+    const centerMarkup = (visual.className === 'is-bag' || visual.className === 'is-spirit-bag')
         ? `
             <span class="pill-visual__core pill-visual__core--bag"></span>
             <img src="./assets/images/bag.svg" class="pill-visual__item-icon" alt="">
         `
+        : visual.className === 'is-insect-skill'
+            ? `
+                <span class="pill-visual__core pill-visual__core--book"></span>
+                <span class="pill-visual__book-mark"></span>
+                <span class="pill-visual__cover-seal pill-visual__cover-seal--insect"></span>
+            `
+            : visual.className === 'is-sword-art'
+                ? `
+                    <span class="pill-visual__core pill-visual__core--book"></span>
+                    <span class="pill-visual__book-mark"></span>
+                    <span class="pill-visual__cover-seal pill-visual__cover-seal--sword"></span>
+                `
+            : visual.className === 'is-flame-art'
+                ? `
+                    <span class="pill-visual__core pill-visual__core--flame"></span>
+                    <span class="pill-visual__flame-mark"></span>
+                `
+            : visual.className === 'is-insect-artifact'
+                ? `
+                    <span class="pill-visual__core pill-visual__core--book"></span>
+                    <span class="pill-visual__book-mark"></span>
+                `
         : `
             <span class="pill-visual__core"></span>
             <span class="pill-visual__sigil"></span>
@@ -204,6 +233,28 @@ const Input = {
     spiritStones: getStartingSpiritStoneCounts(),
     playerName: 'Thanh Trúc Kiếm Chủ',
     playerAvatarInitials: 'TT',
+    attackMode: 'SWORD',
+    selectedInventoryTab: 'items',
+    uniquePurchases: {
+        DAI_CANH_KIEM_TRAN: false,
+        CAN_LAM_BANG_DIEM: false,
+        KHU_TRUNG_THUAT: false,
+        KY_TRUNG_BANG: false,
+        LINH_THU_DAI: false
+    },
+    cultivationArts: {
+        DAI_CANH_KIEM_TRAN: false,
+        CAN_LAM_BANG_DIEM: false,
+        KHU_TRUNG_THUAT: false
+    },
+    insectEggs: {},
+    tamedInsects: {},
+    discoveredInsects: {},
+    beastBagCapacity: Math.max(1, parseInt(CONFIG.INSECT?.STARTING_BEAST_BAG_CAPACITY, 10) || 6),
+    insectCombat: {
+        lastHitAt: 0,
+        visuals: []
+    },
     moveJoystick: {
         active: false,
         pointerId: null,
@@ -661,7 +712,316 @@ const Input = {
         }
     },
 
-    executeBreakthrough(isForced = false) { 
+    _useInventoryItemLegacyPhase1(itemKey) {
+        const item = this.inventory[itemKey];
+        if (!item || item.count <= 0) return false;
+
+        if (this.isVoidCollapsed) {
+            showNotify('Thân thể đã tan vào hư vô, cần reload web để hồi phục', '#a778ff');
+            return false;
+        }
+
+        const qualityConfig = this.getItemQualityConfig(item);
+
+        if (item.category === 'INSECT_ARTIFACT') {
+            if (InsectBookUI && typeof InsectBookUI.open === 'function') {
+                InsectBookUI.open();
+                showNotify(`Mở ${this.getItemDisplayName(item)}`, qualityConfig.color || '#ffd871');
+                return true;
+            }
+            return false;
+        }
+
+        if (item.category === 'SWORD_ART' && this.hasDaiCanhKiemTranUnlocked()) {
+            showNotify(`${this.getItemDisplayName(item)} đã nhập tâm, không thể lĩnh ngộ thêm.`, qualityConfig.color || '#8fffe0');
+            return false;
+        }
+
+        if (item.category === 'FLAME_ART' && this.hasCanLamBangDiemUnlocked()) {
+            showNotify(`${this.getItemDisplayName(item)} đã được luyện hóa vào thần thức.`, qualityConfig.color || '#79d9ff');
+            return false;
+        }
+
+        if (item.category === 'INSECT_SKILL' && this.hasKhuTrungThuatUnlocked()) {
+            showNotify(`${this.getItemDisplayName(item)} đã lĩnh ngộ xong, không thể lĩnh ngộ thêm.`, qualityConfig.color || '#79ffd4');
+            return false;
+        }
+
+        if (item.category === 'BREAKTHROUGH' && !this.isInventoryItemUsable(item)) {
+            showNotify(`Đan này chỉ hợp để đột phá ${item.realmName}`, '#ffd36b');
+            return false;
+        }
+
+        item.count--;
+        if (item.count <= 0) delete this.inventory[itemKey];
+
+        if (item.category === 'EXP') {
+            const rank = this.getCurrentRank();
+            if (!rank) return false;
+
+            const expGain = Math.max(1, Math.round(rank.exp * qualityConfig.expFactor * this.getExpGainMultiplier()));
+            this.updateExp(expGain);
+            showNotify(`Dùng ${this.getItemDisplayName(item)}: +${formatNumber(expGain)} tu vi`, qualityConfig.color);
+            this.refreshResourceUI();
+            return true;
+        }
+
+        if (item.category === 'BREAKTHROUGH') {
+            const rank = this.getCurrentRank();
+            if (!rank) return false;
+
+            const maxAllowed = CONFIG.CULTIVATION.MAX_BREAKTHROUGH_CHANCE || 0.99;
+            const currentTotal = Math.min(maxAllowed, rank.chance + this.breakthroughBonus);
+            const maxBonus = Math.max(0, maxAllowed - rank.chance);
+            const nextBonus = Math.min(maxBonus, this.breakthroughBonus + qualityConfig.breakthroughBoost);
+            const appliedBoost = Math.min(maxAllowed, rank.chance + nextBonus) - currentTotal;
+
+            if (appliedBoost <= 0) {
+                this.addInventoryItem(item, 1);
+                showNotify('Dược lực đã chạm giới hạn đột phá', '#ffd36b');
+                return false;
+            }
+
+            this.breakthroughBonus = nextBonus;
+            showNotify(`Dùng ${this.getItemDisplayName(item)}: +${Math.round(appliedBoost * 100)}% tỉ lệ đột phá`, qualityConfig.color);
+            this.refreshResourceUI();
+            return true;
+        }
+
+        switch (item.category) {
+            case 'SWORD_ART':
+                this.unlockCultivationArt('DAI_CANH_KIEM_TRAN');
+                syncSwordFormation();
+                showNotify(`Lĩnh ngộ ${this.getItemDisplayName(item)}: kiếm trận đã triển khai ${formatNumber(this.getUnlockedSwordTargetCount())} kiếm.`, qualityConfig.color);
+                this.refreshResourceUI();
+                return true;
+            case 'FLAME_ART':
+                this.unlockCultivationArt('CAN_LAM_BANG_DIEM');
+                showNotify(`Luyện hóa ${this.getItemDisplayName(item)}: lam diễm đã hiện nơi đầu niệm.`, qualityConfig.color);
+                this.refreshResourceUI();
+                return true;
+            case 'INSECT_SKILL':
+                this.unlockCultivationArt('KHU_TRUNG_THUAT');
+                this.renderAttackModeUI();
+                showNotify(`Lĩnh ngộ ${this.getItemDisplayName(item)}: có thể dùng linh trùng làm công sát mới.`, qualityConfig.color);
+                this.refreshResourceUI();
+                return true;
+            case 'INSIGHT':
+                this.bonusStats.expGainPct += qualityConfig.expGainPct || 0;
+                showNotify(`Dùng ${this.getItemDisplayName(item)}: +${Math.round((qualityConfig.expGainPct || 0) * 100)}% tu vi thu hoạch`, qualityConfig.color);
+                break;
+            case 'ATTACK':
+                this.bonusStats.attackPct += qualityConfig.attackPct || 0;
+                showNotify(`Dùng ${this.getItemDisplayName(item)}: +${Math.round((qualityConfig.attackPct || 0) * 100)}% công kích`, qualityConfig.color);
+                break;
+            case 'SHIELD_BREAK':
+                this.bonusStats.shieldBreakPct += qualityConfig.shieldBreakPct || 0;
+                showNotify(`Dùng ${this.getItemDisplayName(item)}: +${Math.round((qualityConfig.shieldBreakPct || 0) * 100)}% phá khiên`, qualityConfig.color);
+                break;
+            case 'BERSERK':
+                this.consumeBerserkPill(item, qualityConfig);
+                break;
+            case 'RAGE':
+                this.addRage(qualityConfig.rageGain || 0);
+                showNotify(`Dùng ${this.getItemDisplayName(item)}: +${Math.round(qualityConfig.rageGain || 0)} nộ`, qualityConfig.color);
+                break;
+            case 'MANA':
+                this.updateMana(qualityConfig.manaRestore || 0);
+                showNotify(`Dùng ${this.getItemDisplayName(item)}: hồi ${Math.round(qualityConfig.manaRestore || 0)} linh lực`, qualityConfig.color);
+                break;
+            case 'MAX_MANA':
+                this.bonusStats.maxManaFlat += qualityConfig.maxManaFlat || 0;
+                this.syncDerivedStats();
+                this.updateMana(qualityConfig.maxManaFlat || 0);
+                showNotify(`Dùng ${this.getItemDisplayName(item)}: +${Math.round(qualityConfig.maxManaFlat || 0)} giới hạn linh lực`, qualityConfig.color);
+                break;
+            case 'REGEN':
+                this.bonusStats.manaRegenPct += qualityConfig.manaRegenPct || 0;
+                showNotify(`Dùng ${this.getItemDisplayName(item)}: +${Math.round((qualityConfig.manaRegenPct || 0) * 100)}% hồi linh`, qualityConfig.color);
+                break;
+            case 'SPEED':
+                this.bonusStats.speedPct += qualityConfig.speedPct || 0;
+                showNotify(`Dùng ${this.getItemDisplayName(item)}: +${Math.round((qualityConfig.speedPct || 0) * 100)}% tốc độ`, qualityConfig.color);
+                break;
+            case 'FORTUNE':
+                this.bonusStats.dropRatePct += qualityConfig.dropRatePct || 0;
+                showNotify(`Dùng ${this.getItemDisplayName(item)}: +${Math.round((qualityConfig.dropRatePct || 0) * 100)}% vận khí`, qualityConfig.color);
+                break;
+            case 'SPECIAL':
+                if (item.specialKey === 'CHUNG_CUC_DAO_NGUYEN_DAN') {
+                    if (!this.applyChungCucDaoNguyenDan(item, qualityConfig)) {
+                        this.addInventoryItem(item, 1);
+                        return false;
+                    }
+                } else if (item.specialKey === 'TAN_DAO_DIET_NGUYEN_DAN') {
+                    if (!this.applyTanDaoDietNguyenDan(item, qualityConfig)) {
+                        this.addInventoryItem(item, 1);
+                        return false;
+                    }
+                } else {
+                    this.addInventoryItem(item, 1);
+                    return false;
+                }
+                break;
+            default:
+                this.addInventoryItem(item, 1);
+                return false;
+        }
+
+        this.refreshResourceUI();
+        return true;
+    },
+
+    _useInventoryItemLegacyPhase2(itemKey) {
+        const item = this.inventory[itemKey];
+        if (!item || item.count <= 0) return false;
+
+        if (this.isVoidCollapsed) {
+            showNotify('Thân thể đã tan vào hư vô, cần reload web để hồi phục', '#a778ff');
+            return false;
+        }
+
+        const qualityConfig = this.getItemQualityConfig(item);
+
+        if (item.category === 'INSECT_ARTIFACT') {
+            if (InsectBookUI && typeof InsectBookUI.open === 'function') {
+                InsectBookUI.open();
+                showNotify(`Mở ${this.getItemDisplayName(item)}`, qualityConfig.color || '#ffd871');
+                return true;
+            }
+            return false;
+        }
+
+        if (item.category === 'SWORD_ART' && this.hasDaiCanhKiemTranUnlocked()) {
+            showNotify(`${this.getItemDisplayName(item)} đã nhập tâm, không thể lĩnh ngộ thêm.`, qualityConfig.color || '#8fffe0');
+            return false;
+        }
+
+        if (item.category === 'FLAME_ART' && this.hasCanLamBangDiemUnlocked()) {
+            showNotify(`${this.getItemDisplayName(item)} đã được luyện hóa vào thần thức.`, qualityConfig.color || '#79d9ff');
+            return false;
+        }
+
+        if (item.category === 'BREAKTHROUGH' && !this.isInventoryItemUsable(item)) {
+            showNotify(`Đan này chỉ hợp để đột phá ${item.realmName}`, '#ffd36b');
+            return false;
+        }
+
+        item.count--;
+        if (item.count <= 0) delete this.inventory[itemKey];
+
+        if (item.category === 'EXP') {
+            const rank = this.getCurrentRank();
+            if (!rank) return false;
+
+            const expGain = Math.max(1, Math.round(rank.exp * qualityConfig.expFactor * this.getExpGainMultiplier()));
+            this.updateExp(expGain);
+            showNotify(`Dùng ${this.getItemDisplayName(item)}: +${formatNumber(expGain)} tu vi`, qualityConfig.color);
+            this.refreshResourceUI();
+            return true;
+        }
+
+        if (item.category === 'BREAKTHROUGH') {
+            const rank = this.getCurrentRank();
+            if (!rank) return false;
+
+            const maxAllowed = CONFIG.CULTIVATION.MAX_BREAKTHROUGH_CHANCE || 0.99;
+            const currentTotal = Math.min(maxAllowed, rank.chance + this.breakthroughBonus);
+            const maxBonus = Math.max(0, maxAllowed - rank.chance);
+            const nextBonus = Math.min(maxBonus, this.breakthroughBonus + qualityConfig.breakthroughBoost);
+            const appliedBoost = Math.min(maxAllowed, rank.chance + nextBonus) - currentTotal;
+
+            if (appliedBoost <= 0) {
+                this.addInventoryItem(item, 1);
+                showNotify('Dược lực đã chạm giới hạn đột phá', '#ffd36b');
+                return false;
+            }
+
+            this.breakthroughBonus = nextBonus;
+            showNotify(`Dùng ${this.getItemDisplayName(item)}: +${Math.round(appliedBoost * 100)}% tỉ lệ đột phá`, qualityConfig.color);
+            this.refreshResourceUI();
+            return true;
+        }
+
+        switch (item.category) {
+            case 'SWORD_ART':
+                this.unlockCultivationArt('DAI_CANH_KIEM_TRAN');
+                syncSwordFormation();
+                showNotify(`Lĩnh ngộ ${this.getItemDisplayName(item)}: kiếm trận đã triển khai ${formatNumber(this.getUnlockedSwordTargetCount())} kiếm.`, qualityConfig.color);
+                this.refreshResourceUI();
+                return true;
+            case 'FLAME_ART':
+                this.unlockCultivationArt('CAN_LAM_BANG_DIEM');
+                showNotify(`Luyện hóa ${this.getItemDisplayName(item)}: lam diễm đã hiện nơi đầu niệm.`, qualityConfig.color);
+                this.refreshResourceUI();
+                return true;
+            case 'INSIGHT':
+                this.bonusStats.expGainPct += qualityConfig.expGainPct || 0;
+                showNotify(`Dùng ${this.getItemDisplayName(item)}: +${Math.round((qualityConfig.expGainPct || 0) * 100)}% tu vi thu hoạch`, qualityConfig.color);
+                break;
+            case 'ATTACK':
+                this.bonusStats.attackPct += qualityConfig.attackPct || 0;
+                showNotify(`Dùng ${this.getItemDisplayName(item)}: +${Math.round((qualityConfig.attackPct || 0) * 100)}% công kích`, qualityConfig.color);
+                break;
+            case 'SHIELD_BREAK':
+                this.bonusStats.shieldBreakPct += qualityConfig.shieldBreakPct || 0;
+                showNotify(`Dùng ${this.getItemDisplayName(item)}: +${Math.round((qualityConfig.shieldBreakPct || 0) * 100)}% phá khiên`, qualityConfig.color);
+                break;
+            case 'BERSERK':
+                this.consumeBerserkPill(item, qualityConfig);
+                break;
+            case 'RAGE':
+                this.addRage(qualityConfig.rageGain || 0);
+                showNotify(`Dùng ${this.getItemDisplayName(item)}: +${Math.round(qualityConfig.rageGain || 0)} nộ`, qualityConfig.color);
+                break;
+            case 'MANA':
+                this.updateMana(qualityConfig.manaRestore || 0);
+                showNotify(`Dùng ${this.getItemDisplayName(item)}: hồi ${Math.round(qualityConfig.manaRestore || 0)} linh lực`, qualityConfig.color);
+                break;
+            case 'MAX_MANA':
+                this.bonusStats.maxManaFlat += qualityConfig.maxManaFlat || 0;
+                this.syncDerivedStats();
+                this.updateMana(qualityConfig.maxManaFlat || 0);
+                showNotify(`Dùng ${this.getItemDisplayName(item)}: +${Math.round(qualityConfig.maxManaFlat || 0)} giới hạn linh lực`, qualityConfig.color);
+                break;
+            case 'REGEN':
+                this.bonusStats.manaRegenPct += qualityConfig.manaRegenPct || 0;
+                showNotify(`Dùng ${this.getItemDisplayName(item)}: +${Math.round((qualityConfig.manaRegenPct || 0) * 100)}% hồi linh`, qualityConfig.color);
+                break;
+            case 'SPEED':
+                this.bonusStats.speedPct += qualityConfig.speedPct || 0;
+                showNotify(`Dùng ${this.getItemDisplayName(item)}: +${Math.round((qualityConfig.speedPct || 0) * 100)}% tốc độ`, qualityConfig.color);
+                break;
+            case 'FORTUNE':
+                this.bonusStats.dropRatePct += qualityConfig.dropRatePct || 0;
+                showNotify(`Dùng ${this.getItemDisplayName(item)}: +${Math.round((qualityConfig.dropRatePct || 0) * 100)}% vận khí`, qualityConfig.color);
+                break;
+            case 'SPECIAL':
+                if (item.specialKey === 'CHUNG_CUC_DAO_NGUYEN_DAN') {
+                    if (!this.applyChungCucDaoNguyenDan(item, qualityConfig)) {
+                        this.addInventoryItem(item, 1);
+                        return false;
+                    }
+                } else if (item.specialKey === 'TAN_DAO_DIET_NGUYEN_DAN') {
+                    if (!this.applyTanDaoDietNguyenDan(item, qualityConfig)) {
+                        this.addInventoryItem(item, 1);
+                        return false;
+                    }
+                } else {
+                    this.addInventoryItem(item, 1);
+                    return false;
+                }
+                break;
+            default:
+                this.addInventoryItem(item, 1);
+                return false;
+        }
+
+        this.refreshResourceUI();
+        return true;
+    },
+
+    executeBreakthrough(isForced = false) {
         const currentRank = CONFIG.CULTIVATION.RANKS[this.rankIndex];
         if (!currentRank) return;
 
@@ -1181,6 +1541,343 @@ const Input = {
         showNotify(`Dùng ${this.getItemDisplayName(item)}: cuồng hóa ${Math.round((qualityConfig.attackPct || 0) * 100)}%${sideText}`, qualityConfig.color);
     },
 
+    getInsectSpeciesEntries() {
+        return Object.entries(CONFIG.INSECT?.SPECIES || {});
+    },
+
+    getInsectSpecies(speciesKey) {
+        return CONFIG.INSECT?.SPECIES?.[speciesKey] || null;
+    },
+
+    getInsectTierInfo(tierKey) {
+        return CONFIG.INSECT?.TIERS?.[tierKey] || CONFIG.INSECT?.TIERS?.PHAM || { label: 'Ky trung', color: '#79ffd4', shortLabel: 'Trung' };
+    },
+
+    getBeastBagCapacity() {
+        const baseCapacity = Math.max(1, parseInt(CONFIG.INSECT?.STARTING_BEAST_BAG_CAPACITY, 10) || 1);
+        return Math.max(baseCapacity, Math.floor(this.beastBagCapacity || 0));
+    },
+
+    getTotalEggCount() {
+        return Object.values(this.insectEggs || {}).reduce((total, count) => total + Math.max(0, Math.floor(count || 0)), 0);
+    },
+
+    getTotalTamedInsectCount() {
+        return Object.values(this.tamedInsects || {}).reduce((total, count) => total + Math.max(0, Math.floor(count || 0)), 0);
+    },
+
+    getActiveInsectSpeciesKeys() {
+        return Object.keys(this.tamedInsects || {}).filter(speciesKey => (this.tamedInsects[speciesKey] || 0) > 0);
+    },
+
+    getBeastSummary() {
+        const totalEggs = this.getTotalEggCount();
+        const totalBeasts = this.getTotalTamedInsectCount();
+        const capacity = this.getBeastBagCapacity();
+        const discoveredCount = Object.keys(this.discoveredInsects || {}).filter(key => this.discoveredInsects[key]).length;
+        const speciesTotal = this.getInsectSpeciesEntries().length;
+
+        return {
+            totalEggs,
+            totalBeasts,
+            capacity,
+            freeSlots: Math.max(0, capacity - totalBeasts),
+            discoveredCount,
+            speciesTotal,
+            usageRatio: capacity > 0 ? (totalBeasts / capacity) : 0
+        };
+    },
+
+    hasUniquePurchase(key) {
+        return Boolean(this.uniquePurchases?.[key]);
+    },
+
+    markUniquePurchase(key) {
+        if (!key) return false;
+        if (!this.uniquePurchases) this.uniquePurchases = {};
+        this.uniquePurchases[key] = true;
+        return true;
+    },
+
+    hasCultivationArt(key) {
+        return Boolean(this.cultivationArts?.[key]);
+    },
+
+    unlockCultivationArt(key) {
+        if (!key) return false;
+        if (!this.cultivationArts) this.cultivationArts = {};
+        this.cultivationArts[key] = true;
+        return true;
+    },
+
+    hasDaiCanhKiemTranUnlocked() {
+        return this.hasCultivationArt('DAI_CANH_KIEM_TRAN');
+    },
+
+    hasCanLamBangDiemUnlocked() {
+        return this.hasCultivationArt('CAN_LAM_BANG_DIEM');
+    },
+
+    getUnlockedSwordTargetCount() {
+        return this.hasDaiCanhKiemTranUnlocked()
+            ? getConfiguredSwordCount()
+            : getBaseSwordCountBeforeFormation();
+    },
+
+    hasKhuTrungThuatUnlocked() {
+        return this.hasCultivationArt('KHU_TRUNG_THUAT');
+    },
+
+    hasKyTrungBang() {
+        return this.hasUniquePurchase('KY_TRUNG_BANG');
+    },
+
+    hasSpiritBeastBag() {
+        return this.hasUniquePurchase('LINH_THU_DAI');
+    },
+
+    markDiscoveredInsect(speciesKey) {
+        if (!this.getInsectSpecies(speciesKey)) return false;
+        this.discoveredInsects[speciesKey] = true;
+        return true;
+    },
+
+    hasUnlockedAttackSkill(mode) {
+        if (mode === 'SWORD') return true;
+        if (mode === 'INSECT') return this.hasKhuTrungThuatUnlocked();
+        return false;
+    },
+
+    canUseInsectAttackMode() {
+        return this.hasKhuTrungThuatUnlocked() && this.getTotalTamedInsectCount() > 0;
+    },
+
+    isInsectSwarmActive() {
+        return this.attackMode === 'INSECT' && this.canUseInsectAttackMode() && !this.isUltMode && !this.isUltimateBusy();
+    },
+
+    _getAttackSkillListLegacy() {
+        return [
+            {
+                key: 'SWORD',
+                name: 'Thanh Trúc Kiếm Trận',
+                description: 'Duy trì kiếm trận hộ thân, lấy kiếm quang làm công thủ chủ đạo.',
+                unlocked: true,
+                active: this.attackMode === 'SWORD',
+                ready: true,
+                accent: '#8fffe0',
+                note: `${formatNumber(this.getAliveSwordStats().alive)} kiếm còn chiến lực`
+            },
+            {
+                key: 'INSECT',
+                name: 'Khu Trùng Thuật',
+                description: 'Điều động linh trùng đã ấp nở thành trùng vân công sát bay quanh con trỏ.',
+                unlocked: this.hasKhuTrungThuatUnlocked(),
+                active: this.attackMode === 'INSECT',
+                ready: this.canUseInsectAttackMode(),
+                accent: '#79ffd4',
+                note: this.hasKhuTrungThuatUnlocked()
+                    ? `${formatNumber(this.getTotalTamedInsectCount())} linh trùng đã nở`
+                    : 'Cần mua rồi lĩnh ngộ trong túi trữ vật'
+            }
+        ];
+    },
+
+    getAttackSkillList() {
+        const formationUnlocked = this.hasDaiCanhKiemTranUnlocked();
+        const swordStats = this.getAliveSwordStats();
+
+        return [
+            {
+                key: 'SWORD',
+                name: formationUnlocked ? 'Đại Canh Kiếm Trận' : 'Thanh Trúc Cô Kiếm',
+                description: formationUnlocked
+                    ? 'Triển khai kiếm trận hộ thân, lấy kiếm quang đại trận làm công thủ chủ đạo.'
+                    : 'Chưa lĩnh ngộ kiếm trận, hiện chỉ vận dụng một thanh bản mệnh kiếm để hộ thân và công phạt.',
+                unlocked: true,
+                active: this.attackMode === 'SWORD',
+                ready: true,
+                accent: '#8fffe0',
+                note: formationUnlocked
+                    ? `${formatNumber(swordStats.alive)} kiếm còn chiến lực`
+                    : `${formatNumber(swordStats.alive)} kiếm bản mệnh còn chiến lực`
+            },
+            {
+                key: 'INSECT',
+                name: 'Khu Trùng Thuật',
+                description: 'Điều động linh trùng đã ấp nở thành trùng vân công sát bay quanh con trỏ.',
+                unlocked: this.hasKhuTrungThuatUnlocked(),
+                active: this.attackMode === 'INSECT',
+                ready: this.canUseInsectAttackMode(),
+                accent: '#79ffd4',
+                note: this.hasKhuTrungThuatUnlocked()
+                    ? `${formatNumber(this.getTotalTamedInsectCount())} linh trùng đã nở`
+                    : 'Cần lĩnh ngộ trong cửa hàng'
+            }
+        ];
+    },
+
+    renderAttackModeUI() {
+        const skillBtn = document.getElementById('btn-skill-list');
+        if (skillBtn) {
+            skillBtn.classList.toggle('is-active', this.attackMode === 'INSECT');
+            skillBtn.classList.toggle('is-disabled', !this.hasKhuTrungThuatUnlocked());
+            skillBtn.title = this.attackMode === 'INSECT'
+                ? `Khu Trùng Thuật - ${formatNumber(this.getTotalTamedInsectCount())} linh trùng`
+                : 'Bảng kỹ năng tấn công';
+        }
+
+        const swordCounter = document.getElementById('sword-counter');
+        if (swordCounter) {
+            swordCounter.classList.toggle('is-hidden', this.isInsectSwarmActive());
+        }
+
+        if (SkillsUI && typeof SkillsUI.render === 'function' && SkillsUI.isOpen()) {
+            SkillsUI.render();
+        }
+    },
+
+    ensureValidAttackMode() {
+        if (this.attackMode === 'INSECT' && !this.canUseInsectAttackMode()) {
+            this.attackMode = 'SWORD';
+        }
+
+        this.renderAttackModeUI();
+    },
+
+    setAttackMode(mode) {
+        const nextMode = mode === 'INSECT' ? 'INSECT' : 'SWORD';
+
+        if (!this.hasUnlockedAttackSkill(nextMode)) {
+            showNotify('Chưa lĩnh ngộ kỹ năng này.', '#ffd36b');
+            return false;
+        }
+
+        if (nextMode === 'INSECT' && !this.canUseInsectAttackMode()) {
+            showNotify('Chưa có linh trùng đã ấp nở để bày trùng trận.', '#ffb26b');
+            return false;
+        }
+
+        if (this.attackMode === nextMode) {
+            this.renderAttackModeUI();
+            return true;
+        }
+
+        this.attackMode = nextMode;
+        this.renderAttackModeUI();
+        showNotify(nextMode === 'INSECT' ? 'Đổi sang Khu Trùng Thuật' : 'Đổi về Thanh Trúc Kiếm Trận', nextMode === 'INSECT' ? '#79ffd4' : '#8fffe0');
+        return true;
+    },
+
+    hasBeastCapacity(amount = 1) {
+        const safeAmount = Math.max(0, Math.floor(amount || 0));
+        return (this.getTotalTamedInsectCount() + safeAmount) <= this.getBeastBagCapacity();
+    },
+
+    addInsectEgg(speciesKey, count = 1) {
+        const species = this.getInsectSpecies(speciesKey);
+        const safeCount = Math.max(0, Math.floor(count || 0));
+        if (!species || safeCount <= 0) return 0;
+
+        this.insectEggs[speciesKey] = Math.max(0, Math.floor(this.insectEggs[speciesKey] || 0)) + safeCount;
+        this.markDiscoveredInsect(speciesKey);
+        return safeCount;
+    },
+
+    changeTamedInsects(speciesKey, delta = 0) {
+        const species = this.getInsectSpecies(speciesKey);
+        const safeDelta = Math.trunc(delta || 0);
+        if (!species || safeDelta === 0) return 0;
+
+        const currentCount = Math.max(0, Math.floor(this.tamedInsects[speciesKey] || 0));
+        const nextCount = Math.max(0, currentCount + safeDelta);
+
+        if (nextCount <= 0) {
+            delete this.tamedInsects[speciesKey];
+        } else {
+            this.tamedInsects[speciesKey] = nextCount;
+            this.markDiscoveredInsect(speciesKey);
+        }
+
+        this.ensureValidAttackMode();
+        return nextCount - currentCount;
+    },
+
+    hatchInsectEgg(speciesKey, count = 1) {
+        const species = this.getInsectSpecies(speciesKey);
+        const availableEggs = Math.max(0, Math.floor(this.insectEggs[speciesKey] || 0));
+        const safeCount = Math.max(1, Math.floor(count || 1));
+        const freeSlots = Math.max(0, this.getBeastBagCapacity() - this.getTotalTamedInsectCount());
+        const hatchCount = Math.min(safeCount, availableEggs, freeSlots);
+
+        if (!species || availableEggs <= 0) {
+            return { success: false, reason: 'no-egg', count: 0 };
+        }
+
+        if (hatchCount <= 0) {
+            return { success: false, reason: 'full', count: 0 };
+        }
+
+        this.insectEggs[speciesKey] = availableEggs - hatchCount;
+        if (this.insectEggs[speciesKey] <= 0) delete this.insectEggs[speciesKey];
+
+        this.changeTamedInsects(speciesKey, hatchCount);
+        showNotify(`Ấp nở ${formatNumber(hatchCount)} ${species.name}`, CONFIG.INSECT?.HATCH?.NOTIFY_COLOR || species.color);
+        this.refreshResourceUI();
+        return { success: true, reason: 'hatched', count: hatchCount };
+    },
+
+    loseRandomTamedInsect(baseChance = 0) {
+        const chance = Math.max(0, Math.min(1, baseChance || 0));
+        const candidates = this.getActiveInsectSpeciesKeys();
+
+        if (!candidates.length || Math.random() >= chance) return null;
+
+        const weighted = {};
+        candidates.forEach(speciesKey => {
+            const species = this.getInsectSpecies(speciesKey);
+            const count = this.tamedInsects[speciesKey] || 0;
+            weighted[speciesKey] = Math.max(0.05, count / Math.max(0.2, species?.vitality || 1));
+        });
+
+        const chosenKey = pickWeightedKey(weighted, candidates[0]);
+        this.changeTamedInsects(chosenKey, -1);
+        return chosenKey;
+    },
+
+    reproduceRandomInsect(baseChance = 0) {
+        const chance = Math.max(0, Math.min(1, baseChance || 0));
+        const candidates = this.getActiveInsectSpeciesKeys();
+
+        if (!candidates.length || !this.hasBeastCapacity(1) || Math.random() >= chance) return null;
+
+        const weighted = {};
+        candidates.forEach(speciesKey => {
+            const species = this.getInsectSpecies(speciesKey);
+            const count = this.tamedInsects[speciesKey] || 0;
+            weighted[speciesKey] = Math.max(0.05, count * Math.max(0.15, species?.fertility || 1));
+        });
+
+        const chosenKey = pickWeightedKey(weighted, candidates[0]);
+        this.changeTamedInsects(chosenKey, 1);
+        return chosenKey;
+    },
+
+    createRandomInsectEggDropSpec() {
+        const speciesRates = this.getInsectSpeciesEntries().reduce((rates, [speciesKey, species]) => {
+            rates[speciesKey] = Math.max(0.01, species.weight || 1);
+            return rates;
+        }, {});
+        const speciesKey = pickWeightedKey(speciesRates, this.getInsectSpeciesEntries()[0]?.[0]);
+
+        return {
+            kind: 'INSECT_EGG',
+            category: 'INSECT_EGG',
+            quality: 'LOW',
+            speciesKey
+        };
+    },
+
     getSpiritStoneType(quality) {
         return CONFIG.SPIRIT_STONE.TYPES[quality] || CONFIG.SPIRIT_STONE.TYPES.LOW;
     },
@@ -1279,7 +1976,15 @@ const Input = {
 
         if (spec.specialKey) parts.push(spec.specialKey);
         if (spec.realmKey) parts.push(spec.realmKey);
+        if (spec.uniqueKey) parts.push(spec.uniqueKey);
+        if (spec.speciesKey) parts.push(spec.speciesKey);
         return parts.join('|');
+    },
+
+    getUniqueItemConfig(uniqueKey) {
+        return CONFIG.SECRET_ARTS?.[uniqueKey]
+            || CONFIG.INSECT?.UNIQUE_ITEMS?.[uniqueKey]
+            || null;
     },
 
     getItemQualityConfig(item) {
@@ -1296,11 +2001,25 @@ const Input = {
             REGEN: CONFIG.PILL.REGEN_QUALITIES,
             SPEED: CONFIG.PILL.SPEED_QUALITIES,
             FORTUNE: CONFIG.PILL.FORTUNE_QUALITIES,
-            BAG: CONFIG.ITEMS.STORAGE_BAGS
+            BAG: CONFIG.ITEMS.STORAGE_BAGS,
+            SWORD_ART: CONFIG.SECRET_ARTS,
+            FLAME_ART: CONFIG.SECRET_ARTS,
+            INSECT_SKILL: CONFIG.INSECT.UNIQUE_ITEMS,
+            INSECT_ARTIFACT: CONFIG.INSECT.UNIQUE_ITEMS,
+            SPIRIT_BAG: { HIGH: CONFIG.INSECT.BEAST_BAG }
         };
 
         if (item.specialKey) {
             return CONFIG.PILL.SPECIAL_ITEMS[item.specialKey] || CONFIG.PILL.EXP_QUALITIES.LOW;
+        }
+
+        if (item.uniqueKey) {
+            const uniqueConfig = this.getUniqueItemConfig(item.uniqueKey);
+            if (uniqueConfig) return uniqueConfig;
+        }
+
+        if (item.category === 'SPIRIT_BAG') {
+            return CONFIG.INSECT.BEAST_BAG;
         }
 
         const defs = categoryMap[item.category] || CONFIG.PILL.EXP_QUALITIES;
@@ -1313,19 +2032,36 @@ const Input = {
             return qualityConfig.fullName;
         }
 
+        if (item.kind === 'INSECT_EGG' || item.category === 'INSECT_EGG') {
+            const species = this.getInsectSpecies(item.speciesKey);
+            return species ? `Trung ${species.name}` : 'Trung ky trung';
+        }
+
+        if (item.uniqueKey && qualityConfig.fullName) {
+            return qualityConfig.fullName;
+        }
+
         if (item.category === 'BREAKTHROUGH') {
             const realmName = item.realmName || this.getNextMajorRealmInfo()?.name || "đột phá";
             return `${qualityConfig.label} ${realmName} đan`;
         }
 
-        if (item.category === 'BAG') {
+        if (item.category === 'BAG' || item.category === 'SPIRIT_BAG') {
             return qualityConfig.fullName;
         }
 
         return qualityConfig.fullName;
     },
 
-    getItemCategoryLabel(item) {
+    _getItemCategoryLabelLegacy(item) {
+        const staticLabels = {
+            BAG: 'Túi trữ vật',
+            SPIRIT_BAG: 'Linh thú đại',
+            INSECT_SKILL: 'Trùng đạo bí pháp',
+            INSECT_ARTIFACT: 'Kỳ trùng bảo vật',
+            INSECT_EGG: 'Trùng noãn'
+        };
+        if (staticLabels[item.category]) return staticLabels[item.category];
         if (item.category === 'BAG') return 'Túi trữ vật';
 
         const labels = {
@@ -1368,6 +2104,32 @@ const Input = {
                 }
 
                 return `Túi này chứa tối đa ${formatNumber(targetCapacity)} ô và cảnh giới chứa đồ của ngươi đã đạt đến mức này.`;
+            }
+            case 'SPIRIT_BAG': {
+                const targetCapacity = Math.max(0, Math.floor(qualityConfig.capacity || 0));
+                const currentCapacity = this.getBeastBagCapacity();
+                const extraSlots = Math.max(0, targetCapacity - currentCapacity);
+
+                if (extraSlots > 0) {
+                    return `Mở rộng Linh Thú Đại lên ${formatNumber(targetCapacity)} ô, thu nạp thêm ${formatNumber(extraSlots)} linh trùng đã nở.`;
+                }
+
+                return `Linh Thú Đại hiện đã đủ sức chứa ${formatNumber(targetCapacity)} linh trùng trưởng thành.`;
+            }
+            case 'SWORD_ART':
+                return 'Kiếm đạo bí pháp chỉ truyền một lần. Sau khi lĩnh ngộ mới từ một thanh bản mệnh kiếm hóa thành Đại Canh Kiếm Trận hộ thân như hiện tại.';
+            case 'FLAME_ART':
+                return 'Thiên địa linh hỏa Càn Lam Băng Diễm. Sau khi luyện hóa, con trỏ tâm niệm mới hiển hóa thành lam diễm, trước đó chỉ là một điểm sáng nhỏ.';
+            case 'INSECT_SKILL':
+                return 'Bí pháp điều động bầy linh trùng, cho phép thay kiếm trận bằng trùng vân công sát quanh con trỏ.';
+            case 'INSECT_ARTIFACT':
+                return 'Dị bảo ghi chép huyết mạch và năng lực các kỳ trùng. Thu được loài nào thì mục tương ứng sẽ sáng lên.';
+            case 'INSECT_EGG': {
+                const species = this.getInsectSpecies(item.speciesKey);
+                const tier = this.getInsectTierInfo(species?.tier);
+                return species
+                    ? `${tier.label}: ${species.description}`
+                    : 'Trứng kỳ trùng có thể ấp nở trong tab Linh thú.';
             }
             case 'INSIGHT':
                 return `Tăng vĩnh viễn ${Math.round((qualityConfig.expGainPct || 0) * 100)}% tu vi nhận từ chiến đấu và đan tu vi.`;
@@ -1428,6 +2190,124 @@ const Input = {
         `.trim();
     },
 
+    getItemCategoryLabel(item) {
+        const staticLabels = {
+            BAG: 'Túi trữ vật',
+            SPIRIT_BAG: 'Linh thú đại',
+            SWORD_ART: 'Kiếm đạo bí pháp',
+            FLAME_ART: 'Thiên địa linh hỏa',
+            INSECT_SKILL: 'Trùng đạo bí pháp',
+            INSECT_ARTIFACT: 'Kỳ trùng bảo vật',
+            INSECT_EGG: 'Trùng noãn'
+        };
+
+        if (staticLabels[item.category]) return staticLabels[item.category];
+
+        const labels = {
+            EXP: 'Tu vi',
+            INSIGHT: 'Ngộ đạo',
+            BREAKTHROUGH: 'Đột phá',
+            ATTACK: 'Công phạt',
+            SHIELD_BREAK: 'Phá khiên',
+            BERSERK: 'Cuồng bạo',
+            RAGE: 'Nộ',
+            MANA: 'Hồi linh',
+            MAX_MANA: 'Khai hải',
+            REGEN: 'Hồi nguyên',
+            SPEED: 'Thân pháp',
+            FORTUNE: 'Vận khí',
+            SPECIAL: 'Cấm kỵ'
+        };
+
+        return labels[item.category] || 'Đan dược';
+    },
+
+    _getItemDescriptionLegacy(item) {
+        const qualityConfig = this.getItemQualityConfig(item);
+        if (item.specialKey === 'CHUNG_CUC_DAO_NGUYEN_DAN') {
+            return 'Cực phẩm đạo đan bảy sắc, lập tức đưa tu vi lên cảnh giới cao nhất Chân tiên đại viên mãn và lưu lại hào quang 7 sắc.';
+        }
+
+        if (item.specialKey === 'TAN_DAO_DIET_NGUYEN_DAN') {
+            return 'Cấm kỵ hắc đan, cưỡng ép bước vào Chân tiên đại viên mãn trong 1 giây rồi tan vào hư vô. Chỉ có thể hồi phục khi reload web.';
+        }
+
+        switch (item.category) {
+            case 'BAG': {
+                const targetCapacity = Math.max(0, Math.floor(qualityConfig.capacity || 0));
+                const currentCapacity = this.getInventoryCapacity();
+                const extraSlots = Math.max(0, targetCapacity - currentCapacity);
+
+                if (extraSlots > 0) {
+                    return `Mở rộng túi trữ vật lên ${formatNumber(targetCapacity)} ô, thêm ${formatNumber(extraSlots)} ô so với hiện tại.`;
+                }
+
+                return `Túi này chứa tối đa ${formatNumber(targetCapacity)} ô và cảnh giới chứa đồ của ngươi đã đạt đến mức này.`;
+            }
+            case 'SPIRIT_BAG': {
+                const targetCapacity = Math.max(0, Math.floor(qualityConfig.capacity || 0));
+                const currentCapacity = this.getBeastBagCapacity();
+                const extraSlots = Math.max(0, targetCapacity - currentCapacity);
+
+                if (extraSlots > 0) {
+                    return `Mở rộng Linh Thú Đại lên ${formatNumber(targetCapacity)} ô, thu nạp thêm ${formatNumber(extraSlots)} linh trùng đã nở.`;
+                }
+
+                return `Linh Thú Đại hiện đã đủ sức chứa ${formatNumber(targetCapacity)} linh trùng trưởng thành.`;
+            }
+            case 'SWORD_ART':
+                return 'Kiếm đạo bí pháp chỉ truyền một lần. Sau khi lĩnh ngộ mới từ một thanh bản mệnh kiếm hóa thành Đại Canh Kiếm Trận như hiện tại.';
+            case 'FLAME_ART':
+                return 'Thiên địa linh hỏa Càn Lam Băng Diễm. Sau khi luyện hóa, con trỏ tâm niệm mới hiển hóa thành lam diễm, trước đó chỉ là một điểm sáng nhỏ.';
+            case 'INSECT_SKILL':
+                return 'Bí pháp điều động bầy linh trùng, cho phép thay kiếm trận bằng trùng vân công sát quanh con trỏ.';
+            case 'INSECT_ARTIFACT':
+                return 'Dị bảo ghi chép huyết mạch và năng lực các kỳ trùng. Thu được loài nào thì mục tương ứng sẽ sáng lên.';
+            case 'INSECT_EGG': {
+                const species = this.getInsectSpecies(item.speciesKey);
+                const tier = this.getInsectTierInfo(species?.tier);
+                return species
+                    ? `${tier.label}: ${species.description}`
+                    : 'Trứng kỳ trùng có thể ấp nở trong tab Linh thú.';
+            }
+            case 'INSIGHT':
+                return `Tăng vĩnh viễn ${Math.round((qualityConfig.expGainPct || 0) * 100)}% tu vi nhận từ chiến đấu và đan tu vi.`;
+            case 'BREAKTHROUGH': {
+                const realmName = item.realmName || 'cảnh giới kế tiếp';
+                return `Tăng ${Math.round(qualityConfig.breakthroughBoost * 100)}% tỉ lệ đột phá tới ${realmName}.`;
+            }
+            case 'ATTACK':
+                return `Tăng vĩnh viễn ${Math.round((qualityConfig.attackPct || 0) * 100)}% lực công kích.`;
+            case 'SHIELD_BREAK':
+                return `Tăng vĩnh viễn ${Math.round((qualityConfig.shieldBreakPct || 0) * 100)}% sát lực lên khiên địch.`;
+            case 'BERSERK': {
+                const sideEffects = [];
+                if (qualityConfig.sideManaLoss) sideEffects.push(`hao ${qualityConfig.sideManaLoss} linh lực`);
+                if (qualityConfig.sideMaxManaFlat) sideEffects.push(`giảm ${Math.abs(qualityConfig.sideMaxManaFlat)} giới hạn linh lực`);
+                if (qualityConfig.sideSpeedPct) sideEffects.push(`giảm ${Math.round(Math.abs(qualityConfig.sideSpeedPct) * 100)}% tốc độ`);
+                if (qualityConfig.sideExpLossRatio) sideEffects.push(`tổn ${Math.round(qualityConfig.sideExpLossRatio * 100)}% tu vi hiện có`);
+
+                const sideText = sideEffects.length ? ` Tác dụng phụ: ${sideEffects.join(', ')}.` : '';
+                return `Cuồng hóa ${Math.round((qualityConfig.attackPct || 0) * 100)}% lực công kích trong ${Math.round((qualityConfig.durationMs || 0) / 1000)} giây.${sideText}`;
+            }
+            case 'RAGE':
+                return `Tăng ngay ${Math.round(qualityConfig.rageGain || 0)} nộ kiếm.`;
+            case 'MANA':
+                return `Hồi ngay ${Math.round(qualityConfig.manaRestore || 0)} linh lực.`;
+            case 'MAX_MANA':
+                return `Tăng vĩnh viễn ${Math.round(qualityConfig.maxManaFlat || 0)} giới hạn linh lực.`;
+            case 'REGEN':
+                return `Tăng vĩnh viễn ${Math.round((qualityConfig.manaRegenPct || 0) * 100)}% tốc độ hồi linh lực.`;
+            case 'SPEED':
+                return `Tăng vĩnh viễn ${Math.round((qualityConfig.speedPct || 0) * 100)}% tốc độ vận chuyển kiếm trận.`;
+            case 'FORTUNE':
+                return `Tăng vĩnh viễn ${Math.round((qualityConfig.dropRatePct || 0) * 100)}% tỉ lệ rơi đan dược và linh thạch.`;
+            case 'EXP':
+            default:
+                return `Tăng ${Math.round(qualityConfig.expFactor * 100)}% tu vi của cảnh giới hiện tại.`;
+        }
+    },
+
     addInventoryItem(spec, count = 1) {
         const itemKey = this.buildInventoryKey(spec);
         if (!this.inventory[itemKey] && !this.hasInventorySpaceForSpec(spec)) {
@@ -1443,6 +2323,8 @@ const Input = {
                 specialKey: spec.specialKey || null,
                 realmKey: spec.realmKey || null,
                 realmName: spec.realmName || null,
+                uniqueKey: spec.uniqueKey || null,
+                speciesKey: spec.speciesKey || null,
                 count: 0
             };
         }
@@ -1554,6 +2436,18 @@ const Input = {
             });
         });
 
+        Object.entries(CONFIG.SECRET_ARTS || {}).forEach(([uniqueKey, artConfig]) => {
+            items.push({
+                id: `SECRET_ART:${uniqueKey}`,
+                kind: 'UNIQUE',
+                category: uniqueKey === 'DAI_CANH_KIEM_TRAN' ? 'SWORD_ART' : 'FLAME_ART',
+                quality: artConfig.quality || 'SUPREME',
+                uniqueKey,
+                priceLowStone: artConfig.buyPriceLowStone || 0,
+                isOneTime: true
+            });
+        });
+
         QUALITY_ORDER.forEach(quality => {
             const bagConfig = CONFIG.ITEMS.STORAGE_BAGS?.[quality];
             if (!bagConfig) return;
@@ -1567,7 +2461,36 @@ const Input = {
             });
         });
 
+        Object.entries(CONFIG.INSECT?.UNIQUE_ITEMS || {}).forEach(([uniqueKey, uniqueConfig]) => {
+            items.push({
+                id: `UNIQUE:${uniqueKey}`,
+                kind: 'UNIQUE',
+                category: uniqueKey === 'KHU_TRUNG_THUAT' ? 'INSECT_SKILL' : 'INSECT_ARTIFACT',
+                quality: uniqueConfig.quality || 'HIGH',
+                uniqueKey,
+                priceLowStone: uniqueConfig.buyPriceLowStone || 0,
+                isOneTime: true
+            });
+        });
+
+        if (CONFIG.INSECT?.BEAST_BAG) {
+            items.push({
+                id: 'UNIQUE:LINH_THU_DAI',
+                kind: 'UNIQUE',
+                category: 'SPIRIT_BAG',
+                quality: CONFIG.INSECT.BEAST_BAG.quality || 'HIGH',
+                uniqueKey: 'LINH_THU_DAI',
+                priceLowStone: CONFIG.INSECT.BEAST_BAG.buyPriceLowStone || 0,
+                isOneTime: true
+            });
+        }
+
         const shopOrder = {
+            SWORD_ART: -5,
+            FLAME_ART: -4,
+            INSECT_SKILL: -3,
+            INSECT_ARTIFACT: -2,
+            SPIRIT_BAG: -1.5,
             BAG: -1,
             EXP: 0,
             INSIGHT: 1,
@@ -1599,6 +2522,10 @@ const Input = {
             const stoneType = this.getSpiritStoneType(dropSpec.quality);
             this.addSpiritStone(dropSpec.quality, 1);
             showNotify(`+1 ${stoneType.label}`, stoneType.color);
+        } else if (dropSpec.kind === 'INSECT_EGG') {
+            const species = this.getInsectSpecies(dropSpec.speciesKey);
+            this.addInsectEgg(dropSpec.speciesKey, 1);
+            showNotify(`+1 Trung ${species?.name || 'ky trung'}`, species?.eggColor || species?.color || '#79ffd4');
         } else {
             if (!this.hasInventorySpaceForSpec(dropSpec)) {
                 const qualityConfig = this.getItemQualityConfig(dropSpec);
@@ -1628,6 +2555,16 @@ const Input = {
         if (ProfileUI && typeof ProfileUI.render === 'function') {
             ProfileUI.render();
         }
+
+        if (SkillsUI && typeof SkillsUI.isOpen === 'function' && SkillsUI.isOpen()) {
+            SkillsUI.render();
+        }
+
+        if (InsectBookUI && typeof InsectBookUI.isOpen === 'function' && InsectBookUI.isOpen()) {
+            InsectBookUI.render();
+        }
+
+        this.renderAttackModeUI();
     },
 
     buyShopItem(itemId) {
@@ -1638,13 +2575,25 @@ const Input = {
 
         const item = this.getShopItems().find(entry => entry.id === itemId);
         if (!item) return false;
+        const qualityConfig = this.getItemQualityConfig(item);
+
+        if (item.isOneTime && item.uniqueKey && this.hasUniquePurchase(item.uniqueKey)) {
+            showNotify('Vật phẩm này chỉ có thể mua một lần.', qualityConfig.color || '#ffd36b');
+            return false;
+        }
 
         if (item.category === 'BAG' && !this.canUpgradeInventoryCapacity(item)) {
             showNotify('Túi hiện tại của ngươi đã rộng hơn hoặc bằng loại này.', '#ffd36b');
             return false;
         }
 
-        if (item.category !== 'BAG' && !this.hasInventorySpaceForSpec(item)) {
+        if (item.category === 'SPIRIT_BAG' && Math.floor((qualityConfig.capacity || 0)) <= this.getBeastBagCapacity()) {
+            showNotify('Linh Thú Đại hiện tại đã đạt mức này hoặc hơn.', qualityConfig.color || '#ffd36b');
+            return false;
+        }
+
+        const requiresInventorySpace = !['BAG', 'SPIRIT_BAG'].includes(item.category);
+        if (requiresInventorySpace && !this.hasInventorySpaceForSpec(item)) {
             showNotify('Túi trữ vật đã đầy, không thể mua thêm vật phẩm mới.', '#ff8a80');
             return false;
         }
@@ -1667,7 +2616,23 @@ const Input = {
             return true;
         }
 
+        if (item.category === 'SPIRIT_BAG') {
+            const previousCapacity = this.getBeastBagCapacity();
+            this.beastBagCapacity = Math.max(previousCapacity, Math.floor(qualityConfig.capacity || previousCapacity));
+            if (item.uniqueKey) this.markUniquePurchase(item.uniqueKey);
+
+            showNotify(
+                `Linh Thú Đại mở rộng lên ${formatNumber(this.getBeastBagCapacity())} ô (+${formatNumber(Math.max(0, this.getBeastBagCapacity() - previousCapacity))} ô)`,
+                qualityConfig.color
+            );
+            this.refreshResourceUI();
+            return true;
+        }
+
         const addedItem = this.addInventoryItem(item, 1);
+        if (item.isOneTime && item.uniqueKey) {
+            this.markUniquePurchase(item.uniqueKey);
+        }
         showNotify(`Đã mua ${this.getItemDisplayName(addedItem)}`, this.getItemQualityConfig(addedItem).color);
         this.refreshResourceUI();
         return true;
@@ -1675,6 +2640,7 @@ const Input = {
 
     getInventorySellPrice(item) {
         if (!item) return 0;
+        if (['INSECT_ARTIFACT', 'INSECT_SKILL', 'SWORD_ART', 'FLAME_ART'].includes(item.category)) return 0;
 
         const qualityConfig = this.getItemQualityConfig(item);
         const buyPrice = Math.max(0, qualityConfig.buyPriceLowStone || 0);
@@ -1709,6 +2675,30 @@ const Input = {
         }
 
         const qualityConfig = this.getItemQualityConfig(item);
+
+        if (item.category === 'INSECT_ARTIFACT') {
+            if (InsectBookUI && typeof InsectBookUI.open === 'function') {
+                InsectBookUI.open();
+                showNotify(`Mở ${this.getItemDisplayName(item)}`, qualityConfig.color || '#ffd871');
+                return true;
+            }
+            return false;
+        }
+
+        if (item.category === 'SWORD_ART' && this.hasDaiCanhKiemTranUnlocked()) {
+            showNotify(`${this.getItemDisplayName(item)} đã nhập tâm, không thể lĩnh ngộ thêm.`, qualityConfig.color || '#8fffe0');
+            return false;
+        }
+
+        if (item.category === 'FLAME_ART' && this.hasCanLamBangDiemUnlocked()) {
+            showNotify(`${this.getItemDisplayName(item)} đã được luyện hóa vào thần thức.`, qualityConfig.color || '#79d9ff');
+            return false;
+        }
+
+        if (item.category === 'INSECT_SKILL' && this.hasKhuTrungThuatUnlocked()) {
+            showNotify(`${this.getItemDisplayName(item)} đã lĩnh ngộ xong, không thể lĩnh ngộ thêm.`, qualityConfig.color || '#79ffd4');
+            return false;
+        }
 
         if (item.category === 'BREAKTHROUGH' && !this.isInventoryItemUsable(item)) {
             showNotify(`Đan này chỉ hợp để đột phá ${item.realmName}`, "#ffd36b");
@@ -1752,6 +2742,23 @@ const Input = {
         }
 
         switch (item.category) {
+            case 'SWORD_ART':
+                this.unlockCultivationArt('DAI_CANH_KIEM_TRAN');
+                syncSwordFormation();
+                showNotify(`Lĩnh ngộ ${this.getItemDisplayName(item)}: kiếm trận đã triển khai ${formatNumber(this.getUnlockedSwordTargetCount())} kiếm.`, qualityConfig.color);
+                this.refreshResourceUI();
+                return true;
+            case 'FLAME_ART':
+                this.unlockCultivationArt('CAN_LAM_BANG_DIEM');
+                showNotify(`Luyện hóa ${this.getItemDisplayName(item)}: lam diễm đã hiện nơi đầu niệm.`, qualityConfig.color);
+                this.refreshResourceUI();
+                return true;
+            case 'INSECT_SKILL':
+                this.unlockCultivationArt('KHU_TRUNG_THUAT');
+                this.renderAttackModeUI();
+                showNotify(`Lĩnh ngộ ${this.getItemDisplayName(item)}: có thể dùng linh trùng làm công sát mới.`, qualityConfig.color);
+                this.refreshResourceUI();
+                return true;
             case 'INSIGHT':
                 this.bonusStats.expGainPct += qualityConfig.expGainPct || 0;
                 showNotify(`Dùng ${this.getItemDisplayName(item)}: +${Math.round((qualityConfig.expGainPct || 0) * 100)}% tu vi thu hoạch`, qualityConfig.color);
@@ -1960,6 +2967,8 @@ const Input = {
         this.speed = Math.hypot(this.x - this.px, this.y - this.py);
         this.px = this.x; this.py = this.y;
 
+        this.ensureValidAttackMode();
+
         // Gọi hàm xử lý tiêu hao mana
         this.processActiveConsumption(dt);
     },
@@ -2001,6 +3010,177 @@ const Input = {
     handleWheel(e) {
         const delta = -e.deltaY * CONFIG.ZOOM.SENSITIVITY;
         Camera.adjustZoom(delta);
+    },
+
+    getSwarmVisualCount() {
+        return Math.max(0, Math.min(Math.floor(CONFIG.INSECT?.ATTACK?.VISUAL_LIMIT || 0), this.getTotalTamedInsectCount()));
+    },
+
+    pickOwnedInsectSpeciesKey() {
+        const weighted = this.getActiveInsectSpeciesKeys().reduce((rates, speciesKey) => {
+            rates[speciesKey] = Math.max(0.05, this.tamedInsects[speciesKey] || 0);
+            return rates;
+        }, {});
+
+        return pickWeightedKey(weighted, this.getActiveInsectSpeciesKeys()[0] || null);
+    },
+
+    updateInsectSwarm(dt, enemies, scaleFactor) {
+        const cfg = CONFIG.INSECT?.ATTACK || {};
+        const shouldRender = this.attackMode === 'INSECT' && this.canUseInsectAttackMode() && !this.isUltMode && !this.isUltimateBusy();
+
+        if (!shouldRender) {
+            this.insectCombat.visuals = [];
+            return;
+        }
+
+        const visualCount = this.getSwarmVisualCount();
+        const centerX = this.x;
+        const centerY = this.y;
+        const visuals = this.insectCombat.visuals || [];
+        const minRadius = Math.max(8, cfg.VISUAL_MIN_RADIUS || 18) * scaleFactor;
+        const maxRadius = Math.max(minRadius + 4, cfg.VISUAL_MAX_RADIUS || 70) * scaleFactor;
+        const jitter = Math.max(2, cfg.VISUAL_JITTER || 10) * scaleFactor;
+
+        while (visuals.length < visualCount) {
+            const speciesKey = this.pickOwnedInsectSpeciesKey();
+            const species = this.getInsectSpecies(speciesKey);
+
+            visuals.push({
+                speciesKey,
+                angle: Math.random() * Math.PI * 2,
+                radius: random(minRadius, maxRadius),
+                targetRadius: random(minRadius, maxRadius),
+                speed: random(1.4, 3.2),
+                wobble: Math.random() * Math.PI * 2,
+                wobbleSpeed: random(1.2, 2.8),
+                size: random(2, 3.8) * (species?.tier === 'DE' ? 1.18 : 1),
+                x: centerX,
+                y: centerY
+            });
+        }
+
+        if (visuals.length > visualCount) {
+            visuals.length = visualCount;
+        }
+
+        visuals.forEach(node => {
+            if (!this.tamedInsects[node.speciesKey]) {
+                node.speciesKey = this.pickOwnedInsectSpeciesKey() || node.speciesKey;
+            }
+
+            node.angle += dt * node.speed * (this.isAttacking ? 2.6 : 1.6);
+            node.wobble += dt * node.wobbleSpeed;
+            node.targetRadius += random(-8, 8) * dt * 10;
+            node.targetRadius = Math.max(minRadius, Math.min(maxRadius, node.targetRadius));
+            node.radius += (node.targetRadius - node.radius) * 0.08;
+
+            const swirlX = Math.cos(node.angle) * node.radius;
+            const swirlY = Math.sin(node.angle * 1.18 + node.wobble) * (node.radius * 0.72);
+            const chaosX = Math.cos(node.wobble * 1.7 + node.angle * 0.45) * jitter;
+            const chaosY = Math.sin(node.wobble * 1.35 - node.angle * 0.4) * jitter;
+
+            node.x = centerX + swirlX + chaosX;
+            node.y = centerY + swirlY + chaosY;
+        });
+
+        this.insectCombat.visuals = visuals;
+
+        if (!this.isAttacking) return;
+
+        const now = performance.now();
+        const hitInterval = Math.max(60, cfg.HIT_INTERVAL_MS || 220);
+        if (now - (this.insectCombat.lastHitAt || 0) < hitInterval) return;
+
+        this.insectCombat.lastHitAt = now;
+
+        const totalInsects = Math.max(1, this.getTotalTamedInsectCount());
+        const targetRange = Math.max(60, cfg.TARGET_RANGE || 220);
+        const damageFactor = Math.max(
+            0.18,
+            (cfg.BASE_DAMAGE_FACTOR || 0.45) + (Math.floor(totalInsects / 5) * (cfg.BONUS_DAMAGE_PER_5 || 0.08))
+        );
+        const targetCount = Math.max(1, Math.min(4, Math.ceil(totalInsects / 10)));
+        const targets = enemies
+            .filter(enemy => Math.hypot(enemy.x - centerX, enemy.y - centerY) <= targetRange)
+            .sort((a, b) => Math.hypot(a.x - centerX, a.y - centerY) - Math.hypot(b.x - centerX, b.y - centerY))
+            .slice(0, targetCount);
+
+        if (!targets.length) return;
+
+        const pseudoSwarm = {
+            getDamageMultiplier: () => damageFactor,
+            powerPenalty: damageFactor
+        };
+
+        let shieldHits = 0;
+        let killCount = 0;
+
+        targets.forEach(target => {
+            const result = target.hit(pseudoSwarm);
+
+            if (result === 'shielded') shieldHits++;
+            if (result === 'killed') killCount++;
+
+            if (result === 'hit' || result === 'killed' || result === 'shielded') {
+                this.createAttackBurst?.(target.x, target.y, result === 'shielded' ? '#ffb26b' : '#79ffd4');
+            }
+        });
+
+        const casualtyKey = shieldHits > 0
+            ? this.loseRandomTamedInsect(1 - Math.pow(1 - Math.max(0, Math.min(1, cfg.DEATH_ON_SHIELD_CHANCE || 0)), shieldHits))
+            : this.loseRandomTamedInsect(cfg.DEATH_ON_HIT_CHANCE || 0);
+
+        if (casualtyKey) {
+            const species = this.getInsectSpecies(casualtyKey);
+            showNotify(`1 ${species?.name || 'linh trùng'} tan lạc trong giao tranh`, species?.color || '#ff8a80');
+            this.refreshResourceUI();
+        }
+
+        if (killCount > 0) {
+            let bornCount = 0;
+            for (let i = 0; i < killCount; i++) {
+                if (this.reproduceRandomInsect(cfg.REPRODUCE_ON_KILL_CHANCE || 0)) {
+                    bornCount++;
+                }
+            }
+
+            if (bornCount > 0) {
+                showNotify(`Đàn trùng sinh sôi thêm ${formatNumber(bornCount)} con`, '#79ffd4');
+                this.refreshResourceUI();
+            }
+        }
+    },
+
+    drawInsectSwarm(ctx, scaleFactor) {
+        if (!this.insectCombat.visuals?.length) return;
+
+        ctx.save();
+        ctx.lineWidth = 1;
+
+        this.insectCombat.visuals.forEach((node, index) => {
+            const species = this.getInsectSpecies(node.speciesKey);
+            const color = species?.color || '#79ffd4';
+            const size = Math.max(1.8, node.size * scaleFactor);
+
+            if (index > 0) {
+                const prev = this.insectCombat.visuals[index - 1];
+                ctx.beginPath();
+                ctx.strokeStyle = `${color}22`;
+                ctx.moveTo(prev.x, prev.y);
+                ctx.lineTo(node.x, node.y);
+                ctx.stroke();
+            }
+
+            ctx.beginPath();
+            ctx.shadowBlur = 14;
+            ctx.shadowColor = color;
+            ctx.fillStyle = color;
+            ctx.arc(node.x, node.y, size, 0, Math.PI * 2);
+            ctx.fill();
+        });
+
+        ctx.restore();
     },
 
     // Hàm tạo hiệu ứng hạt bùng nổ
@@ -2132,6 +3312,38 @@ const Input = {
                 rotationSpeed: random(-0.14, 0.14)
             });
         }
+    },
+
+    drawCursorSeed(ctx, scaleFactor) {
+        const cursorConfig = CONFIG.CURSOR || {};
+        const dotRadius = Math.max(1, (cursorConfig.BASE_DOT_RADIUS || 3.2) * scaleFactor);
+        const ringRadius = Math.max(dotRadius + (2 * scaleFactor), (cursorConfig.BASE_RING_RADIUS || 7.5) * scaleFactor);
+
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.shadowBlur = (cursorConfig.BASE_GLOW_BLUR || 10) * scaleFactor;
+        ctx.shadowColor = cursorConfig.BASE_GLOW_COLOR || 'rgba(143, 255, 224, 0.42)';
+
+        ctx.beginPath();
+        ctx.arc(0, 0, ringRadius, 0, Math.PI * 2);
+        ctx.strokeStyle = cursorConfig.BASE_RING_COLOR || 'rgba(143, 255, 224, 0.32)';
+        ctx.lineWidth = Math.max(1, scaleFactor);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.fillStyle = cursorConfig.BASE_DOT_COLOR || '#f3fffd';
+        ctx.arc(0, 0, dotRadius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+    },
+
+    drawCursor(ctx, scaleFactor) {
+        if (this.hasCanLamBangDiemUnlocked()) {
+            this.drawFlame(ctx, scaleFactor);
+            return;
+        }
+
+        this.drawCursorSeed(ctx, scaleFactor);
     },
 
     drawFlame(ctx, scaleFactor) {
@@ -2470,6 +3682,7 @@ const SettingsUI = {
             for (let i = 0; i < CONFIG.SWORD.COUNT; i++) {
                 swords.push(new Sword(i, scaleFactor));
             }
+            syncSwordFormation({ rebuildAll: true });
             for (let i = 0; i < CONFIG.ENEMY.SPAWN_COUNT; i++) {
                 enemies.push(new Enemy());
             }
@@ -2535,6 +3748,73 @@ function buildInventoryCapacityMarkup() {
                 <span>${summary.freeSlots > 0 ? 'Có thể nhận thêm vật phẩm mới' : 'Túi đã đầy'}</span>
             </div>
         </div>
+    `;
+}
+
+function buildBeastWalletMarkup() {
+    const summary = Input.getBeastSummary();
+    const usagePct = Math.max(0, Math.min(100, Math.round((summary.usageRatio || 0) * 100)));
+
+    return `
+        <div class="beast-wallet">
+            <div class="beast-wallet__header">
+                <div>
+                    <span class="beast-wallet__eyebrow">Linh Thú Đại</span>
+                    <strong>${formatNumber(summary.totalBeasts)}/${formatNumber(summary.capacity)} linh trùng đã nở</strong>
+                </div>
+                <div class="beast-wallet__meta">
+                    <span>${formatNumber(summary.totalEggs)} trứng noãn</span>
+                    <span>${formatNumber(summary.discoveredCount)}/${formatNumber(summary.speciesTotal)} loài đã mở</span>
+                </div>
+            </div>
+            <div class="inventory-capacity-card__track beast-wallet__track">
+                <span style="width:${usagePct}%"></span>
+            </div>
+            <div class="beast-wallet__footer">
+                <span>${summary.freeSlots > 0 ? `Còn ${formatNumber(summary.freeSlots)} ô cho linh trùng mới` : 'Linh Thú Đại đã đầy'}</span>
+                <span>${Input.hasKhuTrungThuatUnlocked() ? 'Đã lĩnh ngộ Khu Trùng Thuật' : 'Chưa lĩnh ngộ Khu Trùng Thuật'}</span>
+            </div>
+        </div>
+    `;
+}
+
+function buildInsectEggCardMarkup(speciesKey, count) {
+    const species = Input.getInsectSpecies(speciesKey);
+    if (!species) return '';
+    const tier = Input.getInsectTierInfo(species.tier);
+
+    return `
+        <article class="inventory-slot beast-slot egg-slot" style="--slot-accent:${species.eggColor || species.color}">
+            <div class="slot-badge">${escapeHtml(tier.label)}</div>
+            <div class="beast-card-visual beast-card-visual--egg" style="--beast-accent:${species.eggColor || species.color}"></div>
+            <h4>Trứng ${escapeHtml(species.name)}</h4>
+            <p>${escapeHtml(species.description)}</p>
+            <div class="slot-count">${formatNumber(count)}</div>
+            <div class="slot-actions">
+                <button class="btn-slot-action" data-beast-action="hatch" data-species-key="${escapeHtml(speciesKey)}">Ấp nở</button>
+            </div>
+        </article>
+    `;
+}
+
+function buildTamedInsectCardMarkup(speciesKey, count) {
+    const species = Input.getInsectSpecies(speciesKey);
+    if (!species) return '';
+    const tier = Input.getInsectTierInfo(species.tier);
+    const attackPct = Math.round((species.attackFactor || 1) * 100);
+
+    return `
+        <article class="inventory-slot beast-slot" style="--slot-accent:${species.color}">
+            <div class="slot-badge">${escapeHtml(tier.label)}</div>
+            <div class="beast-card-visual" style="--beast-accent:${species.color}"></div>
+            <h4>${escapeHtml(species.name)}</h4>
+            <p>${escapeHtml(species.description)}</p>
+            <div class="beast-slot__stats">
+                <span>Công sát ${attackPct}%</span>
+                <span>Đàn trùng ${formatNumber(count)}</span>
+            </div>
+            <div class="slot-count">${formatNumber(count)}</div>
+        </article>
     `;
 }
 
@@ -2671,7 +3951,7 @@ ShopUI = {
     },
 
     getCategoryOptions() {
-        return ['ALL', 'EXP', 'INSIGHT', 'ATTACK', 'SHIELD_BREAK', 'BERSERK', 'RAGE', 'MANA', 'MAX_MANA', 'REGEN', 'SPEED', 'FORTUNE', 'BREAKTHROUGH', 'BAG', 'SPECIAL'];
+        return ['ALL', 'SWORD_ART', 'FLAME_ART', 'INSECT_SKILL', 'INSECT_ARTIFACT', 'SPIRIT_BAG', 'EXP', 'INSIGHT', 'ATTACK', 'SHIELD_BREAK', 'BERSERK', 'RAGE', 'MANA', 'MAX_MANA', 'REGEN', 'SPEED', 'FORTUNE', 'BREAKTHROUGH', 'BAG', 'SPECIAL'];
     },
 
     ensureToolbar() {
@@ -2837,14 +4117,27 @@ ShopUI = {
 
         const cards = items.map(item => {
             const qualityConfig = Input.getItemQualityConfig(item);
+            const isOwnedUnique = Boolean(item.isOneTime && item.uniqueKey && Input.hasUniquePurchase(item.uniqueKey));
             const canStoreOrUpgrade = item.category === 'BAG'
                 ? Input.canUpgradeInventoryCapacity(item)
-                : Input.hasInventorySpaceForSpec(item);
+                : item.category === 'SPIRIT_BAG'
+                    ? (Math.floor(qualityConfig.capacity || 0) > Input.getBeastBagCapacity() && !isOwnedUnique)
+                    : (!isOwnedUnique && Input.hasInventorySpaceForSpec(item));
             const canAfford = !Input.isVoidCollapsed && canStoreOrUpgrade && Input.canAffordLowStoneCost(item.priceLowStone);
             const priceMarkup = Input.renderSpiritStoneCostMarkup(item.priceLowStone);
-            const actionLabel = item.category === 'BAG'
+            let actionLabel = item.category === 'BAG'
                 ? (canStoreOrUpgrade ? 'Mở rộng' : 'Đã mở')
                 : (canStoreOrUpgrade ? 'Mua' : 'Túi đầy');
+
+            if (item.category === 'SWORD_ART' || item.category === 'FLAME_ART') {
+                actionLabel = isOwnedUnique ? 'Đã mua' : (canStoreOrUpgrade ? 'Mua' : 'Túi đầy');
+            } else if (item.category === 'SPIRIT_BAG') {
+                actionLabel = canStoreOrUpgrade ? 'Mua' : 'Đã mở';
+            } else if (item.category === 'INSECT_SKILL') {
+                actionLabel = isOwnedUnique ? 'Đã mua' : (canStoreOrUpgrade ? (CONFIG.INSECT?.UNIQUE_ITEMS?.KHU_TRUNG_THUAT?.buttonLabel || 'Mua') : 'Túi đầy');
+            } else if (item.category === 'INSECT_ARTIFACT') {
+                actionLabel = isOwnedUnique ? 'Đã sở hữu' : (canStoreOrUpgrade ? 'Mua' : 'Túi đầy');
+            }
 
             return `
                 <article class="shop-card has-pill-art" style="--slot-accent:${qualityConfig.color}">
@@ -2902,8 +4195,16 @@ InventoryUI = {
     btnOpen: document.getElementById('btn-inventory'),
     btnClose: document.getElementById('close-inventory'),
     wallet: document.getElementById('inventory-wallet'),
+    tabs: document.getElementById('inventory-tabs'),
+    itemPanel: document.getElementById('inventory-panel-items'),
+    stonePanel: document.getElementById('inventory-panel-stones'),
+    beastPanel: document.getElementById('inventory-panel-beasts'),
     pillGrid: document.getElementById('inventory-pill-grid'),
     stoneGrid: document.getElementById('inventory-stone-grid'),
+    beastWallet: document.getElementById('inventory-beast-wallet'),
+    eggGrid: document.getElementById('inventory-egg-grid'),
+    beastGrid: document.getElementById('inventory-beast-grid'),
+    currentTab: 'items',
 
     init() {
         if (!this.overlay || !this.btnOpen) return;
@@ -2942,15 +4243,56 @@ InventoryUI = {
             });
         }
 
+        if (this.tabs) {
+            this.tabs.addEventListener('pointerdown', (e) => {
+                const tabBtn = e.target.closest('[data-inventory-tab]');
+                if (!tabBtn) return;
+
+                e.stopPropagation();
+                this.currentTab = tabBtn.getAttribute('data-inventory-tab') || 'items';
+                Input.selectedInventoryTab = this.currentTab;
+                this.render();
+            });
+        }
+
+        if (this.eggGrid) {
+            this.eggGrid.addEventListener('pointerdown', (e) => {
+                const hatchBtn = e.target.closest('[data-beast-action="hatch"]');
+                if (!hatchBtn) return;
+
+                e.stopPropagation();
+                const speciesKey = hatchBtn.getAttribute('data-species-key');
+                if (speciesKey) {
+                Input.hatchInsectEgg(speciesKey, 1);
+            }
+        });
+        }
+
         this.overlay.addEventListener('pointerdown', (e) => {
             if (e.target === this.overlay) this.close();
         });
     },
 
     render() {
-        if (!this.wallet || !this.pillGrid || !this.stoneGrid) return;
+        if (!this.wallet || !this.pillGrid || !this.stoneGrid || !this.beastWallet || !this.eggGrid || !this.beastGrid) return;
 
+        this.currentTab = Input.selectedInventoryTab || this.currentTab || 'items';
         this.wallet.innerHTML = buildWalletMarkup() + buildInventoryCapacityMarkup();
+
+        if (this.tabs) {
+            this.tabs.querySelectorAll('[data-inventory-tab]').forEach(tabBtn => {
+                tabBtn.classList.toggle('is-active', tabBtn.getAttribute('data-inventory-tab') === this.currentTab);
+            });
+        }
+
+        [
+            { panel: this.itemPanel, key: 'items' },
+            { panel: this.stonePanel, key: 'stones' },
+            { panel: this.beastPanel, key: 'beasts' }
+        ].forEach(entry => {
+            if (!entry.panel) return;
+            entry.panel.classList.toggle('is-active', entry.key === this.currentTab);
+        });
 
         const inventorySummary = Input.getInventorySummary();
         const entries = inventorySummary.entries;
@@ -2959,6 +4301,14 @@ InventoryUI = {
             const usable = Input.isInventoryItemUsable(item);
             const sellPrice = Input.getInventorySellPrice(item);
             const sellPriceMarkup = Input.renderSpiritStoneCostMarkup(sellPrice);
+            const isArtifactBook = item.category === 'INSECT_ARTIFACT';
+            const inventoryActionLabel = item.category === 'SWORD_ART'
+                ? (CONFIG.SECRET_ARTS?.DAI_CANH_KIEM_TRAN?.inventoryActionLabel || 'Lĩnh ngộ')
+                : item.category === 'FLAME_ART'
+                    ? (CONFIG.SECRET_ARTS?.CAN_LAM_BANG_DIEM?.inventoryActionLabel || 'Luyện hóa')
+                    : item.category === 'INSECT_SKILL'
+                        ? (CONFIG.INSECT?.UNIQUE_ITEMS?.KHU_TRUNG_THUAT?.inventoryActionLabel || 'Lĩnh ngộ')
+                    : null;
             const label = item.category === 'BREAKTHROUGH' && !usable
                 ? `Chờ ${item.realmName}`
                 : 'Dùng';
@@ -2975,8 +4325,8 @@ InventoryUI = {
                         ${sellPriceMarkup}
                     </div>
                     <div class="slot-actions">
-                        <button class="btn-slot-action" data-action="use" data-item-key="${escapeHtml(item.key)}" ${usable ? '' : 'disabled'}>${escapeHtml(label)}</button>
-                        <button class="btn-slot-action is-secondary" data-action="sell" data-item-key="${escapeHtml(item.key)}">Bán</button>
+                        <button class="btn-slot-action" data-action="use" data-item-key="${escapeHtml(item.key)}" ${usable ? '' : 'disabled'}>${escapeHtml(isArtifactBook ? 'Xem' : (inventoryActionLabel || label))}</button>
+                        <button class="btn-slot-action is-secondary" data-action="sell" data-item-key="${escapeHtml(item.key)}" ${sellPrice > 0 ? '' : 'disabled'}>Bán</button>
                     </div>
                 </article>
             `;
@@ -2997,6 +4347,188 @@ InventoryUI = {
                     <h4>${escapeHtml(stoneType.label)}</h4>
                     <p>Quy đổi: ${formatNumber(stoneType.value)} hạ phẩm linh thạch.</p>
                     <div class="slot-count">${formatNumber(Input.spiritStones[quality] || 0)}</div>
+                </article>
+            `;
+        }).join('');
+
+        this.beastWallet.innerHTML = buildBeastWalletMarkup();
+
+        const eggCards = Input.getInsectSpeciesEntries()
+            .filter(([speciesKey]) => (Input.insectEggs[speciesKey] || 0) > 0)
+            .map(([speciesKey]) => buildInsectEggCardMarkup(speciesKey, Input.insectEggs[speciesKey]));
+        this.eggGrid.innerHTML = eggCards.length
+            ? eggCards.join('')
+            : '<article class="inventory-slot is-empty"><span>Chưa có trứng kỳ trùng.</span></article>';
+
+        const beastCards = Input.getInsectSpeciesEntries()
+            .filter(([speciesKey]) => (Input.tamedInsects[speciesKey] || 0) > 0)
+            .map(([speciesKey]) => buildTamedInsectCardMarkup(speciesKey, Input.tamedInsects[speciesKey]));
+        this.beastGrid.innerHTML = beastCards.length
+            ? beastCards.join('')
+            : '<article class="inventory-slot is-empty"><span>Chưa có linh trùng đã nở.</span></article>';
+    },
+
+    open() {
+        this.render();
+        openPopup(this.overlay);
+    },
+
+    close() {
+        closePopup(this.overlay);
+    }
+};
+
+SkillsUI = {
+    overlay: document.getElementById('skills-popup'),
+    btnOpen: document.getElementById('btn-skill-list'),
+    btnClose: document.getElementById('close-skills'),
+    list: document.getElementById('attack-skill-list'),
+
+    isOpen() {
+        return Boolean(this.overlay && this.overlay.classList.contains('show'));
+    },
+
+    init() {
+        if (!this.overlay || !this.btnOpen || !this.list) return;
+
+        const content = this.overlay.querySelector('.popup-content');
+        if (content) {
+            content.addEventListener('pointerdown', (e) => e.stopPropagation());
+        }
+
+        this.btnOpen.addEventListener('pointerdown', (e) => {
+            e.stopPropagation();
+            this.open();
+        });
+
+        if (this.btnClose) {
+            this.btnClose.addEventListener('pointerdown', (e) => {
+                e.stopPropagation();
+                this.close();
+            });
+        }
+
+        this.list.addEventListener('pointerdown', (e) => {
+            const skillBtn = e.target.closest('[data-attack-skill]');
+            if (!skillBtn) return;
+
+            e.stopPropagation();
+            const skillKey = skillBtn.getAttribute('data-attack-skill');
+            if (Input.setAttackMode(skillKey)) {
+                this.render();
+                this.close();
+            }
+        });
+
+        this.overlay.addEventListener('pointerdown', (e) => {
+            if (e.target === this.overlay) this.close();
+        });
+    },
+
+    render() {
+        if (!this.list) return;
+
+        this.list.innerHTML = Input.getAttackSkillList().map(skill => `
+            <article class="attack-skill-card ${skill.active ? 'is-active' : ''} ${!skill.unlocked || !skill.ready ? 'is-disabled' : ''}" style="--skill-accent:${skill.accent}">
+                <div class="attack-skill-card__head">
+                    <div>
+                        <h4>${escapeHtml(skill.name)}</h4>
+                        <p>${escapeHtml(skill.description)}</p>
+                    </div>
+                    <span class="attack-skill-card__tag">${skill.active ? 'Đang dùng' : (skill.unlocked ? 'Đã học' : 'Chưa học')}</span>
+                </div>
+                <div class="attack-skill-card__foot">
+                    <span>${escapeHtml(skill.note)}</span>
+                    <button class="btn-slot-action" type="button" data-attack-skill="${escapeHtml(skill.key)}" ${skill.unlocked && skill.ready ? '' : 'disabled'}>
+                        ${skill.active ? 'Đã chọn' : 'Chọn'}
+                    </button>
+                </div>
+            </article>
+        `).join('');
+    },
+
+    open() {
+        this.render();
+        openPopup(this.overlay);
+    },
+
+    close() {
+        closePopup(this.overlay);
+    }
+};
+
+InsectBookUI = {
+    overlay: document.getElementById('insect-book-popup'),
+    btnClose: document.getElementById('close-insect-book'),
+    summary: document.getElementById('insect-book-summary'),
+    grid: document.getElementById('insect-book-grid'),
+
+    isOpen() {
+        return Boolean(this.overlay && this.overlay.classList.contains('show'));
+    },
+
+    init() {
+        if (!this.overlay || !this.grid) return;
+
+        const content = this.overlay.querySelector('.popup-content');
+        if (content) {
+            content.addEventListener('pointerdown', (e) => e.stopPropagation());
+        }
+
+        if (this.btnClose) {
+            this.btnClose.addEventListener('pointerdown', (e) => {
+                e.stopPropagation();
+                this.close();
+            });
+        }
+
+        this.overlay.addEventListener('pointerdown', (e) => {
+            if (e.target === this.overlay) this.close();
+        });
+    },
+
+    render() {
+        if (!this.summary || !this.grid) return;
+
+        const beastSummary = Input.getBeastSummary();
+        this.summary.innerHTML = `
+            <div class="book-summary">
+                <div class="book-summary__card">
+                    <span>Đã mở</span>
+                    <strong>${formatNumber(beastSummary.discoveredCount)}/${formatNumber(beastSummary.speciesTotal)} mục</strong>
+                </div>
+                <div class="book-summary__card">
+                    <span>Trứng noãn</span>
+                    <strong>${formatNumber(beastSummary.totalEggs)}</strong>
+                </div>
+                <div class="book-summary__card">
+                    <span>Linh trùng</span>
+                    <strong>${formatNumber(beastSummary.totalBeasts)}/${formatNumber(beastSummary.capacity)}</strong>
+                </div>
+            </div>
+        `;
+
+        this.grid.innerHTML = Input.getInsectSpeciesEntries().map(([speciesKey, species]) => {
+            const discovered = Boolean(Input.discoveredInsects[speciesKey]);
+            const tier = Input.getInsectTierInfo(species.tier);
+            const eggCount = Input.insectEggs[speciesKey] || 0;
+            const beastCount = Input.tamedInsects[speciesKey] || 0;
+
+            return `
+                <article class="insect-book-card ${discovered ? 'is-discovered' : 'is-locked'}" style="--book-accent:${species.color}">
+                    <div class="insect-book-card__image-wrap">
+                        <img src="${escapeHtml(species.image || CONFIG.INSECT?.PLACEHOLDER_IMAGE || './assets/images/image.jpg')}" alt="${escapeHtml(species.name)}" class="insect-book-card__image">
+                        <span class="insect-book-card__tier">${escapeHtml(tier.label)}</span>
+                        ${discovered ? '' : '<span class="insect-book-card__veil">Chưa thu thập</span>'}
+                    </div>
+                    <div class="insect-book-card__body">
+                        <h4>${escapeHtml(species.name)}</h4>
+                        <p>${escapeHtml(species.description)}</p>
+                        <div class="insect-book-card__meta">
+                            <span>Trứng ${formatNumber(eggCount)}</span>
+                            <span>Đã nở ${formatNumber(beastCount)}</span>
+                        </div>
+                    </div>
                 </article>
             `;
         }).join('');
@@ -3074,6 +4606,7 @@ ProfileUI = {
             + (inventorySummary.categories.FORTUNE || 0)
             + (inventorySummary.categories.INSIGHT || 0)
             + (inventorySummary.categories.EXP || 0);
+        const beastSummary = Input.getBeastSummary();
 
         this.btnOpen.setAttribute('title', `${displayName} - ${rank?.name || 'Chưa nhập đạo'}`);
         this.btnOpen.setAttribute('aria-label', `Mở hồ sơ của ${displayName}`);
@@ -3094,6 +4627,7 @@ ProfileUI = {
                     <span class="profile-chip">Tu vi<strong>${formatNumber(Input.exp)}/${formatNumber(rank?.exp || 0)}</strong></span>
                     <span class="profile-chip">Đột phá<strong>${Math.round(breakthroughChance * 100)}%</strong></span>
                     <span class="profile-chip">Kiếm trận<strong>${swordStats.alive}/${swordStats.total}</strong></span>
+                    <span class="profile-chip">Linh trùng<strong>${formatNumber(beastSummary.totalBeasts)}</strong></span>
                 </div>
             </article>
             <article class="profile-hero__card">
@@ -3103,6 +4637,7 @@ ProfileUI = {
                     <span class="profile-chip is-soft">Nộ kiếm<strong>${formatNumber(Input.rage)}/${formatNumber(Input.maxRage)}</strong></span>
                     <span class="profile-chip is-soft">Sát thương<strong>${formatNumber(Input.getEffectiveAttackDamage())}</strong></span>
                     <span class="profile-chip is-soft">Linh thạch<strong>${formatNumber(Input.getSpiritStoneTotalValue())}</strong></span>
+                    <span class="profile-chip is-soft">Kỹ năng<strong>${escapeHtml(Input.attackMode === 'INSECT' ? 'Khu Trùng Thuật' : 'Kiếm trận')}</strong></span>
                 </div>
             </article>
         `;
@@ -3122,6 +4657,9 @@ ProfileUI = {
             { label: 'Tỉ lệ đột phá', value: `${Math.round(breakthroughChance * 100)}%` },
             { label: 'Kiếm trận', value: `${swordStats.alive}/${swordStats.total}` },
             { label: 'Kiếm hỏng', value: `${swordStats.broken}` },
+            { label: 'Linh trùng', value: `${formatNumber(beastSummary.totalBeasts)}/${formatNumber(beastSummary.capacity)}` },
+            { label: 'Trứng noãn', value: `${formatNumber(beastSummary.totalEggs)}` },
+            { label: 'Kỳ trùng đã mở', value: `${formatNumber(beastSummary.discoveredCount)}/${formatNumber(beastSummary.speciesTotal)}` },
             { label: 'Túi trữ vật', value: `${formatNumber(inventorySummary.uniqueCount)}/${formatNumber(inventorySummary.capacity)} ô` },
             { label: 'Ô trống', value: `${formatNumber(inventorySummary.freeSlots)}` }
         ];
@@ -3281,8 +4819,15 @@ const startAttack = (e) => {
     // 1. Kiểm tra xem còn thanh kiếm nào còn sống (hp > 0) không
     const aliveSwords = swords.filter(s => !s.isDead).length;
 
-    // 2. Nếu mana = 0 VÀ không còn kiếm nào sống
-    if (Input.mana <= 0 && aliveSwords === 0) {
+    // 2. Nếu đang dùng Khu Trùng Thuật thì chỉ cần còn mana
+    if (Input.isInsectSwarmActive() && Input.mana <= 0) {
+        Input.triggerManaShake();
+        Input.isAttacking = false;
+        return false;
+    }
+
+    // 3. Nếu mana = 0 VÀ không còn kiếm nào sống
+    if (!Input.isInsectSwarmActive() && Input.mana <= 0 && aliveSwords === 0) {
         Input.triggerManaShake();
         Input.isAttacking = false; // Không cho phép tấn công
         return false;
@@ -3369,6 +4914,50 @@ const swords = [];
 let starField;
 const guardCenter = { x: width / 2, y: height / 2, vx: 0, vy: 0 };
 
+function getConfiguredSwordCount() {
+    return Math.max(1, parseInt(CONFIG.SWORD.COUNT, 10) || 1);
+}
+
+function getBaseSwordCountBeforeFormation() {
+    const configuredBase = Math.max(1, parseInt(CONFIG.SWORD.STARTING_COUNT_BEFORE_FORMATION, 10) || 1);
+    return Math.min(configuredBase, getConfiguredSwordCount());
+}
+
+function getDesiredSwordCount() {
+    return Input.hasDaiCanhKiemTranUnlocked()
+        ? getConfiguredSwordCount()
+        : getBaseSwordCountBeforeFormation();
+}
+
+function syncSwordFormation(options = {}) {
+    const { rebuildAll = false } = options;
+    const targetCount = getDesiredSwordCount();
+
+    if (rebuildAll) {
+        swords.length = 0;
+    }
+
+    if (swords.length > targetCount) {
+        swords.length = targetCount;
+    }
+
+    for (let i = 0; i < targetCount; i++) {
+        if (!swords[i]) {
+            const sword = new Sword(i, scaleFactor);
+            sword.x = guardCenter.x;
+            sword.y = guardCenter.y;
+            swords[i] = sword;
+        }
+    }
+
+    updateSwordCounter(swords);
+    if (typeof Input?.renderAttackModeUI === 'function') {
+        Input.renderAttackModeUI();
+    }
+
+    return swords.length;
+}
+
 function init() {
     // Khởi tạo thông số theo rank đầu tiên
     const startingRank = CONFIG.CULTIVATION.RANKS[Input.rankIndex];
@@ -3385,10 +4974,14 @@ function init() {
     Input.renderRageUI();
     if (ShopUI) ShopUI.init();
     if (InventoryUI) InventoryUI.init();
+    if (SkillsUI) SkillsUI.init();
+    if (InsectBookUI) InsectBookUI.init();
     if (ProfileUI) ProfileUI.init();
+    Input.renderAttackModeUI();
     starField = new StarField(CONFIG.BG.STAR_COUNT, width, height);
     for (let i = 0; i < CONFIG.ENEMY.SPAWN_COUNT; i++) enemies.push(new Enemy());
-    for (let i = 0; i < CONFIG.SWORD.COUNT; i++) swords.push(new Sword(i, scaleFactor));
+    syncSwordFormation({ rebuildAll: true });
+    updateSwordCounter(swords);
 }
 
 function updateSwordCounter(swords) {
@@ -3428,7 +5021,7 @@ function renderCursor() {
     ctx.shadowBlur = 0; 
     
     // Gọi trực tiếp Băng Diễm từ Input
-    Input.drawFlame(ctx, scaleFactor);
+    Input.drawCursor(ctx, scaleFactor);
 }
 
 function animate() {
@@ -3486,10 +5079,25 @@ function animate() {
         pill.draw(ctx);
         return true;
     });
+
+    const renderSwarm = Input.attackMode === 'INSECT' && Input.canUseInsectAttackMode() && !Input.isUltMode && !Input.isUltimateBusy();
+    Input.updateInsectSwarm(dt, enemies, scaleFactor);
+
+    const swordInput = renderSwarm
+        ? { ...Input, isAttacking: false, isUltMode: false, ultimatePhase: 'idle', attackMode: 'SWORD' }
+        : Input;
+
     swords.forEach(s => {
-        s.update(guardCenter, enemies, Input, scaleFactor);
-        s.draw(ctx, scaleFactor);
+        s.update(guardCenter, enemies, swordInput, scaleFactor);
+        if (!renderSwarm) {
+            s.draw(ctx, scaleFactor);
+        }
     });
+
+    if (renderSwarm) {
+        Input.drawInsectSwarm(ctx, scaleFactor);
+    }
+
     renderCursor();
 
     // Vẽ và cập nhật hạt hiệu ứng

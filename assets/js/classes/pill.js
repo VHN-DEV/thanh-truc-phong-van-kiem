@@ -22,12 +22,24 @@ class Pill {
     }
 
     getConfig() {
-        return this.dropSpec.kind === 'STONE' ? CONFIG.SPIRIT_STONE : CONFIG.PILL;
+        if (this.dropSpec.kind === 'STONE') {
+            return CONFIG.SPIRIT_STONE;
+        }
+
+        return CONFIG.PILL;
     }
 
     getAppearance() {
         if (this.dropSpec.kind === 'STONE') {
             return CONFIG.SPIRIT_STONE.TYPES[this.dropSpec.quality] || CONFIG.SPIRIT_STONE.TYPES.LOW;
+        }
+
+        if (this.dropSpec.kind === 'INSECT_EGG') {
+            const species = CONFIG.INSECT?.SPECIES?.[this.dropSpec.speciesKey];
+            return {
+                color: species?.eggColor || species?.color || "#d7fff1",
+                radius: 5.4
+            };
         }
 
         if (this.dropSpec.specialKey) {
@@ -141,12 +153,42 @@ class Pill {
         ctx.restore();
     }
 
+    drawEgg(ctx) {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.shadowBlur = 18;
+        ctx.shadowColor = this.color;
+
+        const eggHeight = this.r * 2.3;
+        const eggWidth = this.r * 1.55;
+        const grad = ctx.createRadialGradient(-eggWidth * 0.2, -eggHeight * 0.35, this.r * 0.2, 0, 0, eggHeight);
+        grad.addColorStop(0, "#ffffff");
+        grad.addColorStop(0.42, this.color);
+        grad.addColorStop(1, "rgba(14, 24, 34, 0.45)");
+
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.moveTo(0, -eggHeight * 0.55);
+        ctx.bezierCurveTo(eggWidth * 0.68, -eggHeight * 0.5, eggWidth * 0.78, eggHeight * 0.1, 0, eggHeight * 0.62);
+        ctx.bezierCurveTo(-eggWidth * 0.78, eggHeight * 0.1, -eggWidth * 0.68, -eggHeight * 0.5, 0, -eggHeight * 0.55);
+        ctx.fill();
+
+        ctx.strokeStyle = "rgba(255,255,255,0.65)";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(-eggWidth * 0.16, -eggHeight * 0.18, this.r * 0.35, Math.PI * 1.05, Math.PI * 1.85);
+        ctx.stroke();
+        ctx.restore();
+    }
+
     draw(ctx) {
         ctx.save();
         this.drawTrail(ctx);
 
         if (this.dropSpec.kind === 'STONE') {
             this.drawStone(ctx);
+        } else if (this.dropSpec.kind === 'INSECT_EGG') {
+            this.drawEgg(ctx);
         } else {
             this.drawPill(ctx);
         }

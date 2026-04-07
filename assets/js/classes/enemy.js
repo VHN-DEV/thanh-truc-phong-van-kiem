@@ -288,6 +288,18 @@ class Enemy {
                 }
             }
 
+            if (CONFIG.INSECT && typeof Input?.createRandomInsectEggDropSpec === 'function') {
+                const eggCfg = CONFIG.INSECT.EGG_DROP || {};
+                const eggDropChance = Math.min(1, ((this.isElite ? eggCfg.ELITE_CHANCE : eggCfg.NORMAL_CHANCE) || 0) * dropRateMultiplier);
+                const eggDropCount = this.isElite ? (eggCfg.ELITE_COUNT || 1) : (eggCfg.NORMAL_COUNT || 1);
+
+                if (Math.random() < eggDropChance) {
+                    for (let i = 0; i < eggDropCount; i++) {
+                        pills.push(new Pill(this.x, this.y, Input.createRandomInsectEggDropSpec(this.isElite)));
+                    }
+                }
+            }
+
             this.respawn();
             return "killed";
 
