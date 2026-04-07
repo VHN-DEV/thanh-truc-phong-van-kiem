@@ -263,8 +263,8 @@ canvas {
         gap: 10px;
 
         .btn-setting {
-            width: 40px;
-            height: 40px;
+            width: 30px;
+            height: 30px;
             background: rgba(7, 16, 24, 0.76);
             border: 1px solid rgba($primary-color, 0.32);
         }
@@ -272,11 +272,21 @@ canvas {
         .btn-shop {
             border-color: rgba(#ffd36b, 0.45);
             box-shadow: 0 4px 0 $shadow-color, 0 0 12px rgba(#ffd36b, 0.25);
+
+            .sword-icon {
+                width: 30%;
+                height: 30%;
+            }
         }
 
         .btn-inventory {
             border-color: rgba(#77d8ff, 0.45);
             box-shadow: 0 4px 0 $shadow-color, 0 0 12px rgba(#77d8ff, 0.22);
+
+            .sword-icon {
+                width: 30%;
+                height: 30%;
+            }
         }
     }
 }
@@ -320,7 +330,7 @@ canvas {
 }
 
 .breakthrough-group {
-    @include abs-pos($top: 110x, $right: 25px);
+    @include abs-pos($top: 100x, $right: 25px);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -449,25 +459,67 @@ body.is-touch-device {
 }
 
 .attack-group {
-    @include abs-pos($bottom: 40px, $right: 40px);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 14px;
+    @include abs-pos($bottom: 30px, $right: 26px);
+    width: 164px;
+    height: 164px;
+
+    .skill-pad {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+
+        &::before {
+            content: "";
+            position: absolute;
+            inset: 12px 12px 12px 30px;
+            border-radius: 50%;
+            border: 1px dashed rgba(255, 255, 255, 0.08);
+            opacity: 0.5;
+        }
+
+        &::after {
+            content: "";
+            position: absolute;
+            right: 8px;
+            bottom: 8px;
+            width: 112px;
+            height: 112px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba($primary-color, 0.08), rgba($primary-color, 0) 70%);
+            pointer-events: none;
+        }
+    }
+
+    .btn-skill-slot,
+    .btn-attack {
+        position: absolute;
+        top: auto;
+        left: auto;
+        pointer-events: auto;
+    }
+
+    .btn-skill-slot {
+        z-index: 1;
+    }
+
+    .btn-skill-slot:active,
+    .btn-attack:active {
+        top: auto;
+    }
 
     .btn-ultimate {
         --ult-charge: 0%;
         --ult-charge-ratio: 0;
-        width: 48px;
-        height: 48px;
-        position: relative;
+        width: 52px;
+        height: 52px;
+        right: 58px;
+        bottom: 92px;
         overflow: hidden;
         isolation: isolate;
         background: radial-gradient(circle at 50% 12%, rgba(255, 255, 255, 0.14), rgba(8, 14, 22, 0.96) 72%) !important;
         border: 2px solid rgba($ult-color, 0.28) !important;
         box-shadow: 0 0 10px rgba($ult-color, 0.18) !important;
-        margin-bottom: 5px;
-        display: flex;
         opacity: 1;
         transform: scale(1);
         transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
@@ -580,22 +632,28 @@ body.is-touch-device {
     }
 
     .btn-form {
-        width: 30px;
-        height: 30px;
-        background: rgba($primary-color, 0.1);
+        width: 42px;
+        height: 42px;
+        right: 112px;
+        bottom: 44px;
+        background: radial-gradient(circle at 38% 30%, rgba(255, 255, 255, 0.2), rgba(9, 18, 28, 0.94) 72%);
+        border: 1px solid rgba($primary-color, 0.34);
+        box-shadow: 0 4px 0 rgba(0, 0, 0, 0.44), 0 0 14px rgba($primary-color, 0.2);
     }
 
     .btn-attack {
         --attack-stick-x: 0px;
         --attack-stick-y: 0px;
         --attack-drag-ratio: 0;
-        width: 50px;
-        height: 50px;
-        position: relative;
+        width: 74px;
+        height: 74px;
+        right: 0;
+        bottom: 0;
         border: 2px solid $primary-color;
         box-shadow: 0 6px 0 rgba(0, 0, 0, 0.5), 0 0 20px rgba($primary-color, 0.2);
         touch-action: none;
         overflow: visible;
+        z-index: 2;
 
         &::before,
         &::after {
@@ -635,9 +693,8 @@ body.is-touch-device {
         }
 
         &:active:not(.is-joystick-active) {
-            top: 5px;
             box-shadow: 0 1px 0 rgba(0, 0, 0, 0.5), 0 0 30px rgba($primary-color, 0.5);
-            transform: scale(0.95);
+            transform: translateY(4px) scale(0.95);
         }
     }
 }
@@ -650,8 +707,8 @@ body.is-touch-device {
     transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 
     &.icon-form {
-        width: 55%;
-        height: 55%;
+        width: 58%;
+        height: 58%;
         transform: rotate(-15deg);
     }
 }
@@ -660,7 +717,7 @@ body.is-touch-device {
 // 6. SWORD COUNTER UI
 // ====================================================================
 #sword-counter {
-    @include abs-pos($top: 65px, $right: 20px);
+    @include abs-pos($top: 60px, $right: 20px);
     position: fixed;
     display: flex;
     align-items: center;
@@ -2152,12 +2209,39 @@ select.shop-control-input {
     }
 
     .attack-group {
-        right: 24px;
-        bottom: 28px;
+        right: 14px;
+        bottom: 18px;
+        width: 190px;
+        height: 190px;
+
+        .skill-pad::before {
+            inset: 16px 14px 16px 42px;
+        }
+
+        .skill-pad::after {
+            right: 10px;
+            bottom: 10px;
+            width: 128px;
+            height: 128px;
+        }
+
+        .btn-ultimate {
+            width: 58px;
+            height: 58px;
+            right: 50px;
+            bottom: 100px;
+        }
+
+        .btn-form {
+            width: 46px;
+            height: 46px;
+            right: -5px;
+            bottom: 95px;
+        }
 
         .btn-attack {
-            width: 74px;
-            height: 74px;
+            width: 84px;
+            height: 84px;
 
             &::before {
                 inset: -10px;
