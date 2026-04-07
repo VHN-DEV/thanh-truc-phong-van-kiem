@@ -314,85 +314,85 @@ const KET_DAN_REALM_START_ID = CONFIG.CULTIVATION?.MAJOR_REALMS?.find(realm => r
 
 const INSECT_COMBAT_PROFILES = Object.freeze({
     DEFAULT: {
-        label: 'Trung tran can chien',
-        summary: 'Bao vay muc tieu gan nhat va can xe lien tuc.',
+        label: 'Trùng trận cận chiến',
+        summary: 'Bao vây mục tiêu gần nhất và cắn xé liên tục.',
         focus: 'nearest',
         damageScale: 1,
         latchRadius: 18
     },
     KIEN_THIEN_TINH: {
-        label: 'Tinh quang tap kich',
-        summary: 'Chia dan lao vao nhieu muc tieu gan nhau nhu mua sao.',
+        label: 'Tinh quang tập kích',
+        summary: 'Chia đàn lao vào nhiều mục tiêu gần nhau như mưa sao.',
         focus: 'nearest',
         damageScale: 1.05,
         latchRadius: 20
     },
     PHE_KIM_TRUNG: {
-        label: 'Can giap phac khi',
-        summary: 'Uu tien dich con khien, can vo giap rat nhanh.',
+        label: 'Cắn giáp phác khiên',
+        summary: 'Ưu tiên địch còn khiên, cắn vỡ giáp rất nhanh.',
         focus: 'shielded',
         damageScale: 1.08,
         latchRadius: 14
     },
     PHI_THIEN_TU_VAN_HAT: {
-        label: 'Truy kich doc van',
-        summary: 'Bam sat con moi, lien tuc dam doc va gay roi loai.',
+        label: 'Truy kích độc vân',
+        summary: 'Bám sát con mồi, liên tục đâm độc và gây rối loạn.',
         focus: 'nearest',
         damageScale: 0.96,
         latchRadius: 15
     },
     HUYET_NGOC_TRI_CHU: {
-        label: 'Huyet vong',
-        summary: 'Det to khoa chan roi rut sinh co tu muc tieu dang yeu.',
+        label: 'Huyết võng',
+        summary: 'Dệt tơ khóa chân rồi rút sinh cơ từ mục tiêu đang yếu.',
         focus: 'lowestHp',
         damageScale: 1,
         latchRadius: 18
     },
     HUYEN_DIEM_NGA: {
-        label: 'Huyen diem me than',
-        summary: 'Vu hoa me hoac, lam dung im muc tieu dang di chuyen va cat ne tranh.',
+        label: 'Huyễn diệm mê thần',
+        summary: 'Vũ hóa mê hoặc, làm đứng im mục tiêu đang di chuyển và cắt né tránh.',
         focus: 'swift',
         damageScale: 0.88,
         latchRadius: 22
     },
     KIM_TAM: {
-        label: 'Kim tam ky sinh',
-        summary: 'Bam vao dich yeu, rut linh luc va ket lieu ke sap guc.',
+        label: 'Kim tàm ký sinh',
+        summary: 'Bám vào địch yếu, rút linh lực và kết liễu kẻ sắp gục.',
         focus: 'lowestHp',
         damageScale: 0.98,
         latchRadius: 16
     },
     THIET_HOA_NGHI: {
-        label: 'Hoa nghich bao tap',
-        summary: 'Lao vao cum dich roi no tung, dot lan sang xung quanh.',
+        label: 'Hỏa nghĩ bạo tập',
+        summary: 'Lao vào cụm địch rồi nổ tung, đốt lan sang xung quanh.',
         focus: 'cluster',
         damageScale: 0.92,
         latchRadius: 17
     },
     KIM_GIAP_HAT: {
-        label: 'Kim giap cong thanh',
-        summary: 'Dam truc dien vao muc tieu lon, pha thu va ep dung lai.',
+        label: 'Kim giáp công thành',
+        summary: 'Đâm trực diện vào mục tiêu lớn, phá thủ và ép đứng lại.',
         focus: 'elite',
         damageScale: 1.14,
         latchRadius: 14
     },
     HUYET_THUC_NGHI: {
-        label: 'Huyet thuc cuong tap',
-        summary: 'Cang co sat khi trong chien truong cang danh hung han.',
+        label: 'Huyết thực cuồng tập',
+        summary: 'Càng có sát khí trong chiến trường càng đánh hung hãn.',
         focus: 'nearest',
         damageScale: 0.96,
         latchRadius: 16
     },
     BANG_TAM: {
-        label: 'Bang to phong toa',
-        summary: 'Nha bang ty len muc tieu, lam cham roi dong cung than phap.',
+        label: 'Băng tơ phong tỏa',
+        summary: 'Nhả băng ty lên mục tiêu, làm chậm rồi đông cứng thân pháp.',
         focus: 'nearest',
         damageScale: 0.9,
         latchRadius: 20
     },
     THON_LINH_TRUNG: {
-        label: 'Thon linh thuc khi',
-        summary: 'Gam nham linh luc, khoa hoi khien va lam suy yeu than phap.',
+        label: 'Thôn linh thực khí',
+        summary: 'Gặm nhấm linh lực, khóa hồi khiên và làm suy yếu thân pháp.',
         focus: 'shielded',
         damageScale: 0.82,
         latchRadius: 13
@@ -1802,7 +1802,7 @@ const Input = {
     },
 
     getInsectTierInfo(tierKey) {
-        return CONFIG.INSECT?.TIERS?.[tierKey] || CONFIG.INSECT?.TIERS?.PHAM || { label: 'Ky trung', color: '#79ffd4', shortLabel: 'Trung' };
+        return CONFIG.INSECT?.TIERS?.[tierKey] || CONFIG.INSECT?.TIERS?.PHAM || { label: 'Kỳ trùng', color: '#79ffd4', shortLabel: 'Trùng' };
     },
 
     getInsectTierShopInfo(tierKey) {
@@ -1815,7 +1815,7 @@ const Input = {
         const shopInfo = this.getInsectTierShopInfo(species?.tier);
 
         return {
-            fullName: species ? `Trung ${species.name}` : 'Trung ky trung',
+            fullName: species ? `Trứng ${species.name}` : 'Trứng kỳ trùng',
             quality: shopInfo.quality || 'LOW',
             color: species?.eggColor || species?.color || tierInfo.color || '#d7fff1',
             radius: 5.4,
@@ -2432,36 +2432,36 @@ const Input = {
         return [
             {
                 key: 'SWORD',
-                name: formationUnlocked ? 'Dai Canh Kiem Tran' : 'Thanh Truc Phong Van Kiem',
+                name: formationUnlocked ? 'Đại Canh Kiếm Trận' : 'Thanh Trúc Phong Vân Kiếm',
                 description: formationUnlocked
-                    ? 'Trien khai kiem tran ho than, lay kiem quang dai tran lam cong thu chu dao.'
-                    : 'Chua linh ngo kiem tran, hien chi van dung mot thanh ban menh kiem de ho than va cong phat.',
+                    ? 'Triển khai kiếm trận hộ thân, lấy kiếm quang đại trận làm công thủ chủ đạo.'
+                    : 'Chưa lĩnh ngộ kiếm trận, hiện chỉ vận dụng một thanh bản mệnh kiếm để hộ thân và công phạt.',
                 unlocked: true,
                 active: this.attackMode === 'SWORD',
                 ready: true,
                 accent: '#8fffe0',
                 note: formationUnlocked
-                    ? `${formatNumber(swordStats.alive)} kiem con chien luc`
-                    : `${formatNumber(swordStats.alive)} kiem ban menh con chien luc`
+                    ? `${formatNumber(swordStats.alive)} kiếm còn chiến lực`
+                    : `${formatNumber(swordStats.alive)} kiếm bản mệnh còn chiến lực`
             },
             {
                 key: 'INSECT',
-                name: 'Khu Trung Thuat',
-                description: 'Dieu dong linh trung da ap no bam vao muc tieu va tan cong theo dac tinh tung loai.',
+                name: 'Khu Trùng Thuật',
+                description: 'Điều động linh trùng đã ấp nở bám vào mục tiêu và tấn công theo đặc tính từng loài.',
                 unlocked: this.hasKhuTrungThuatUnlocked(),
                 active: this.attackMode === 'INSECT',
                 ready: this.canUseInsectAttackMode(),
                 accent: '#79ffd4',
                 note: this.hasKhuTrungThuatUnlocked()
                     ? combatReadyCount > 0
-                        ? `${formatNumber(combatReadyCount)} linh trung xuat chien${reservedCount > 0 ? ` | ${formatNumber(reservedCount)} dang giu lai` : ''}`
+                        ? `${formatNumber(combatReadyCount)} linh trùng xuất chiến${reservedCount > 0 ? ` | ${formatNumber(reservedCount)} đang giữ lại` : ''}`
                         : totalInsects > 0
-                            ? 'Tat ca ky trung dang duoc giu lai de sinh san'
-                            : 'Chua co linh trung da ap no'
-                    : 'Can linh ngo ky nang nay',
+                            ? 'Tất cả kỳ trùng đang được giữ lại để sinh sản'
+                            : 'Chưa có linh trùng đã ấp nở'
+                    : 'Cần lĩnh ngộ kỹ năng này',
                 roster: this.hasKhuTrungThuatUnlocked() ? this.getInsectCombatRoster() : [],
                 rosterSummary: this.hasKhuTrungThuatUnlocked()
-                    ? `${formatNumber(combatReadyCount)} xuat chien / ${formatNumber(totalInsects)} dang co`
+                    ? `${formatNumber(combatReadyCount)} xuất chiến / ${formatNumber(totalInsects)} đang có`
                     : ''
             }
         ];
@@ -2493,8 +2493,8 @@ const Input = {
             skillBtn.classList.toggle('is-active', this.attackMode === 'INSECT');
             skillBtn.classList.toggle('is-disabled', !this.hasKhuTrungThuatUnlocked());
             skillBtn.title = this.attackMode === 'INSECT'
-                ? `Khu Trung Thuat - ${formatNumber(this.getCombatReadyInsectCount())} linh trung xuat chien`
-                : 'Bang ky nang tan cong';
+                ? `Khu Trùng Thuật - ${formatNumber(this.getCombatReadyInsectCount())} linh trùng xuất chiến`
+                : 'Bảng kỹ năng tấn công';
         }
 
         const swordCounter = document.getElementById('sword-counter');
@@ -2543,7 +2543,7 @@ const Input = {
         const nextMode = mode === 'INSECT' ? 'INSECT' : 'SWORD';
 
         if (!this.hasUnlockedAttackSkill(nextMode)) {
-            showNotify('Chua linh ngo ky nang nay.', '#ffd36b');
+            showNotify('Chưa lĩnh ngộ kỹ năng này.', '#ffd36b');
             return false;
         }
 
@@ -2551,8 +2551,8 @@ const Input = {
             const totalInsects = this.getTotalTamedInsectCount();
             showNotify(
                 totalInsects > 0
-                    ? 'Tat ca ky trung dang duoc giu lai, hay bat it nhat mot loai de xuat chien.'
-                    : 'Chua co linh trung da ap no de bay trung tran.',
+                    ? 'Tất cả kỳ trùng đang được giữ lại, hãy bật ít nhất một loài để xuất chiến.'
+                    : 'Chưa có linh trùng đã ấp nở để bày trùng trận.',
                 '#ffb26b'
             );
             return false;
@@ -2565,7 +2565,7 @@ const Input = {
 
         this.attackMode = nextMode;
         this.renderAttackModeUI();
-        showNotify(nextMode === 'INSECT' ? 'Doi sang Khu Trung Thuat' : 'Doi ve Thanh Truc Kiem Tran', nextMode === 'INSECT' ? '#79ffd4' : '#8fffe0');
+        showNotify(nextMode === 'INSECT' ? 'Đổi sang Khu Trùng Thuật' : 'Đổi về Thanh Trúc Kiếm Trận', nextMode === 'INSECT' ? '#79ffd4' : '#8fffe0');
         return true;
     },
 
@@ -2925,7 +2925,7 @@ const Input = {
 
         if (item.kind === 'INSECT_EGG' || item.category === 'INSECT_EGG') {
             const species = this.getInsectSpecies(item.speciesKey);
-            return species ? `Trung ${species.name}` : 'Trung ky trung';
+            return species ? `Trứng ${species.name}` : 'Trứng kỳ trùng';
         }
 
         if (item.uniqueKey && qualityConfig.fullName) {
@@ -2989,8 +2989,8 @@ const Input = {
         if (item.category === 'SPIRIT_HABITAT') {
             const species = this.getInsectSpecies(item.speciesKey);
             return species
-                ? `Linh Thu Dai rieng danh cho ${species.name}. Co noi o dung moi co the sinh no on dinh, neu nuoi sai se co ty le tu vong.`
-                : 'Linh Thu Dai rieng giup ky trung sinh no an toan.';
+                ? `Linh Thú Đại riêng dành cho ${species.name}. Có nơi ở đúng mới có thể sinh nở ổn định, nếu nuôi sai sẽ có tỷ lệ tử vong.`
+                : 'Linh Thú Đại riêng giúp kỳ trùng sinh nở an toàn.';
         }
 
         if (item.category === 'MATERIAL') {
@@ -3457,7 +3457,7 @@ const Input = {
         } else if (dropSpec.kind === 'INSECT_EGG') {
             const species = this.getInsectSpecies(dropSpec.speciesKey);
             this.addInsectEgg(dropSpec.speciesKey, 1);
-            showNotify(`+1 Trung ${species?.name || 'ky trung'}`, species?.eggColor || species?.color || '#79ffd4');
+            showNotify(`+1 Trứng ${species?.name || 'kỳ trùng'}`, species?.eggColor || species?.color || '#79ffd4');
         } else {
             if (!this.hasInventorySpaceForSpec(dropSpec)) {
                 const qualityConfig = this.getItemQualityConfig(dropSpec);
@@ -3515,7 +3515,7 @@ const Input = {
         }
 
         if (item.category === 'SPIRIT_HABITAT' && this.hasInsectHabitat(item.speciesKey)) {
-            showNotify('Linh Thu Dai nay da an tri xong.', qualityConfig.color || '#8ebfff');
+            showNotify('Linh Thú Đại này đã an trí xong.', qualityConfig.color || '#8ebfff');
             return false;
         }
 
@@ -3568,14 +3568,14 @@ const Input = {
 
         if (item.category === 'SPIRIT_HABITAT') {
             this.unlockInsectHabitat(item.speciesKey);
-            showNotify(`Da an tri ${this.getItemDisplayName(item)}`, qualityConfig.color || '#8ebfff');
+            showNotify(`Đã an trí ${this.getItemDisplayName(item)}`, qualityConfig.color || '#8ebfff');
             this.refreshResourceUI();
             return true;
         }
 
         if (item.category === 'INSECT_EGG') {
             this.addInsectEgg(item.speciesKey, 1);
-            showNotify(`Da mua ${this.getItemDisplayName(item)}`, qualityConfig.color || '#79ffd4');
+            showNotify(`Đã mua ${this.getItemDisplayName(item)}`, qualityConfig.color || '#79ffd4');
             this.refreshResourceUI();
             return true;
         }
@@ -4591,7 +4591,7 @@ const Input = {
 
         if (casualtyKey) {
             const species = this.getInsectSpecies(casualtyKey);
-            showNotify(`1 ${species?.name || 'linh trung'} tan lac trong giao tranh`, species?.color || '#ff8a80');
+            showNotify(`1 ${species?.name || 'linh trùng'} tan lạc trong giao tranh`, species?.color || '#ff8a80');
             shouldRefresh = true;
         }
 
@@ -4604,7 +4604,7 @@ const Input = {
             }
 
             if (bornCount > 0) {
-                showNotify(`Dan trung sinh soi them ${formatNumber(bornCount)} con`, '#79ffd4');
+                showNotify(`Đàn trùng sinh sôi thêm ${formatNumber(bornCount)} con`, '#79ffd4');
                 shouldRefresh = true;
             }
         }
@@ -5966,7 +5966,7 @@ ShopUI = {
             } else if (item.category === 'SPIRIT_BAG') {
                 actionLabel = canStoreOrUpgrade ? 'Mở rộng' : 'Không hợp lệ';
             } else if (item.category === 'SPIRIT_HABITAT') {
-                actionLabel = isOwnedHabitat ? 'Da an tri' : 'Mua';
+                actionLabel = isOwnedHabitat ? 'Đã an trí' : 'Mua';
             } else if (item.category === 'INSECT_EGG') {
                 actionLabel = 'Mua';
             } else if (item.category === 'INSECT_SKILL') {
@@ -6374,7 +6374,7 @@ SkillsUI = {
         if (!skill.roster?.length) {
             return `
                 <div class="attack-skill-card__roster is-empty">
-                    <span>Chua co linh trung nao da ap no de xuat chien.</span>
+                    <span>Chưa có linh trùng nào đã ấp nở để xuất chiến.</span>
                 </div>
             `;
         }
@@ -6382,7 +6382,7 @@ SkillsUI = {
         return `
             <div class="attack-skill-card__roster">
                 <div class="attack-skill-card__roster-head">
-                    <strong>Linh trung tham chien</strong>
+                    <strong>Linh trùng tham chiến</strong>
                     <span>${escapeHtml(skill.rosterSummary || '')}</span>
                 </div>
                 <div class="insect-toggle-list">
@@ -6446,12 +6446,12 @@ SkillsUI.render = function () {
                     <h4>${escapeHtml(skill.name)}</h4>
                     <p>${escapeHtml(skill.description)}</p>
                 </div>
-                <span class="attack-skill-card__tag">${skill.active ? 'Dang dung' : (skill.unlocked ? 'Da hoc' : 'Chua hoc')}</span>
+                <span class="attack-skill-card__tag">${skill.active ? 'Đang dùng' : (skill.unlocked ? 'Đã học' : 'Chưa học')}</span>
             </div>
             <div class="attack-skill-card__foot">
                 <span>${escapeHtml(skill.note)}</span>
                 <button class="btn-slot-action" type="button" data-attack-skill="${escapeHtml(skill.key)}" ${skill.unlocked && skill.ready ? '' : 'disabled'}>
-                    ${skill.active ? 'Da chon' : 'Chon'}
+                    ${skill.active ? 'Đã chọn' : 'Chọn'}
                 </button>
             </div>
             ${this.renderInsectRosterMarkup(skill)}

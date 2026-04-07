@@ -480,6 +480,34 @@ body.is-touch-device {
     .move-group {
         display: flex;
     }
+
+    button,
+    .btn,
+    .close-btn,
+    .panel-tab,
+    .btn-reset,
+    .btn-save,
+    .btn-shop-reset,
+    .btn-shop-page,
+    .btn-slot-action {
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
+    }
+
+    button *,
+    .btn *,
+    .close-btn *,
+    .panel-tab *,
+    .btn-reset *,
+    .btn-save *,
+    .btn-shop-reset *,
+    .btn-shop-page *,
+    .btn-slot-action * {
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
+    }
 }
 
 .attack-group {
