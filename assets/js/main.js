@@ -511,6 +511,7 @@ const Input = {
     ultimatePhase: 'idle',
     ultimatePhaseStartedAt: 0,
     ultimateCoreIndex: -1,
+    lastAttackBurstAt: 0,
 
     updateCombo(isReset = false) {
         if (isReset) {
@@ -4759,7 +4760,29 @@ const Input = {
     },
 
     createAttackBurst(x, y, color = "#ffcc00") {
+        const now = performance.now();
+        const burstInterval = this.isUltMode
+            ? Math.max(0, Math.floor(CONFIG.ULTIMATE?.ATTACK_BURST_INTERVAL_MS || 0))
+            : 0;
+
+        if (burstInterval > 0 && (now - (this.lastAttackBurstAt || 0)) < burstInterval) {
+            return;
+        }
+
+        const maxActiveBurstParticles = Math.max(
+            40,
+            Math.floor(CONFIG.ULTIMATE?.MAX_ACTIVE_BURST_PARTICLES || 220)
+        );
+
+        if (visualParticles.length > maxActiveBurstParticles) {
+            visualParticles.splice(0, visualParticles.length - maxActiveBurstParticles);
+        }
+
+        this.lastAttackBurstAt = now;
         const palette = [color, "#fff1a8", "#ffd36b", "#ff9d4d"];
+        const particleSlotsLeft = Math.max(0, maxActiveBurstParticles - visualParticles.length);
+
+        if (particleSlotsLeft <= 0) return;
 
         visualParticles.push({
             type: 'ring',
@@ -4775,8 +4798,13 @@ const Input = {
             glow: 12
         });
 
-        for (let i = 0; i < 14; i++) {
-            const angle = (Math.PI * 2 * i) / 14 + random(-0.12, 0.12);
+        const desiredParticleCount = this.isUltMode
+            ? Math.max(4, Math.floor(CONFIG.ULTIMATE?.ATTACK_BURST_PARTICLE_COUNT || 8))
+            : 14;
+        const burstParticleCount = Math.max(0, Math.min(desiredParticleCount, particleSlotsLeft - 1));
+
+        for (let i = 0; i < burstParticleCount; i++) {
+            const angle = (Math.PI * 2 * i) / Math.max(1, burstParticleCount) + random(-0.12, 0.12);
             const speed = random(2.4, 5.8);
             visualParticles.push({
                 type: i % 4 === 0 ? 'square' : 'spark',

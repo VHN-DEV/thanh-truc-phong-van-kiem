@@ -38,6 +38,7 @@ class Sword {
         this.respawnTimer = 0;
         this.fragments = [];
         this.deathTime = 0;
+        this.lastUltimateHitAt = 0;
         this.powerPenalty = 1; // hệ số sát thương theo độ bền
         this.isEnlarged = false;      // Đang trong trạng thái cường hóa phóng to
         this.currentVisualScale = 1;  // Tỉ lệ hiển thị thực tế (để animation mượt)
@@ -324,6 +325,7 @@ class Sword {
         this.isReturning = false;
         this.currentVisualScale = 1;
         this.targetVisualScale = 1;
+        this.lastUltimateHitAt = 0;
         this.trail = [];
         this.fragments = [];
     }
@@ -403,8 +405,10 @@ class Sword {
 
     updateAttackMode(enemies, Input, scaleFactor) {
         const speedMult = Input?.getSpeedMultiplier ? Input.getSpeedMultiplier() : 1;
+        const isUltimateCore = Input.isUltMode && this.isUltimateCore();
+        const ultimateHitInterval = Math.max(16, Number(CONFIG.ULTIMATE?.CORE_HIT_INTERVAL_MS) || 42);
         this.attackFrame++;
-        const requiredAttackDelay = (Input.isUltMode && this.isUltimateCore()) ? 1 : this.attackDelay;
+        const requiredAttackDelay = isUltimateCore ? 1 : this.attackDelay;
         if (this.attackFrame < requiredAttackDelay) return;
 
         // Cập nhật kích thước (Enlarge logic)
@@ -413,7 +417,7 @@ class Sword {
             this.isEnlarged = true;
             this.targetVisualScale = 2.5;
         }
-        if (Input.isUltMode && this.isUltimateCore()) {
+        if (isUltimateCore) {
             this.targetVisualScale = 4.8;
         }
         this.currentVisualScale += (this.targetVisualScale - this.currentVisualScale) * 0.1;
@@ -426,7 +430,7 @@ class Sword {
         }
 
         if (!target) {
-            if (Input.isUltMode && this.isUltimateCore()) {
+            if (isUltimateCore) {
                 this.startReturnToGuard();
             }
             return;
@@ -458,11 +462,20 @@ class Sword {
                 this.targetVisualScale = 1;
             }
 
+            if (isUltimateCore && (performance.now() - (this.lastUltimateHitAt || 0)) < ultimateHitInterval) {
+                this.trail.push({ x: this.x, y: this.y });
+                if (this.trail.length > CONFIG.SWORD.TRAIL_LENGTH) this.trail.shift();
+                return;
+            }
+
             const result = target.hit(this);
+            if (isUltimateCore) {
+                this.lastUltimateHitAt = performance.now();
+            }
 
             // CƠ CHẾ ĐÂM XUYÊN (PIERCE)
             if (result !== "missed" && result !== "shielded") {
-                if (Input.isUltMode && this.isUltimateCore()) {
+                if (isUltimateCore) {
                     this.pierceCount = 0;
                 } else {
                     this.pierceCount = (this.pierceCount || 0) + 1;
@@ -479,7 +492,7 @@ class Sword {
             } 
             else if (result === "shielded") {
                 // Đập trúng khiên thì gãy/văng ngay lập tức
-                if (Input.isUltMode && this.isUltimateCore()) {
+                if (isUltimateCore) {
                     this.vx *= -0.18;
                     this.vy *= -0.18;
                     this.startReturnToGuard();

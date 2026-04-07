@@ -43,6 +43,10 @@ const CONFIG = {
         DURATION_MS: 10000, // Thời gian duy trì trạng thái ultimate
         TRANSITION_MS: 1000, // Thời gian hợp kiếm hoặc tách kiếm
         CHARGE_STEPS: 10,   // Số nấc hiển thị tiến độ nộ trên nút ultimate
+        CORE_HIT_INTERVAL_MS: 42,
+        ATTACK_BURST_INTERVAL_MS: 32,
+        ATTACK_BURST_PARTICLE_COUNT: 8,
+        MAX_ACTIVE_BURST_PARTICLES: 220
     },
     INPUT: {
         JOYSTICK_CURSOR_SPEED: 0.01, // Hệ số độ nhạy/tốc độ con trỏ khi điều khiển bằng joystick mobile
@@ -797,4 +801,6 @@ const CONFIG = {
         }
     }
 };
+CONFIG.ENEMY.MAX_SHIELD_CRACK_LINES = 48;
+CONFIG.ENEMY.MAX_SHIELD_CRACK_RINGS = 4;
 // <!-- Create By: Vũ Hoài Nam -->

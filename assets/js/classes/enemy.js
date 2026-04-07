@@ -146,10 +146,12 @@ class Enemy {
         // Đảm bảo bán kính vết nứt khớp với bán kính vòng tròn khiên sẽ vẽ
         const shieldPadding = 12; // Tăng nhẹ padding để bao quát hơn
         const shieldR = this.r + shieldPadding; 
-        
+        const maxCrackLines = Math.max(12, parseInt(CONFIG.ENEMY.MAX_SHIELD_CRACK_LINES, 10) || 48);
+        const maxRingCount = Math.max(1, parseInt(CONFIG.ENEMY.MAX_SHIELD_CRACK_RINGS, 10) || 4);
         const baseAngle = Math.random() * Math.PI * 2;
-        const numRadial = 5 + level * 2;
+        const numRadial = Math.min(5 + level * 2, Math.max(6, Math.floor(maxCrackLines / 2)));
         const radialPoints = [];
+        let crackCount = 0;
 
         this.cracks = []; // Đảm bảo mảng sạch
 
@@ -169,19 +171,23 @@ class Enemy {
             }
             this.cracks.push(points);
             radialPoints.push(points);
+            crackCount++;
         }
 
-        const numRings = 2 + level;
+        const numRings = Math.min(2 + level, maxRingCount);
         for (let r = 1; r <= numRings; r++) {
+            if (crackCount >= maxCrackLines) break;
             const ringDistIdx = Math.floor((radialPoints[0].length - 1) * (r / (numRings + 1)));
 
             for (let i = 0; i < radialPoints.length; i++) {
+                if (crackCount >= maxCrackLines) break;
                 const nextIdx = (i + 1) % radialPoints.length;
                 const p1 = radialPoints[i][ringDistIdx];
                 const p2 = radialPoints[nextIdx][ringDistIdx];
 
-                if (Math.random() > 0.2) {
+                if (Math.random() > 0.35) {
                     this.cracks.push([p1, p2]);
+                    crackCount++;
                 }
             }
         }
