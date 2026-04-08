@@ -100,7 +100,17 @@ function pickWeightedKey(rates, fallbackKey = null) {
 }
 
 function formatNumber(value) {
-    return numberFormatter.format(Math.floor(value));
+    const numericValue = Number(value);
+    if (Number.isNaN(numericValue)) return '0';
+    if (!Number.isFinite(numericValue)) return '∞';
+    return numberFormatter.format(Math.floor(numericValue));
+}
+
+function formatBoostPercent(multiplier) {
+    const boostValue = (Number(multiplier) || 0) - 1;
+    if (!Number.isFinite(boostValue)) return '+∞%';
+    const rounded = Math.round(boostValue * 100);
+    return `${rounded >= 0 ? '+' : ''}${rounded}%`;
 }
 
 function escapeHtml(value) {
@@ -114,6 +124,47 @@ function escapeHtml(value) {
 
 function hslaColor(h, s, l, a = 1) {
     return `hsla(${Math.round(h)}, ${Math.round(s)}%, ${Math.round(l)}%, ${a})`;
+}
+
+function getSafeProgressPercent(current, max) {
+    const currentValue = Number(current);
+    const maxValue = Number(max);
+
+    if (!Number.isFinite(currentValue) && !Number.isFinite(maxValue)) return 100;
+    if (!Number.isFinite(maxValue)) return 100;
+    if (!Number.isFinite(currentValue)) return 100;
+    if (maxValue <= 0) return 0;
+
+    return Math.max(0, Math.min(100, (currentValue / maxValue) * 100));
+}
+
+function getRankAccentColor(rank) {
+    return rank?.accentColor || rank?.color || '#8fffe0';
+}
+
+function getRankLightColor(rank) {
+    return rank?.lightColor || getRankAccentColor(rank);
+}
+
+function getRankBarBackground(rank) {
+    if (rank?.barGradient) return rank.barGradient;
+    return `linear-gradient(90deg, ${getRankLightColor(rank)}, ${getRankAccentColor(rank)})`;
+}
+
+function applyRankTextVisual(element, rank) {
+    if (!element) return;
+
+    const textGradient = rank?.textGradient || '';
+    const accentColor = getRankAccentColor(rank);
+
+    element.style.background = textGradient || 'none';
+    element.style.webkitBackgroundClip = textGradient ? 'text' : '';
+    element.style.backgroundClip = textGradient ? 'text' : '';
+    element.style.webkitTextFillColor = textGradient ? 'transparent' : '';
+    element.style.color = textGradient ? 'transparent' : accentColor;
+    element.style.textShadow = textGradient
+        ? '0 0 14px rgba(255, 255, 255, 0.35)'
+        : '';
 }
 
 function clampNumber(value, min, max) {
@@ -790,6 +841,50 @@ const Input = {
         return Math.max(0, CONFIG.CULTIVATION.RANKS.length - 1);
     },
 
+    reformSwordFormationState({ rebuildAll = false } = {}) {
+        if (typeof syncSwordFormation !== 'function' || typeof swords === 'undefined' || !Array.isArray(swords)) {
+            return false;
+        }
+
+        syncSwordFormation({ rebuildAll });
+
+        const anchorX = typeof guardCenter !== 'undefined' ? guardCenter.x : this.x;
+        const anchorY = typeof guardCenter !== 'undefined' ? guardCenter.y : this.y;
+        const rankData = this.getCurrentRank();
+
+        swords.forEach((sword, index) => {
+            if (!sword) return;
+
+            sword.index = index;
+            sword.layer = Math.floor(index / 24);
+            sword.maxHp = rankData?.swordDurability || sword.maxHp || 1;
+            sword.hp = sword.maxHp;
+            sword.isDead = false;
+            sword.fragments = [];
+            sword.x = anchorX;
+            sword.y = anchorY;
+            sword.vx = 0;
+            sword.vy = 0;
+            sword.drawAngle = 0;
+            sword.trail = [];
+            sword.attackFrame = 0;
+            sword.pierceCount = 0;
+            sword.isReturning = false;
+            sword.isStunned = false;
+            sword.stunTimer = 0;
+            sword.isEnlarged = false;
+            sword.currentVisualScale = 1;
+            sword.targetVisualScale = 1;
+            sword.lastUltimateHitAt = 0;
+        });
+
+        if (typeof updateSwordCounter === 'function') {
+            updateSwordCounter(swords);
+        }
+
+        return true;
+    },
+
     setSpecialAura(mode, durationMs = null) {
         this.specialAuraMode = mode || null;
         if (!mode) {
@@ -821,12 +916,14 @@ const Input = {
         const maxRank = CONFIG.CULTIVATION.RANKS[maxRankIndex];
         if (!maxRank) return null;
 
+        this.resetAttackState();
         this.rankIndex = maxRankIndex;
         this.exp = maxRank.exp;
         this.isReadyToBreak = false;
         this.breakthroughBonus = 0;
         this.syncDerivedStats();
         this.mana = this.maxMana;
+        this.reformSwordFormationState({ rebuildAll: true });
         this.renderManaUI();
         this.renderExpUI();
         return maxRank;
@@ -1144,12 +1241,12 @@ const Input = {
         const bar = document.getElementById('mana-bar');
         const text = document.getElementById('mana-text');
         if (bar && text) {
-            const percentage = (this.mana / this.maxMana) * 100;
+            const percentage = getSafeProgressPercent(this.mana, this.maxMana);
             bar.style.width = percentage + '%';
-            text.innerText = `Linh lực: ${Math.round(this.mana)}/${this.maxMana}`;
+            text.innerText = `Linh lực: ${formatNumber(this.mana)}/${formatNumber(this.maxMana)}`;
 
             // Logic đổi màu khi mana thấp (đã khai báo trong SCSS)
-            if (percentage < 20) {
+            if (Number.isFinite(percentage) && percentage < 20) {
                 bar.classList.add('low-mana');
             } else {
                 bar.classList.remove('low-mana');
@@ -1178,6 +1275,13 @@ const Input = {
     updateExp(amount) {
         const currentRank = CONFIG.CULTIVATION.RANKS[this.rankIndex];
         if (!currentRank) return;
+
+        if (this.rankIndex >= this.getMaxRankIndex() || currentRank.infiniteStats) {
+            this.exp = currentRank.exp;
+            this.isReadyToBreak = false;
+            this.renderExpUI();
+            return;
+        }
 
         // NGƯỠNG TRÀN: Ví dụ 120% của 5 exp là 6 exp
         const overflowLimit = currentRank.exp * (CONFIG.CULTIVATION.OVERFLOW_LIMIT || 1.2);
@@ -1740,6 +1844,7 @@ const Input = {
     getCurrentBreakthroughChance() {
         const rank = this.getCurrentRank();
         if (!rank) return 0;
+        if (this.rankIndex >= this.getMaxRankIndex() || rank.infiniteStats) return 0;
 
         const maxAllowed = CONFIG.CULTIVATION.MAX_BREAKTHROUGH_CHANCE || 0.99;
         return Math.max(0, Math.min(maxAllowed, rank.chance + this.calculateTotalPillBoost()));
@@ -3337,11 +3442,11 @@ const Input = {
     getItemDescription(item) {
         const qualityConfig = this.getItemQualityConfig(item);
         if (item.specialKey === 'CHUNG_CUC_DAO_NGUYEN_DAN') {
-            return 'Cực phẩm đạo đan bảy sắc, lập tức đưa tu vi lên cảnh giới cao nhất Chân tiên đại viên mãn và lưu lại hào quang 7 sắc.';
+            return 'Cực phẩm đạo đan bảy sắc, lập tức đưa tu vi lên Đạo tổ đỉnh phong, mở thất sắc đạo quang và để lại trạng thái vô hạn.';
         }
 
         if (item.specialKey === 'TAN_DAO_DIET_NGUYEN_DAN') {
-            return 'Cấm kị hắc đan, cưỡng ép bước vào Chân tiên đại viên mãn trong 1 giây rồi tan vào hư vô. Chỉ có thể hồi phục khi tải lại giới vực.';
+            return 'Cấm kị hắc đan, cưỡng ép bước vào Đạo tổ đỉnh phong trong 1 giây rồi tan vào hư vô. Chỉ có thể hồi phục khi tải lại giới vực.';
         }
 
         if (item.category === 'SPIRIT_HABITAT') {
@@ -3494,11 +3599,11 @@ const Input = {
     _getItemDescriptionLegacy(item) {
         const qualityConfig = this.getItemQualityConfig(item);
         if (item.specialKey === 'CHUNG_CUC_DAO_NGUYEN_DAN') {
-            return 'Cực phẩm đạo đan bảy sắc, lập tức đưa tu vi lên cảnh giới cao nhất Chân tiên đại viên mãn và lưu lại hào quang 7 sắc.';
+            return 'Cực phẩm đạo đan bảy sắc, lập tức đưa tu vi lên Đạo tổ đỉnh phong, mở thất sắc đạo quang và để lại trạng thái vô hạn.';
         }
 
         if (item.specialKey === 'TAN_DAO_DIET_NGUYEN_DAN') {
-            return 'Cấm kỵ hắc đan, cưỡng ép bước vào Chân tiên đại viên mãn trong 1 giây rồi tan vào hư vô. Chỉ có thể hồi phục khi tải lại giới vực.';
+            return 'Cấm kỵ hắc đan, cưỡng ép bước vào Đạo tổ đỉnh phong trong 1 giây rồi tan vào hư vô. Chỉ có thể hồi phục khi tải lại giới vực.';
         }
 
         switch (item.category) {
@@ -4172,6 +4277,12 @@ const Input = {
 
         const currentRank = this.getCurrentRank();
         if (!currentRank) return;
+        if (this.rankIndex >= this.getMaxRankIndex() || currentRank.infiniteStats) {
+            this.isReadyToBreak = false;
+            showNotify(`Đã chạm ${currentRank.name}, thiên đạo không còn cửa ải cao hơn`, getRankAccentColor(currentRank));
+            this.refreshResourceUI();
+            return;
+        }
 
         const pillBoost = this.calculateTotalPillBoost();
         let totalChance = currentRank.chance + pillBoost;
@@ -4219,6 +4330,8 @@ const Input = {
         if (!rank) return;
 
         this.syncDerivedStats();
+        const rankAccent = getRankAccentColor(rank);
+        const rankLight = getRankLightColor(rank);
 
         const barExp = document.getElementById('exp-bar');
         const textExp = document.getElementById('exp-text');
@@ -4246,27 +4359,27 @@ const Input = {
         }
 
         if (breakthroughGroup) {
-            if (this.isReadyToBreak) breakthroughGroup.classList.add('is-active');
+            if (this.isReadyToBreak && this.rankIndex < this.getMaxRankIndex() && !rank.infiniteStats) breakthroughGroup.classList.add('is-active');
             else breakthroughGroup.classList.remove('is-active');
         }
 
-        const percentage = (this.exp / rank.exp) * 100;
+        const percentage = getSafeProgressPercent(this.exp, rank.exp);
         if (barExp) {
-            barExp.style.width = Math.min(100, percentage) + '%';
-            barExp.style.background = `linear-gradient(90deg, ${rank.lightColor}, ${rank.color})`;
+            barExp.style.width = `${percentage}%`;
+            barExp.style.background = getRankBarBackground(rank);
 
             if (this.isReadyToBreak) {
-                barExp.style.boxShadow = `0 0 15px #fff, 0 0 5px ${rank.color}`;
+                barExp.style.boxShadow = `0 0 15px #fff, 0 0 5px ${rankAccent}`;
                 barExp.classList.add('exp-full-glow');
             } else {
-                barExp.style.boxShadow = `0 0 10px ${rank.lightColor}`;
+                barExp.style.boxShadow = `0 0 10px ${rankLight}`;
                 barExp.classList.remove('exp-full-glow');
             }
         }
 
         if (rankText) {
             rankText.innerText = `Cảnh giới: ${rank.name}`;
-            rankText.style.color = rank.color;
+            applyRankTextVisual(rankText, rank);
         }
         if (ProfileUI && typeof ProfileUI.isOpen === 'function' && ProfileUI.isOpen()) {
             ProfileUI.render();
@@ -7839,8 +7952,8 @@ ProfileUI = {
         const swordStats = Input.getAliveSwordStats();
         const inventorySummary = Input.getInventorySummary();
         const displayName = Input.getPlayerDisplayName();
-        const accent = rank?.color || '#8fffe0';
-        const accentLight = rank?.lightColor || '#ffffff';
+        const accent = getRankAccentColor(rank);
+        const accentLight = getRankLightColor(rank);
         const rageLabel = Input.getUltimateResourceLabel();
         const attackModeLabel = Input.getAttackModeDisplayName();
         const swordMetricLabel = Input.attackMode === 'SWORD' ? 'Kiếm trận' : 'Bản mệnh kiếm';
@@ -7898,11 +8011,11 @@ ProfileUI = {
             { label: 'Linh lực', value: `${formatNumber(Input.mana)}/${formatNumber(Input.maxMana)}` },
             { label: rageLabel, value: `${formatNumber(Input.rage)}/${formatNumber(Input.maxRage)}` },
             { label: 'Sát thương', value: `≈ ${formatNumber(Input.getEffectiveAttackDamage())}` },
-            { label: 'Công lực', value: `+${Math.round((Input.getAttackMultiplier() - 1) * 100)}%` },
-            { label: 'Phá khiên', value: `+${Math.round((Input.getShieldBreakMultiplier() - 1) * 100)}%` },
-            { label: 'Tốc độ', value: `+${Math.round((Input.getSpeedMultiplier() - 1) * 100)}%` },
-            { label: 'Hồi linh', value: `+${Math.round((Input.getManaRegenMultiplier() - 1) * 100)}%` },
-            { label: 'Vận khí', value: `+${Math.round((Input.getDropRateMultiplier() - 1) * 100)}%` },
+            { label: 'Công lực', value: formatBoostPercent(Input.getAttackMultiplier()) },
+            { label: 'Phá khiên', value: formatBoostPercent(Input.getShieldBreakMultiplier()) },
+            { label: 'Tốc độ', value: formatBoostPercent(Input.getSpeedMultiplier()) },
+            { label: 'Hồi linh', value: formatBoostPercent(Input.getManaRegenMultiplier()) },
+            { label: 'Vận khí', value: formatBoostPercent(Input.getDropRateMultiplier()) },
             { label: 'Tỉ lệ đột phá', value: `${Math.round(breakthroughChance * 100)}%` },
             { label: swordMetricLabel, value: `${swordStats.alive}/${swordStats.total}` },
             { label: 'Kiếm hỏng', value: `${swordStats.broken}` },
@@ -8253,7 +8366,8 @@ function updatePhysics(dt) {
     Camera.update();
     Input.update(dt);
     Input.regenMana();
-    const speedMult = Input.getSpeedMultiplier();
+    const speedMultRaw = Input.getSpeedMultiplier();
+    const speedMult = Number.isFinite(speedMultRaw) ? speedMultRaw : 16;
     let dx = Input.x - guardCenter.x;
     let dy = Input.y - guardCenter.y;
     guardCenter.vx += dx * 0.04 * speedMult;

@@ -8,6 +8,22 @@ class Enemy {
         this.respawn();
     }
 
+    getTargetRankCapId() {
+        const daiLaRealm = CONFIG.CULTIVATION?.MAJOR_REALMS?.find(realm => realm.key === 'DAI_LA');
+        if (daiLaRealm?.endId) return daiLaRealm.endId;
+
+        const daoToRealm = CONFIG.CULTIVATION?.MAJOR_REALMS?.find(realm => realm.key === 'DAO_TO');
+        if (daoToRealm?.startId) return Math.max(1, daoToRealm.startId - 1);
+
+        return CONFIG.ENEMY?.SPAWN_RANK_RANGE?.MAX_ID || CONFIG.CULTIVATION.RANKS[CONFIG.CULTIVATION.RANKS.length - 1]?.id || 1;
+    }
+
+    getTargetRankCapIndex() {
+        const capId = this.getTargetRankCapId();
+        const capIndex = CONFIG.CULTIVATION.RANKS.findIndex(rank => rank.id === capId);
+        return capIndex >= 0 ? capIndex : Math.max(0, CONFIG.CULTIVATION.RANKS.length - 1);
+    }
+
     respawn() {
         const zoom = Camera.currentZoom;
         const visibleWidth = window.innerWidth / zoom;
@@ -33,6 +49,7 @@ class Enemy {
 
         // 1. KIỂM TRA SỐ LƯỢNG QUÁI VỪA SỨC HIỆN CÓ
         const playerRank = Input.rankIndex || 0;
+        const targetCapIndex = this.getTargetRankCapIndex();
         const diffLimit = CONFIG.ENEMY.DIFF_LIMIT || 3;
 
         // Đếm xem trong mảng enemies hiện tại có bao nhiêu con quái mà người chơi đánh được
@@ -56,17 +73,18 @@ class Enemy {
             const minOffset = -1;
             const randomOffset = Math.floor(Math.random() * (maxOffset - minOffset + 1)) + minOffset;
             
-            enemyRankIndex = Math.max(0, Math.min(CONFIG.CULTIVATION.RANKS.length - 1, playerRank + randomOffset));
+            enemyRankIndex = Math.max(0, Math.min(targetCapIndex, playerRank + randomOffset));
             this.isElite = false; // Quái "cứu trợ" không nên là Tinh Anh để người chơi dễ thở
         } else if (this.isElite) {
             // 🔴 TINH ANH
-            enemyRankIndex = Math.min(CONFIG.CULTIVATION.RANKS.length - 1, playerRank + 2);
+            enemyRankIndex = Math.min(targetCapIndex, playerRank + 2);
         } else {
             // 🔵 NGẪU NHIÊN THEO KHU VỰC
             const { MIN_ID, MAX_ID } = CONFIG.ENEMY.SPAWN_RANK_RANGE;
             const rank = this.getRandomRankById(MIN_ID, MAX_ID);
             enemyRankIndex = CONFIG.CULTIVATION.RANKS.findIndex(r => r.id === (rank ? rank.id : 1));
             if (enemyRankIndex === -1) enemyRankIndex = 0;
+            enemyRankIndex = Math.min(targetCapIndex, enemyRankIndex);
         }
 
         // 2. CẬP NHẬT DỮ LIỆU RANK
@@ -106,14 +124,15 @@ class Enemy {
 
     getRandomRankById(minId, maxId) {
         const ranks = CONFIG.CULTIVATION.RANKS;
+        const cappedMaxId = Math.min(maxId, this.getTargetRankCapId());
 
         // Lọc các rank nằm trong khoảng id
         const candidates = ranks.filter(
-            r => r.id >= minId && r.id <= maxId
+            r => r.id >= minId && r.id <= cappedMaxId
         );
 
         if (candidates.length === 0) {
-            console.warn("Không tìm thấy cảnh giới trong khoảng id:", minId, maxId);
+            console.warn("Không tìm thấy cảnh giới trong khoảng id:", minId, cappedMaxId);
             return null;
         }
 

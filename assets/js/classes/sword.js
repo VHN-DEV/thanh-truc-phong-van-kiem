@@ -92,6 +92,15 @@ class Sword {
         return this.getNormalGuardTarget(guardCenter, r, Input);
     }
 
+    getSafeSpeedMultiplier(Input) {
+        const rawSpeedMult = Input?.getSpeedMultiplier ? Input.getSpeedMultiplier() : 1;
+        if (!Number.isFinite(rawSpeedMult)) {
+            return 16;
+        }
+
+        return Math.max(0.35, rawSpeedMult);
+    }
+
     startReturnToGuard() {
         this.isReturning = true;
         this.attackFrame = 0;
@@ -182,7 +191,7 @@ class Sword {
     }
 
     updateReturnMode(guardCenter, r, Input, scaleFactor) {
-        const speedMult = Input?.getSpeedMultiplier ? Input.getSpeedMultiplier() : 1;
+        const speedMult = this.getSafeSpeedMultiplier(Input);
         const target = this.getCurrentGuardTarget(guardCenter, r, Input, scaleFactor);
         const followStiffness = (Input.isUltMode && this.isUltimateCore()) ? 0.22 : 0.18;
         const returnBoost = (Input.isUltMode && this.isUltimateCore()) ? 16 : 10;
@@ -331,7 +340,7 @@ class Sword {
     }
 
     updateGuardMode(guardCenter, r, Input, scaleFactor) {
-        const speedMult = Input?.getSpeedMultiplier ? Input.getSpeedMultiplier() : 1;
+        const speedMult = this.getSafeSpeedMultiplier(Input);
         this.isReturning = false;
         // Thu nhỏ lại nếu trước đó đang phóng to
         if (this.isEnlarged) {
@@ -404,7 +413,7 @@ class Sword {
     }
 
     updateAttackMode(enemies, Input, scaleFactor) {
-        const speedMult = Input?.getSpeedMultiplier ? Input.getSpeedMultiplier() : 1;
+        const speedMult = this.getSafeSpeedMultiplier(Input);
         const isUltimateCore = Input.isUltMode && this.isUltimateCore();
         const ultimateHitInterval = Math.max(16, Number(CONFIG.ULTIMATE?.CORE_HIT_INTERVAL_MS) || 42);
         this.attackFrame++;

@@ -332,7 +332,9 @@ Thái Ất (Ngọc Tiên)
 └─ Cơ chế:
    ├─ Hợp nhất với Đại Đạo
    ├─ Không chịu nhân quả thông thường
-   └─ Không thể tùy tiện ra tay
+   ├─ Không thể tùy tiện ra tay
+   ├─ Thất sắc đạo quang (màu chủ đạo 7 sắc)
+   └─ Toàn bộ thông số đạt mức vô hạn
 ```
 
 ## ✦ Vòng chơi ngắn gọn
