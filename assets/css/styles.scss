@@ -498,32 +498,28 @@ body.is-touch-device {
         display: flex;
     }
 
-    button,
-    .btn,
-    .close-btn,
-    .panel-tab,
-    .btn-reset,
-    .btn-save,
-    .btn-shop-reset,
-    .btn-shop-page,
-    .btn-slot-action {
+    .game-ui,
+    .game-ui *,
+    .popup-overlay,
+    .popup-overlay * {
         -webkit-user-select: none;
         user-select: none;
         -webkit-touch-callout: none;
+        -webkit-tap-highlight-color: transparent;
     }
 
-    button *,
-    .btn *,
-    .close-btn *,
-    .panel-tab *,
-    .btn-reset *,
-    .btn-save *,
-    .btn-shop-reset *,
-    .btn-shop-page *,
-    .btn-slot-action * {
-        -webkit-user-select: none;
-        user-select: none;
-        -webkit-touch-callout: none;
+    .popup-overlay input,
+    .popup-overlay textarea,
+    .popup-overlay [contenteditable="true"] {
+        -webkit-user-select: text !important;
+        user-select: text !important;
+        -webkit-touch-callout: default;
+    }
+
+    .popup-overlay select,
+    .popup-overlay option {
+        -webkit-user-select: auto !important;
+        user-select: auto !important;
     }
 }
 
