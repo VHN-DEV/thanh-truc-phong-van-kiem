@@ -1236,13 +1236,13 @@ const Input = {
         let costTick = 0;
         const isBlinkTransiting = this.isPhongLoiBlinkTransiting();
 
-        // 1. T??NH TO??N CHI PH?? DI CHUYỂN
+        // 1. Tính toán chi phí di chuyển
         // Nếu tốc độ > 1 (tránh nhiễu khi chuột rung nhẹ)
         if (!isBlinkTransiting && this.speed > 1) {
             costTick += CONFIG.MANA.COST_MOVE_PER_SEC * dt;
         }
 
-        // 2. T??NH TO??N CHI PH?? TẤN CÔNG
+        // 2. Tính toán chi phí tấn công
         if (this.isAttacking) {
             costTick += CONFIG.MANA.COST_ATTACK_PER_SEC * dt;
         }
@@ -3912,16 +3912,18 @@ const Input = {
         button.setAttribute('aria-pressed', enabled ? 'true' : 'false');
 
         if (label) {
-            label.textContent = charging ? 'XA' : (enabled ? 'ON' : 'OFF');
+            label.textContent = charging
+                ? UI_TEXT.PHONG_LOI_SI_STATES.CHARGING
+                : (enabled ? UI_TEXT.PHONG_LOI_SI_STATES.ACTIVE : UI_TEXT.PHONG_LOI_SI_STATES.INACTIVE);
         }
 
         const title = !available
             ? 'Phong Lôi Sí chưa triển khai'
             : charging
-                ? `Phong Lôi Sí đang tụ lực - hao ${costText} linh lực`
+                ? `Phong Lôi Sí đang tụ lôi - hao ${costText} linh lực`
                 : enabled
-                    ? `Phong Lôi Sí đang bật - ${cfg.name}, hao ${costText} linh lực mỗi lần dịch chuyển`
-                    : `Phong Lôi Sí đang tắt - bật để kích hoạt ${cfg.name}`;
+                    ? `Phong Lôi Sí đang khai mở - ${cfg.name}, hao ${costText} linh lực mỗi lần dịch chuyển`
+                    : `Phong Lôi Sí đang thu liễm - khai mở để kích hoạt ${cfg.name}`;
 
         button.title = title;
         button.setAttribute('aria-label', title);
@@ -3956,7 +3958,7 @@ const Input = {
             const blinkName = this.getPhongLoiBlinkConfig().name;
             showNotify(
                 normalized
-                    ? `${blinkName} đã khởi động nơi Phong Lôi Sí.`
+                    ? `${blinkName} đã khai mở theo Phong Lôi Sí.`
                     : `${blinkName} đã thu liễm về tâm ấn.`,
                 artifactColor
             );
@@ -5633,7 +5635,7 @@ const Input = {
 
         if (textExp) {
             const statusText = this.isVoidCollapsed
-                ? `<span style="color:#b48cff; font-weight:bold;">THÂN THỂ ĐÃ TAN VÀO HƯ VÔ - RELOAD WEB ĐỂ HỒI PHỤC</span>`
+                ? `<span style="color:#b48cff; font-weight:bold;">${UI_TEXT.VOID_COLLAPSED}</span>`
                 : this.isReadyToBreak ?
                 `<span style="color:#ffcc00; font-weight:bold;">SẴN SÀNG ĐỘT PHÁ</span>` :
                 `Tu vi: ${formatNumber(this.exp)}/${formatNumber(rank.exp)}`;
@@ -7830,64 +7832,6 @@ window.addEventListener('touchcancel', () => {
     Input.pinchZoomActive = false;
 }, { passive: false });
 
-function hasVisiblePopupOverlay() {
-    return Array.from(document.querySelectorAll('.popup-overlay')).some(overlay =>
-        overlay.classList.contains('show') || overlay.style.display === 'flex'
-    );
-}
-
-function syncPopupCursorState() {
-    if (!document?.body) return;
-
-    document.body.style.removeProperty('cursor');
-    document.body.classList.toggle('popup-cursor-active', hasVisiblePopupOverlay());
-}
-
-function setTextIfPresent(selector, text) {
-    const node = document.querySelector(selector);
-    if (node) node.textContent = text;
-}
-
-function setAttrIfPresent(selector, attribute, value) {
-    const node = document.querySelector(selector);
-    if (node) node.setAttribute(attribute, value);
-}
-
-function repairLegacyUiText() {
-    if (document?.title != null) {
-        document.title = 'Đại Canh Kiếm Trận - 72 Thanh Trúc Phong Vân Kiếm';
-    }
-
-    [
-        ['#settings-popup .popup-header h3', 'THIÊN ĐẠO QUY TẮC'],
-        ['#shop-popup .popup-header h3', 'LINH THỊ CỬA HÀNG'],
-        ['#inventory-popup .popup-header h3', 'TÚI KHÔNG GIAN TRỮ VẬT'],
-        ['#skills-popup .popup-header h3', 'BẢNG BÍ PHÁP'],
-        ['#insect-book-popup .popup-header h3', 'KỲ TRÙNG BẢNG'],
-        ['#profile-popup .popup-header h3', 'HỒ SƠ KIẾM TU'],
-        ['#inventory-tabs [data-inventory-tab="items"]', 'Vật phẩm'],
-        ['#inventory-tabs [data-inventory-tab="stones"]', 'Linh thạch'],
-        ['#inventory-panel-items h4', 'Vật phẩm'],
-        ['#inventory-panel-stones h4', 'Linh thạch']
-    ].forEach(([selector, text]) => setTextIfPresent(selector, text));
-
-    [
-        ['#btn-profile', 'aria-label', 'Mở hồ sơ kiếm tu'],
-        ['#btn-settings img', 'alt', 'Thiên đạo quy tắc'],
-        ['#btn-shop img', 'alt', 'Linh thị'],
-        ['#btn-inventory img', 'alt', 'Túi trữ vật'],
-        ['#btn-beast-bag img', 'alt', 'Linh thú đại'],
-        ['#btn-breakthrough img', 'alt', 'Độ kiếp đột phá'],
-        ['#btn-move', 'aria-label', 'Luân bàn thân pháp'],
-        ['#btn-ultimate img', 'alt', 'Tuyệt kỹ'],
-        ['#btn-form img', 'alt', 'Đổi kiếm thức'],
-        ['#btn-phong-loi-blink', 'title', 'Phong Lôi Sí - OFF'],
-        ['#btn-phong-loi-blink img', 'alt', 'Phong Lôi Sí'],
-        ['#btn-skill-list', 'title', 'Bảng bí pháp'],
-        ['#btn-attack img', 'alt', 'Xuất kiếm']
-    ].forEach(([selector, attribute, value]) => setAttrIfPresent(selector, attribute, value));
-}
-
 const SettingsUI = {
     overlay: document.getElementById('settings-popup'),
     btnOpen: document.getElementById('btn-settings'),
@@ -8906,28 +8850,6 @@ function markLeaderInsectVisuals(visuals = []) {
     });
 }
 
-function openPopup(overlay) {
-    if (!overlay) return;
-    overlay.style.display = 'flex';
-    syncPopupCursorState();
-    setTimeout(() => {
-        overlay.classList.add('show');
-        syncPopupCursorState();
-    }, 10);
-}
-
-function closePopup(overlay) {
-    if (!overlay) return;
-    overlay.classList.remove('show');
-    setTimeout(() => {
-        if (!overlay.classList.contains('show')) {
-            overlay.style.display = 'none';
-            syncPopupCursorState();
-        }
-    }, 300);
-    syncPopupCursorState();
-}
-
 ShopUI = {
     overlay: document.getElementById('shop-popup'),
     btnOpen: document.getElementById('btn-shop'),
@@ -9084,7 +9006,7 @@ ShopUI = {
             </div>
             <div class="shop-toolbar-meta">
                 <div id="shop-summary" class="shop-summary"></div>
-                <button type="button" class="btn-shop-reset" data-shop-action="reset-filters">Xóa lọc</button>
+                <button type="button" class="btn-shop-reset" data-shop-action="reset-filters">${UI_TEXT.SHOP_RESET_FILTERS}</button>
             </div>
         `;
 
@@ -9111,7 +9033,7 @@ ShopUI = {
         if (categoryEl && categoryEl.value !== this.categoryFilter) categoryEl.value = this.categoryFilter;
         if (qualityEl && qualityEl.value !== this.qualityFilter) qualityEl.value = this.qualityFilter;
         if (summaryEl) {
-            summaryEl.innerHTML = `Hiển thị <strong>${formatNumber(filteredCount)}</strong> / ${formatNumber(totalCount)} vật phẩm`;
+            summaryEl.innerHTML = formatShopSummaryText(filteredCount, totalCount);
         }
         if (resetBtn) {
             resetBtn.disabled = !this.searchQuery && this.categoryFilter === 'ALL' && this.qualityFilter === 'ALL';
@@ -9208,7 +9130,7 @@ ShopUI = {
         if (!this.list) return;
 
         if (!items.length) {
-            this.list.innerHTML = '<div class="shop-empty">Không tìm thấy vật phẩm phù hợp với bộ lọc hiện tại.</div>';
+            this.list.innerHTML = `<div class="shop-empty">${UI_TEXT.SHOP_EMPTY}</div>`;
             return;
         }
 
@@ -9339,7 +9261,7 @@ ShopUI.ensureToolbar = function () {
         </div>
         <div class="shop-toolbar-meta">
             <div id="shop-summary" class="shop-summary"></div>
-            <button type="button" class="btn-shop-reset" data-shop-action="reset-filters">Xóa lọc</button>
+            <button type="button" class="btn-shop-reset" data-shop-action="reset-filters">${UI_TEXT.SHOP_RESET_FILTERS}</button>
         </div>
     `;
 
@@ -9369,7 +9291,7 @@ ShopUI.syncToolbar = function (totalCount, filteredCount) {
     });
 
     if (summaryEl) {
-        summaryEl.innerHTML = `${escapeHtml(getItemCollectionTabLabel(this.categoryFilter))}: <strong>${formatNumber(filteredCount)}</strong> / ${formatNumber(totalCount)} vật phẩm`;
+        summaryEl.innerHTML = `${escapeHtml(getItemCollectionTabLabel(this.categoryFilter))}: ${formatShopSummaryText(filteredCount, totalCount)}`;
     }
 
     if (resetBtn) {
@@ -9697,12 +9619,12 @@ const BeastBagUI = {
                     const requestedCount = Math.max(0, Math.floor(Number(amountInput?.value) || 0));
 
                     if (!materialKey) {
-                        showNotify('Hãy chọn loại thức ăn phù hợp.', '#ffb86c');
+                        showNotify(UI_TEXT.BEAST_FOOD_SELECT_HINT, '#ffb86c');
                         return;
                     }
 
                     if (requestedCount <= 0) {
-                        showNotify('Hãy nhập số lượng thức ăn hợp lệ.', '#ffb86c');
+                        showNotify(UI_TEXT.BEAST_FOOD_AMOUNT_HINT, '#ffb86c');
                         return;
                     }
 
@@ -9717,7 +9639,7 @@ const BeastBagUI = {
                         );
                         Input.refreshResourceUI();
                     } else {
-                        showNotify('Không đủ thức ăn này trong túi trữ vật.', '#ffb86c');
+                        showNotify(UI_TEXT.BEAST_FOOD_NOT_ENOUGH_INVENTORY, '#ffb86c');
                     }
                     return;
                 }
@@ -9739,14 +9661,14 @@ const BeastBagUI = {
                     if (feedResult.success) {
                         const species = Input.getInsectSpecies(speciesKey);
                         showNotify(
-                            `Đã cho ${species?.name || 'kỳ trùng'} ăn (${formatNumber(feedResult.consumedNutrition)} linh dưỡng).`,
+                            `Đã nạp linh liệu cho ${species?.name || 'kỳ trùng'} (${formatNumber(feedResult.consumedNutrition)} linh dưỡng).`,
                             species?.color || '#79ffd4'
                         );
                         Input.refreshResourceUI();
                     } else if (feedResult.reason === 'rainbow') {
-                        showNotify('Thất Sắc Linh Thú Đại không cần cho ăn.', '#79ffd4');
+                        showNotify(UI_TEXT.BEAST_FOOD_RAINBOW_NOT_NEEDED, '#79ffd4');
                     } else {
-                        showNotify('Ô thức ăn của tab này chưa đủ linh dưỡng.', '#ffb86c');
+                        showNotify(UI_TEXT.BEAST_FOOD_SLOT_NOT_ENOUGH, '#ffb86c');
                     }
                 }
             });

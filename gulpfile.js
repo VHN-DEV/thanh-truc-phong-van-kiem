@@ -23,6 +23,7 @@ gulp.task('build-js', function () {
     'assets/js/classes/starField.js',
     'assets/js/classes/pill.js',
     'assets/js/classes/camera.js',
+    'assets/js/ui/ui-core.js',
     'assets/js/main.js'
   ])
     .pipe(concat('scripts.js'))
