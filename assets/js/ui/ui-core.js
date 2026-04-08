@@ -1,3 +1,9 @@
+let ShopUI = null;
+let InventoryUI = null;
+let ProfileUI = null;
+let SkillsUI = null;
+let InsectBookUI = null;
+
 const UI_TEXT = Object.freeze({
     PHONG_LOI_SI_STATES: Object.freeze({
         INACTIVE: 'THU',
