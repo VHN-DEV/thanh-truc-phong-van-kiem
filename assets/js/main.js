@@ -10,6 +10,18 @@ let frameCount = 0;
 let lastTime = performance.now();
 let visualParticles = [];
 
+function trimVisualParticles(limit = 320) {
+    const safeLimit = Math.max(0, Math.floor(limit || 0));
+    if (!safeLimit) {
+        visualParticles.length = 0;
+        return;
+    }
+
+    if (visualParticles.length > safeLimit) {
+        visualParticles.splice(0, visualParticles.length - safeLimit);
+    }
+}
+
 function preloadEnemyIcons() {
     return Promise.all(
         CONFIG.ENEMY.ANIMALS.map(path => {
@@ -691,6 +703,7 @@ const Input = {
         lastMoveVectorX: 0,
         lastMoveVectorY: 0,
         charging: null,
+        transiting: null,
         trails: [],
         afterimages: []
     },
@@ -1221,11 +1234,11 @@ const Input = {
         // dt là thời gian trôi qua tính bằng giây (seconds)
 
         let costTick = 0;
-        const isBlinkCharging = this.isPhongLoiBlinkCharging();
+        const isBlinkTransiting = this.isPhongLoiBlinkTransiting();
 
         // 1. T??NH TO??N CHI PH?? DI CHUYỂN
         // Nếu tốc độ > 1 (tránh nhiễu khi chuột rung nhẹ)
-        if (!isBlinkCharging && this.speed > 1) {
+        if (!isBlinkTransiting && this.speed > 1) {
             costTick += CONFIG.MANA.COST_MOVE_PER_SEC * dt;
         }
 
@@ -2085,27 +2098,21 @@ const Input = {
         return state;
     },
 
-    beginPhongLoiBlinkCharge(guardCenter, destinationX, destinationY, directionX, directionY) {
+    beginPhongLoiBlinkCharge(guardCenter) {
         const state = this.ensurePhongLoiBlinkState();
         const cfg = this.getPhongLoiBlinkConfig();
         const now = performance.now();
 
+        trimVisualParticles(260);
         this.updateMana(-cfg.manaCost);
         state.accumulatedDistance = 0;
         state.charging = {
             startedAt: now,
-            originX: guardCenter.x,
-            originY: guardCenter.y,
-            destinationX,
-            destinationY,
-            directionX,
-            directionY
+            anchorX: guardCenter.x,
+            anchorY: guardCenter.y
         };
 
-        guardCenter.vx = 0;
-        guardCenter.vy = 0;
-
-        for (let i = 0; i < 10; i++) {
+        for (let i = 0; i < 6; i++) {
             const angle = random(0, Math.PI * 2);
             const speed = random(1.2, 3.2);
             visualParticles.push({
@@ -2131,34 +2138,33 @@ const Input = {
         this.renderPhongLoiBlinkButton();
     },
 
-    completePhongLoiBlinkCharge(guardCenter) {
+    startPhongLoiBlinkTransit(guardCenter, destinationX, destinationY, directionX, directionY) {
         const state = this.ensurePhongLoiBlinkState();
-        const charge = state.charging;
-        if (!charge) return false;
-
         const cfg = this.getPhongLoiBlinkConfig();
         const now = performance.now();
+        const originX = guardCenter.x;
+        const originY = guardCenter.y;
 
-        guardCenter.x = charge.destinationX;
-        guardCenter.y = charge.destinationY;
+        trimVisualParticles(280);
+
         guardCenter.vx = 0;
         guardCenter.vy = 0;
 
         state.trails.unshift({
-            fromX: charge.originX,
-            fromY: charge.originY,
-            toX: charge.destinationX,
-            toY: charge.destinationY,
-            directionX: charge.directionX,
-            directionY: charge.directionY,
+            fromX: originX,
+            fromY: originY,
+            toX: destinationX,
+            toY: destinationY,
+            directionX,
+            directionY,
             startedAt: now,
             durationMs: cfg.trailMs
         });
         state.afterimages.unshift({
-            x: charge.originX,
-            y: charge.originY,
-            directionX: charge.directionX,
-            directionY: charge.directionY,
+            x: originX,
+            y: originY,
+            directionX,
+            directionY,
             startedAt: now,
             durationMs: cfg.afterimageMs
         });
@@ -2166,11 +2172,19 @@ const Input = {
         if (state.trails.length > 6) state.trails.length = 6;
         if (state.afterimages.length > 5) state.afterimages.length = 5;
 
-        this.createPhongLoiBlinkBurst(charge.originX, charge.originY, charge.directionX, charge.directionY, { arrival: false });
-        this.createPhongLoiBlinkBurst(charge.destinationX, charge.destinationY, charge.directionX, charge.directionY, { arrival: true });
-
         state.charging = null;
+        state.transiting = {
+            startedAt: now,
+            durationMs: cfg.transitionMs,
+            originX,
+            originY,
+            destinationX,
+            destinationY
+        };
         state.lastBlinkAt = now;
+
+        this.createPhongLoiBlinkBurst(originX, originY, directionX, directionY, { arrival: false });
+        this.createPhongLoiBlinkBurst(destinationX, destinationY, directionX, directionY, { arrival: true });
         this.renderPhongLoiBlinkButton();
         return true;
     },
@@ -2188,14 +2202,57 @@ const Input = {
             return;
         }
 
-        if (state.charging) {
-            guardCenter.x = state.charging.originX;
-            guardCenter.y = state.charging.originY;
+        if (state.transiting) {
+            const transit = state.transiting;
+            const progress = clampNumber((now - transit.startedAt) / Math.max(1, transit.durationMs || 1), 0, 1);
+            const eased = 1 - Math.pow(1 - progress, 4);
+
+            guardCenter.x = transit.originX + ((transit.destinationX - transit.originX) * eased);
+            guardCenter.y = transit.originY + ((transit.destinationY - transit.originY) * eased);
             guardCenter.vx = 0;
             guardCenter.vy = 0;
 
+            if (progress >= 1) {
+                guardCenter.x = transit.destinationX;
+                guardCenter.y = transit.destinationY;
+                state.transiting = null;
+            }
+            return;
+        }
+
+        if (state.charging) {
+            state.charging.anchorX = guardCenter.x;
+            state.charging.anchorY = guardCenter.y;
+
             if ((now - state.charging.startedAt) >= cfg.chargeMs) {
-                this.completePhongLoiBlinkCharge(guardCenter);
+                const directionLength = Math.hypot(state.lastMoveVectorX, state.lastMoveVectorY);
+                if (directionLength < 0.5) {
+                    state.charging = null;
+                    return;
+                }
+
+                const safeMargin = Math.max(18, 26 * scaleFactor);
+                const minVisible = Camera.screenToWorld(safeMargin, safeMargin);
+                const maxVisible = Camera.screenToWorld(window.innerWidth - safeMargin, window.innerHeight - safeMargin);
+                const targetDx = this.x - guardCenter.x;
+                const targetDy = this.y - guardCenter.y;
+                const targetDistance = Math.hypot(targetDx, targetDy);
+                const desiredBlinkDistance = (!this.isTouchDevice && !this.moveJoystick.active && targetDistance > cfg.minMoveSpeed)
+                    ? Math.min(cfg.blinkDistance, Math.max(cfg.minBlinkDistance, targetDistance))
+                    : cfg.blinkDistance;
+                const destinationX = clampNumber(guardCenter.x + (state.lastMoveVectorX * desiredBlinkDistance), minVisible.x, maxVisible.x);
+                const destinationY = clampNumber(guardCenter.y + (state.lastMoveVectorY * desiredBlinkDistance), minVisible.y, maxVisible.y);
+                const actualDistance = Math.hypot(destinationX - guardCenter.x, destinationY - guardCenter.y);
+
+                if (actualDistance < Math.max(16, cfg.minBlinkDistance * 0.45)) {
+                    state.charging = null;
+                    state.accumulatedDistance = 0;
+                    return;
+                }
+
+                const directionX = (destinationX - guardCenter.x) / actualDistance;
+                const directionY = (destinationY - guardCenter.y) / actualDistance;
+                this.startPhongLoiBlinkTransit(guardCenter, destinationX, destinationY, directionX, directionY);
             }
             return;
         }
@@ -2245,25 +2302,7 @@ const Input = {
             return;
         }
 
-        const desiredBlinkDistance = (!this.isTouchDevice && !this.moveJoystick.active && targetDistance > cfg.minMoveSpeed)
-            ? Math.min(cfg.blinkDistance, Math.max(cfg.minBlinkDistance, targetDistance))
-            : cfg.blinkDistance;
-
-        const safeMargin = Math.max(18, 26 * scaleFactor);
-        const minVisible = Camera.screenToWorld(safeMargin, safeMargin);
-        const maxVisible = Camera.screenToWorld(window.innerWidth - safeMargin, window.innerHeight - safeMargin);
-        const destinationX = clampNumber(guardCenter.x + (state.lastMoveVectorX * desiredBlinkDistance), minVisible.x, maxVisible.x);
-        const destinationY = clampNumber(guardCenter.y + (state.lastMoveVectorY * desiredBlinkDistance), minVisible.y, maxVisible.y);
-        const actualDistance = Math.hypot(destinationX - guardCenter.x, destinationY - guardCenter.y);
-
-        if (actualDistance < Math.max(16, cfg.minBlinkDistance * 0.45)) {
-            state.accumulatedDistance = 0;
-            return;
-        }
-
-        const directionX = (destinationX - guardCenter.x) / actualDistance;
-        const directionY = (destinationY - guardCenter.y) / actualDistance;
-        this.beginPhongLoiBlinkCharge(guardCenter, destinationX, destinationY, directionX, directionY);
+        this.beginPhongLoiBlinkCharge(guardCenter);
     },
 
     syncLandscapeMode() {
@@ -3787,6 +3826,7 @@ const Input = {
                 lastMoveVectorX: 0,
                 lastMoveVectorY: 0,
                 charging: null,
+                transiting: null,
                 trails: [],
                 afterimages: []
             };
@@ -3800,7 +3840,7 @@ const Input = {
 
         return {
             name: blinkConfig.NAME || 'Phong Lôi Độn',
-            chargeMs: Math.max(0, parseInt(blinkConfig.CHARGE_MS, 10) || 150),
+            chargeMs: Math.max(0, parseInt(blinkConfig.CHARGE_MS, 10) || 90),
             cooldownMs: Math.max(0, parseInt(blinkConfig.COOLDOWN_MS, 10) || 320),
             manaCost: Math.max(0, Number(blinkConfig.MANA_COST) || 18),
             triggerTravelDistance: Math.max(24, Number(blinkConfig.TRIGGER_TRAVEL_DISTANCE) || 140),
@@ -3810,6 +3850,7 @@ const Input = {
             afterimageMs: Math.max(120, parseInt(blinkConfig.AFTERIMAGE_MS, 10) || 280),
             trailMs: Math.max(120, parseInt(blinkConfig.TRAIL_MS, 10) || 260),
             flashMs: Math.max(40, parseInt(blinkConfig.FLASH_MS, 10) || 80),
+            transitionMs: Math.max(20, parseInt(blinkConfig.TRANSITION_MS, 10) || 48),
             impactRadius: Math.max(10, Number(blinkConfig.IMPACT_RADIUS) || 26)
         };
     },
@@ -3826,6 +3867,15 @@ const Input = {
         return Boolean(this.ensurePhongLoiBlinkState().charging);
     },
 
+    isPhongLoiBlinkTransiting() {
+        return Boolean(this.ensurePhongLoiBlinkState().transiting);
+    },
+
+    isPhongLoiBlinkBusy() {
+        const state = this.ensurePhongLoiBlinkState();
+        return Boolean(state.charging || state.transiting);
+    },
+
     resetPhongLoiBlinkState({ clearEffects = false } = {}) {
         const state = this.ensurePhongLoiBlinkState();
         state.enabled = false;
@@ -3833,6 +3883,7 @@ const Input = {
         state.lastMoveVectorX = 0;
         state.lastMoveVectorY = 0;
         state.charging = null;
+        state.transiting = null;
 
         if (clearEffects) {
             state.trails = [];
@@ -6811,6 +6862,7 @@ const Input = {
     },
 
     createPhongLoiBlinkBurst(x, y, directionX = 1, directionY = 0, { arrival = true } = {}) {
+        trimVisualParticles(280);
         const artifactConfig = this.getArtifactConfig('PHONG_LOI_SI') || {};
         const cfg = this.getPhongLoiBlinkConfig();
         const primaryColor = artifactConfig.color || '#9fe8ff';
@@ -6820,8 +6872,8 @@ const Input = {
         const rayPalette = arrival
             ? ['#ffffff', primaryColor, '#d5d8ff', '#b48cff']
             : [secondaryColor, primaryColor, auraColor, '#ffffff'];
-        const rayCount = arrival ? 16 : 10;
-        const sparkCount = arrival ? 24 : 16;
+        const rayCount = arrival ? 12 : 8;
+        const sparkCount = arrival ? 16 : 10;
         const directionAngle = Math.atan2(directionY, directionX || 0.0001);
 
         visualParticles.push(
@@ -7499,7 +7551,7 @@ const Input = {
         const distance = Math.max(1, Math.hypot(dx, dy));
         const normalX = -dy / distance;
         const normalY = dx / distance;
-        const segmentCount = Math.max(5, Math.min(12, Math.round(distance / 28)));
+        const segmentCount = Math.max(4, Math.min(8, Math.round(distance / 34)));
         const jitter = Math.max(5, 12 * scaleFactor) * alpha;
 
         ctx.save();
@@ -7542,12 +7594,16 @@ const Input = {
         const primaryColor = artifactConfig?.color || '#9fe8ff';
         const auraColor = artifactConfig?.auraColor || '#89a6ff';
         const secondaryColor = artifactConfig?.secondaryColor || '#dffeff';
-        const angle = Math.atan2(charge.directionY, charge.directionX || 0.0001);
+        const directionX = this.ensurePhongLoiBlinkState().lastMoveVectorX || 1;
+        const directionY = this.ensurePhongLoiBlinkState().lastMoveVectorY || 0;
+        const angle = Math.atan2(directionY, directionX || 0.0001);
         const pulse = 0.82 + (Math.sin(performance.now() * 0.05) * 0.18);
         const radius = (18 + (progress * 10)) * scaleFactor;
+        const anchorX = Number.isFinite(charge.anchorX) ? charge.anchorX : this.x;
+        const anchorY = Number.isFinite(charge.anchorY) ? charge.anchorY : this.y;
 
         ctx.save();
-        ctx.translate(charge.originX, charge.originY);
+        ctx.translate(anchorX, anchorY);
         ctx.globalCompositeOperation = 'lighter';
 
         const halo = ctx.createRadialGradient(0, 0, 0, 0, 0, radius * 2.6);
@@ -7591,8 +7647,8 @@ const Input = {
         ctx.restore();
 
         for (let i = 0; i < 4; i++) {
-            const sparkAngle = angle + random(-1.1, 1.1);
-            const sparkDistance = random(radius * 0.3, radius * 1.6) * pulse;
+            const sparkAngle = angle + ((i - 1.5) * 0.58) + (Math.sin((elapsed * 0.022) + i) * 0.12);
+            const sparkDistance = radius * (0.58 + (i * 0.18) + (Math.sin((elapsed * 0.016) + (i * 1.4)) * 0.08)) * pulse;
             const px = Math.cos(sparkAngle) * sparkDistance;
             const py = Math.sin(sparkAngle) * sparkDistance;
             ctx.beginPath();
@@ -10651,13 +10707,13 @@ function updatePhysics(dt) {
     Camera.update();
     Input.update(dt);
     Input.regenMana();
-    const wasChargingBlink = Input.isPhongLoiBlinkCharging();
+    const isBlinkTransiting = Input.isPhongLoiBlinkTransiting();
     const prevGuardX = guardCenter.x;
     const prevGuardY = guardCenter.y;
     const speedMultRaw = Input.getSpeedMultiplier();
     const speedMult = Number.isFinite(speedMultRaw) ? speedMultRaw : 16;
 
-    if (wasChargingBlink) {
+    if (isBlinkTransiting) {
         guardCenter.vx = 0;
         guardCenter.vy = 0;
     } else {

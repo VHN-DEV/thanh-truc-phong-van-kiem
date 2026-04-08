@@ -778,7 +778,8 @@ const CONFIG = {
             },
             teleportSkill: {
                 NAME: "Phong Lôi Độn",
-                CHARGE_MS: 150,
+                CHARGE_MS: 90,
+                TRANSITION_MS: 48,
                 COOLDOWN_MS: 320,
                 MANA_COST: 18,
                 TRIGGER_TRAVEL_DISTANCE: 140,
