@@ -731,7 +731,22 @@ const CONFIG = {
             VISUAL_LIMIT: 36,
             VISUAL_MIN_RADIUS: 20,
             VISUAL_MAX_RADIUS: 74,
-            VISUAL_JITTER: 14,
+            VISUAL_JITTER: 14,              // Độ rung ngẫu nhiên của quỹ đạo bầy trùng
+            // Tốc độ nền của từng con khi bay trong Khu Trùng Thuật.
+            // Giảm các giá trị này nếu muốn nhìn rõ đường bay hơn.
+            VISUAL_SPEED_MIN: 0.72,
+            VISUAL_SPEED_MAX: 1.6,
+            // Tốc độ lắc cánh / đảo nhịp phụ của quỹ đạo.
+            VISUAL_WOBBLE_SPEED_MIN: 0.6,
+            VISUAL_WOBBLE_SPEED_MAX: 1.35,
+            // Tốc độ quay quanh chủ nhân hoặc quanh địch.
+            VISUAL_IDLE_ORBIT_SPEED: 1.05,  // Khi không công kích
+            VISUAL_ATTACK_ORBIT_SPEED: 1.45,// Khi đang công kích nhưng chưa bám mục tiêu
+            VISUAL_TARGET_ORBIT_SPEED: 1.7, // Khi đã bám quanh mục tiêu
+            // Tốc độ lao/bám theo điểm đích.
+            // Đây là nhóm nên hạ trước nếu bầy trùng lao quá nhanh.
+            VISUAL_IDLE_FOLLOW_SPEED: 6.2,
+            VISUAL_TARGET_FOLLOW_SPEED: 6.8,
             REPRODUCE_ON_KILL_CHANCE: 0.16,
             DEATH_ON_HIT_CHANCE: 0.04,
             DEATH_ON_SHIELD_CHANCE: 0.12

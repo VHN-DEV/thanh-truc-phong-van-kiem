@@ -4627,6 +4627,15 @@ const Input = {
         const minRadius = Math.max(8, cfg.VISUAL_MIN_RADIUS || 18) * scaleFactor;
         const maxRadius = Math.max(minRadius + 4, cfg.VISUAL_MAX_RADIUS || 70) * scaleFactor;
         const jitter = Math.max(2, cfg.VISUAL_JITTER || 10) * scaleFactor;
+        const visualSpeedMin = Math.max(0.2, Number(cfg.VISUAL_SPEED_MIN) || 0.72);
+        const visualSpeedMax = Math.max(visualSpeedMin, Number(cfg.VISUAL_SPEED_MAX) || 1.6);
+        const wobbleSpeedMin = Math.max(0.2, Number(cfg.VISUAL_WOBBLE_SPEED_MIN) || 0.6);
+        const wobbleSpeedMax = Math.max(wobbleSpeedMin, Number(cfg.VISUAL_WOBBLE_SPEED_MAX) || 1.35);
+        const idleOrbitSpeed = Math.max(0.2, Number(cfg.VISUAL_IDLE_ORBIT_SPEED) || 1.05);
+        const attackOrbitSpeed = Math.max(0.2, Number(cfg.VISUAL_ATTACK_ORBIT_SPEED) || 1.45);
+        const targetOrbitSpeed = Math.max(0.2, Number(cfg.VISUAL_TARGET_ORBIT_SPEED) || 1.7);
+        const idleFollowSpeed = Math.max(1, Number(cfg.VISUAL_IDLE_FOLLOW_SPEED) || 6.2);
+        const targetFollowSpeed = Math.max(1, Number(cfg.VISUAL_TARGET_FOLLOW_SPEED) || 6.8);
         const focusTargets = this.getInsectAttackCandidates(
             centerX,
             centerY,
@@ -4643,9 +4652,9 @@ const Input = {
                 angle: Math.random() * Math.PI * 2,
                 radius: random(minRadius, maxRadius),
                 targetRadius: random(minRadius, maxRadius),
-                speed: random(0.95, 2.2),
+                speed: random(visualSpeedMin, visualSpeedMax),
                 wobble: Math.random() * Math.PI * 2,
-                wobbleSpeed: random(0.85, 1.9),
+                wobbleSpeed: random(wobbleSpeedMin, wobbleSpeedMax),
                 size: random(2, 3.8) * (species?.tier === 'DE' ? 1.18 : 1),
                 targetRef: null,
                 trail: [],
@@ -4685,7 +4694,7 @@ const Input = {
             const anchorY = node.targetRef ? node.targetRef.y : centerY;
             const chaosJitter = node.targetRef ? jitter * 0.22 : jitter * 0.74;
 
-            node.angle += dt * node.speed * (node.targetRef ? 2.8 : (this.isAttacking ? 1.9 : 1.25));
+            node.angle += dt * node.speed * (node.targetRef ? targetOrbitSpeed : (this.isAttacking ? attackOrbitSpeed : idleOrbitSpeed));
             node.wobble += dt * node.wobbleSpeed;
             node.targetRadius += random(node.targetRef ? -3.5 : -7, node.targetRef ? 3.5 : 7) * dt * 10;
             node.targetRadius = Math.max(orbitMin, Math.min(orbitMax, node.targetRadius));
@@ -4701,7 +4710,7 @@ const Input = {
                 anchorX + swirlX + chaosX,
                 anchorY + swirlY + chaosY,
                 dt,
-                node.targetRef ? 11.5 : 8.5,
+                node.targetRef ? targetFollowSpeed : idleFollowSpeed,
                 node.targetRef ? 5 : 4
             );
         });
