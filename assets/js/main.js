@@ -5193,6 +5193,10 @@ const Input = {
     refreshResourceUI() {
         this.renderExpUI();
 
+        if (BeastBagUI && typeof BeastBagUI.syncAvailability === 'function') {
+            BeastBagUI.syncAvailability();
+        }
+
         if (ShopUI && typeof ShopUI.render === 'function') {
             ShopUI.render();
         }

@@ -349,9 +349,30 @@ BeastBagUI = {
     beastGrid: null,
     initialized: false,
 
+    hasAccess() {
+        return Boolean(
+            (typeof Input.hasSpiritBeastBag === 'function' && Input.hasSpiritBeastBag())
+            || (typeof Input.hasSevenColorSpiritBag === 'function' && Input.hasSevenColorSpiritBag())
+        );
+    },
+
+    syncAvailability() {
+        this.btnOpen = document.getElementById('btn-beast-bag') || this.btnOpen;
+        if (!this.btnOpen) return;
+
+        const unlocked = this.hasAccess();
+        const lockedTitle = 'Chưa khai mở Linh Thú Đại, chưa thể mở giới vực dưỡng trùng.';
+        const activeTitle = 'Mở Linh Thú Đại';
+
+        this.btnOpen.classList.toggle('is-disabled', !unlocked);
+        this.btnOpen.setAttribute('aria-disabled', unlocked ? 'false' : 'true');
+        this.btnOpen.setAttribute('title', unlocked ? activeTitle : lockedTitle);
+    },
+
     ensureStructure() {
         this.btnOpen = document.getElementById('btn-beast-bag');
         if (!this.btnOpen) return false;
+        this.syncAvailability();
 
         let overlay = document.getElementById('beast-popup');
         if (!overlay) {
@@ -433,6 +454,11 @@ BeastBagUI = {
 
         this.btnOpen.addEventListener('pointerdown', (e) => {
             e.stopPropagation();
+            if (!this.hasAccess()) {
+                showNotify('Chưa khai mở Linh Thú Đại, chưa thể mở giới vực dưỡng trùng.', '#ffd36b');
+                this.syncAvailability();
+                return;
+            }
             this.open();
         });
 
@@ -528,6 +554,7 @@ BeastBagUI = {
         });
 
         this.initialized = true;
+        this.syncAvailability();
     },
 
     getScopeLabel(currentBeastTab = 'all') {
@@ -566,6 +593,11 @@ BeastBagUI = {
 
     render() {
         if (!this.ensureStructure()) return;
+        if (!this.hasAccess()) {
+            this.syncAvailability();
+            if (this.isOpen()) this.close();
+            return;
+        }
 
         const currentBeastTab = Input.ensureValidBeastBagTab();
         const tabSpeciesKeys = new Set(Input.getBeastTabSpeciesKeys(currentBeastTab));
@@ -629,6 +661,10 @@ BeastBagUI = {
 
     open() {
         if (!this.ensureStructure()) return;
+        if (!this.hasAccess()) {
+            this.syncAvailability();
+            return;
+        }
         this.render();
         openPopup(this.overlay);
     },

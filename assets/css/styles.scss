@@ -354,6 +354,12 @@ canvas {
         transform: scale(0.98);
         background: rgba($primary-color, 0.4);
     }
+
+    &.is-disabled {
+        opacity: 0.5;
+        filter: saturate(0.72);
+        box-shadow: 0 2px 0 rgba(0, 0, 0, 0.22), 0 0 6px rgba(255, 255, 255, 0.06);
+    }
 }
 
 .zoom-group {
