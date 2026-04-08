@@ -775,6 +775,20 @@ const CONFIG = {
                 GLOW_BLUR: 16,
                 // Chiều dài điện văn phụ trên cánh
                 ARC_LENGTH: 9
+            },
+            teleportSkill: {
+                NAME: "Phong Lôi Độn",
+                CHARGE_MS: 150,
+                COOLDOWN_MS: 320,
+                MANA_COST: 18,
+                TRIGGER_TRAVEL_DISTANCE: 140,
+                BLINK_DISTANCE: 220,
+                MIN_BLINK_DISTANCE: 88,
+                MIN_MOVE_SPEED: 0.8,
+                AFTERIMAGE_MS: 280,
+                TRAIL_MS: 260,
+                FLASH_MS: 80,
+                IMPACT_RADIUS: 26
             }
         }
     },

@@ -683,6 +683,17 @@ const Input = {
     activeArtifacts: {
         PHONG_LOI_SI: false
     },
+    phongLoiBlink: {
+        enabled: false,
+        accumulatedDistance: 0,
+        lastBlinkAt: 0,
+        lastFailAt: 0,
+        lastMoveVectorX: 0,
+        lastMoveVectorY: 0,
+        charging: null,
+        trails: [],
+        afterimages: []
+    },
     insectEggs: {},
     tamedInsects: {},
     insectColonies: {},
@@ -1210,10 +1221,11 @@ const Input = {
         // dt là thời gian trôi qua tính bằng giây (seconds)
 
         let costTick = 0;
+        const isBlinkCharging = this.isPhongLoiBlinkCharging();
 
         // 1. T??NH TO??N CHI PH?? DI CHUYỂN
         // Nếu tốc độ > 1 (tránh nhiễu khi chuột rung nhẹ)
-        if (this.speed > 1) {
+        if (!isBlinkCharging && this.speed > 1) {
             costTick += CONFIG.MANA.COST_MOVE_PER_SEC * dt;
         }
 
@@ -2064,6 +2076,194 @@ const Input = {
         if (this.isVoidCollapsed) return 0;
         const active = this.getActiveEffectModifiers();
         return Math.max(0.35, 1 + this.bonusStats.speedPct + active.speedPct);
+    },
+
+    prunePhongLoiBlinkEffects(now = performance.now()) {
+        const state = this.ensurePhongLoiBlinkState();
+        state.trails = (state.trails || []).filter(effect => (now - effect.startedAt) < effect.durationMs);
+        state.afterimages = (state.afterimages || []).filter(effect => (now - effect.startedAt) < effect.durationMs);
+        return state;
+    },
+
+    beginPhongLoiBlinkCharge(guardCenter, destinationX, destinationY, directionX, directionY) {
+        const state = this.ensurePhongLoiBlinkState();
+        const cfg = this.getPhongLoiBlinkConfig();
+        const now = performance.now();
+
+        this.updateMana(-cfg.manaCost);
+        state.accumulatedDistance = 0;
+        state.charging = {
+            startedAt: now,
+            originX: guardCenter.x,
+            originY: guardCenter.y,
+            destinationX,
+            destinationY,
+            directionX,
+            directionY
+        };
+
+        guardCenter.vx = 0;
+        guardCenter.vy = 0;
+
+        for (let i = 0; i < 10; i++) {
+            const angle = random(0, Math.PI * 2);
+            const speed = random(1.2, 3.2);
+            visualParticles.push({
+                type: i % 3 === 0 ? 'square' : 'spark',
+                x: guardCenter.x,
+                y: guardCenter.y,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed - random(0.2, 1.1),
+                size: random(1.8, 3.6),
+                sizeVelocity: -0.035,
+                friction: 0.93,
+                gravity: -0.01,
+                life: 0.7,
+                decay: random(0.045, 0.07),
+                opacity: 0.86,
+                color: i % 2 === 0 ? '#9fe8ff' : '#b48cff',
+                glow: 10,
+                rotation: angle,
+                rotationSpeed: random(-0.2, 0.2)
+            });
+        }
+
+        this.renderPhongLoiBlinkButton();
+    },
+
+    completePhongLoiBlinkCharge(guardCenter) {
+        const state = this.ensurePhongLoiBlinkState();
+        const charge = state.charging;
+        if (!charge) return false;
+
+        const cfg = this.getPhongLoiBlinkConfig();
+        const now = performance.now();
+
+        guardCenter.x = charge.destinationX;
+        guardCenter.y = charge.destinationY;
+        guardCenter.vx = 0;
+        guardCenter.vy = 0;
+
+        state.trails.unshift({
+            fromX: charge.originX,
+            fromY: charge.originY,
+            toX: charge.destinationX,
+            toY: charge.destinationY,
+            directionX: charge.directionX,
+            directionY: charge.directionY,
+            startedAt: now,
+            durationMs: cfg.trailMs
+        });
+        state.afterimages.unshift({
+            x: charge.originX,
+            y: charge.originY,
+            directionX: charge.directionX,
+            directionY: charge.directionY,
+            startedAt: now,
+            durationMs: cfg.afterimageMs
+        });
+
+        if (state.trails.length > 6) state.trails.length = 6;
+        if (state.afterimages.length > 5) state.afterimages.length = 5;
+
+        this.createPhongLoiBlinkBurst(charge.originX, charge.originY, charge.directionX, charge.directionY, { arrival: false });
+        this.createPhongLoiBlinkBurst(charge.destinationX, charge.destinationY, charge.directionX, charge.directionY, { arrival: true });
+
+        state.charging = null;
+        state.lastBlinkAt = now;
+        this.renderPhongLoiBlinkButton();
+        return true;
+    },
+
+    updatePhongLoiBlinkMotion(guardCenter, movementDx, movementDy) {
+        const now = performance.now();
+        const state = this.prunePhongLoiBlinkEffects(now);
+        const cfg = this.getPhongLoiBlinkConfig();
+
+        if (!this.hasPhongLoiBlinkSkill()) {
+            if (state.enabled || state.charging || state.trails.length || state.afterimages.length) {
+                this.resetPhongLoiBlinkState({ clearEffects: true });
+                this.renderPhongLoiBlinkButton();
+            }
+            return;
+        }
+
+        if (state.charging) {
+            guardCenter.x = state.charging.originX;
+            guardCenter.y = state.charging.originY;
+            guardCenter.vx = 0;
+            guardCenter.vy = 0;
+
+            if ((now - state.charging.startedAt) >= cfg.chargeMs) {
+                this.completePhongLoiBlinkCharge(guardCenter);
+            }
+            return;
+        }
+
+        if (!state.enabled) {
+            state.accumulatedDistance = 0;
+            return;
+        }
+
+        const movementDistance = Math.hypot(movementDx, movementDy);
+        if (movementDistance < cfg.minMoveSpeed) {
+            state.accumulatedDistance = 0;
+            return;
+        }
+
+        const targetDx = this.x - guardCenter.x;
+        const targetDy = this.y - guardCenter.y;
+        const targetDistance = Math.hypot(targetDx, targetDy);
+
+        if (targetDistance >= cfg.minMoveSpeed) {
+            state.lastMoveVectorX = targetDx / targetDistance;
+            state.lastMoveVectorY = targetDy / targetDistance;
+        } else {
+            state.lastMoveVectorX = movementDx / movementDistance;
+            state.lastMoveVectorY = movementDy / movementDistance;
+        }
+
+        state.accumulatedDistance += movementDistance;
+
+        if (state.accumulatedDistance < cfg.triggerTravelDistance) return;
+        if ((now - (state.lastBlinkAt || 0)) < cfg.cooldownMs) return;
+
+        const directionLength = Math.hypot(state.lastMoveVectorX, state.lastMoveVectorY);
+        if (directionLength < 0.5) {
+            state.accumulatedDistance = 0;
+            return;
+        }
+
+        if (this.mana < cfg.manaCost) {
+            state.accumulatedDistance = 0;
+
+            if ((now - (state.lastFailAt || 0)) > 900) {
+                state.lastFailAt = now;
+                showNotify('Phong Lôi Sí thiếu linh lực để xé không gian.', this.getArtifactConfig('PHONG_LOI_SI')?.color || '#9fe8ff');
+                this.triggerManaShake();
+            }
+            return;
+        }
+
+        const desiredBlinkDistance = (!this.isTouchDevice && !this.moveJoystick.active && targetDistance > cfg.minMoveSpeed)
+            ? Math.min(cfg.blinkDistance, Math.max(cfg.minBlinkDistance, targetDistance))
+            : cfg.blinkDistance;
+
+        const safeMargin = Math.max(18, 26 * scaleFactor);
+        const minVisible = Camera.screenToWorld(safeMargin, safeMargin);
+        const maxVisible = Camera.screenToWorld(window.innerWidth - safeMargin, window.innerHeight - safeMargin);
+        const destinationX = clampNumber(guardCenter.x + (state.lastMoveVectorX * desiredBlinkDistance), minVisible.x, maxVisible.x);
+        const destinationY = clampNumber(guardCenter.y + (state.lastMoveVectorY * desiredBlinkDistance), minVisible.y, maxVisible.y);
+        const actualDistance = Math.hypot(destinationX - guardCenter.x, destinationY - guardCenter.y);
+
+        if (actualDistance < Math.max(16, cfg.minBlinkDistance * 0.45)) {
+            state.accumulatedDistance = 0;
+            return;
+        }
+
+        const directionX = (destinationX - guardCenter.x) / actualDistance;
+        const directionY = (destinationY - guardCenter.y) / actualDistance;
+        this.beginPhongLoiBlinkCharge(guardCenter, destinationX, destinationY, directionX, directionY);
     },
 
     syncLandscapeMode() {
@@ -3577,6 +3777,151 @@ const Input = {
             .map(uniqueKey => this.getArtifactConfig(uniqueKey)?.fullName || uniqueKey);
     },
 
+    ensurePhongLoiBlinkState() {
+        if (!this.phongLoiBlink) {
+            this.phongLoiBlink = {
+                enabled: false,
+                accumulatedDistance: 0,
+                lastBlinkAt: 0,
+                lastFailAt: 0,
+                lastMoveVectorX: 0,
+                lastMoveVectorY: 0,
+                charging: null,
+                trails: [],
+                afterimages: []
+            };
+        }
+
+        return this.phongLoiBlink;
+    },
+
+    getPhongLoiBlinkConfig() {
+        const blinkConfig = this.getArtifactConfig('PHONG_LOI_SI')?.teleportSkill || {};
+
+        return {
+            name: blinkConfig.NAME || 'Phong Lôi Độn',
+            chargeMs: Math.max(0, parseInt(blinkConfig.CHARGE_MS, 10) || 150),
+            cooldownMs: Math.max(0, parseInt(blinkConfig.COOLDOWN_MS, 10) || 320),
+            manaCost: Math.max(0, Number(blinkConfig.MANA_COST) || 18),
+            triggerTravelDistance: Math.max(24, Number(blinkConfig.TRIGGER_TRAVEL_DISTANCE) || 140),
+            blinkDistance: Math.max(32, Number(blinkConfig.BLINK_DISTANCE) || 220),
+            minBlinkDistance: Math.max(24, Number(blinkConfig.MIN_BLINK_DISTANCE) || 88),
+            minMoveSpeed: Math.max(0.05, Number(blinkConfig.MIN_MOVE_SPEED) || 0.8),
+            afterimageMs: Math.max(120, parseInt(blinkConfig.AFTERIMAGE_MS, 10) || 280),
+            trailMs: Math.max(120, parseInt(blinkConfig.TRAIL_MS, 10) || 260),
+            flashMs: Math.max(40, parseInt(blinkConfig.FLASH_MS, 10) || 80),
+            impactRadius: Math.max(10, Number(blinkConfig.IMPACT_RADIUS) || 26)
+        };
+    },
+
+    hasPhongLoiBlinkSkill() {
+        return this.isArtifactDeployed('PHONG_LOI_SI');
+    },
+
+    isPhongLoiBlinkEnabled() {
+        return this.hasPhongLoiBlinkSkill() && Boolean(this.ensurePhongLoiBlinkState().enabled);
+    },
+
+    isPhongLoiBlinkCharging() {
+        return Boolean(this.ensurePhongLoiBlinkState().charging);
+    },
+
+    resetPhongLoiBlinkState({ clearEffects = false } = {}) {
+        const state = this.ensurePhongLoiBlinkState();
+        state.enabled = false;
+        state.accumulatedDistance = 0;
+        state.lastMoveVectorX = 0;
+        state.lastMoveVectorY = 0;
+        state.charging = null;
+
+        if (clearEffects) {
+            state.trails = [];
+            state.afterimages = [];
+        }
+
+        return state;
+    },
+
+    renderPhongLoiBlinkButton() {
+        const button = document.getElementById('btn-phong-loi-blink');
+        if (!button) return;
+
+        const label = button.querySelector('.phong-loi-toggle__state');
+        const state = this.ensurePhongLoiBlinkState();
+        const cfg = this.getPhongLoiBlinkConfig();
+        const available = this.hasPhongLoiBlinkSkill();
+        const enabled = available && Boolean(state.enabled);
+        const charging = available && Boolean(state.charging);
+        const costText = formatNumber(cfg.manaCost);
+
+        button.classList.toggle('is-hidden', !available);
+        button.classList.toggle('is-active', enabled);
+        button.classList.toggle('is-charging', charging);
+        button.style.display = available ? 'flex' : 'none';
+        button.setAttribute('aria-pressed', enabled ? 'true' : 'false');
+
+        if (label) {
+            label.textContent = charging ? 'XA' : (enabled ? 'ON' : 'OFF');
+        }
+
+        const title = !available
+            ? 'Phong Lôi Sí chưa triển khai'
+            : charging
+                ? `Phong Lôi Sí đang tụ lực - hao ${costText} linh lực`
+                : enabled
+                    ? `Phong Lôi Sí đang bật - ${cfg.name}, hao ${costText} linh lực mỗi lần dịch chuyển`
+                    : `Phong Lôi Sí đang tắt - bật để kích hoạt ${cfg.name}`;
+
+        button.title = title;
+        button.setAttribute('aria-label', title);
+    },
+
+    setPhongLoiBlinkEnabled(nextEnabled, { silent = false, force = false } = {}) {
+        const state = this.ensurePhongLoiBlinkState();
+        const available = this.hasPhongLoiBlinkSkill();
+        const normalized = available && Boolean(nextEnabled);
+
+        if (!force && !available) {
+            this.renderPhongLoiBlinkButton();
+            return false;
+        }
+
+        if (state.enabled === normalized && !(force && !normalized)) {
+            this.renderPhongLoiBlinkButton();
+            return false;
+        }
+
+        state.enabled = normalized;
+        state.accumulatedDistance = 0;
+        state.lastMoveVectorX = 0;
+        state.lastMoveVectorY = 0;
+
+        if (!normalized) {
+            state.charging = null;
+        }
+
+        if (!silent) {
+            const artifactColor = this.getArtifactConfig('PHONG_LOI_SI')?.color || '#9fe8ff';
+            const blinkName = this.getPhongLoiBlinkConfig().name;
+            showNotify(
+                normalized
+                    ? `${blinkName} đã khởi động nơi Phong Lôi Sí.`
+                    : `${blinkName} đã thu liễm về tâm ấn.`,
+                artifactColor
+            );
+        }
+
+        this.renderPhongLoiBlinkButton();
+        if (SkillsUI && typeof SkillsUI.isOpen === 'function' && SkillsUI.isOpen()) {
+            SkillsUI.render();
+        }
+        return true;
+    },
+
+    togglePhongLoiBlink() {
+        return this.setPhongLoiBlinkEnabled(!this.isPhongLoiBlinkEnabled());
+    },
+
     setArtifactDeployment(uniqueKey, nextActive, { silent = false, skipRefresh = false } = {}) {
         const artifactConfig = this.getArtifactConfig(uniqueKey);
         if (!artifactConfig || !this.hasArtifactUnlocked(uniqueKey)) return false;
@@ -3586,6 +3931,10 @@ const Input = {
         if (Boolean(this.activeArtifacts[uniqueKey]) === normalized) return false;
 
         this.activeArtifacts[uniqueKey] = normalized;
+
+        if (uniqueKey === 'PHONG_LOI_SI') {
+            this.resetPhongLoiBlinkState({ clearEffects: !normalized });
+        }
 
         if (!silent) {
             showNotify(
@@ -3626,7 +3975,9 @@ const Input = {
                 ready: unlocked,
                 accent: artifactConfig.color || '#9fe8ff',
                 note: active
-                    ? 'Linh dực phong lôi đang hộ tại hai bên con trỏ.'
+                    ? this.isPhongLoiBlinkEnabled()
+                        ? 'Linh dực phong lôi đang hộ tại hai bên con trỏ, thân pháp dịch chuyển đã bật.'
+                        : 'Linh dực phong lôi đang hộ tại hai bên con trỏ, thân pháp dịch chuyển đang tắt.'
                     : unlocked
                         ? 'Đã luyện hóa, có thể khai triển hoặc thu hồi bất kỳ lúc nào.'
                         : purchased
@@ -3740,6 +4091,8 @@ const Input = {
         if (swordCounter) {
             swordCounter.classList.toggle('is-hidden', this.isInsectSwarmActive() || this.isInsectUltimateActive());
         }
+
+        this.renderPhongLoiBlinkButton();
 
         if (SkillsUI && typeof SkillsUI.render === 'function' && SkillsUI.isOpen()) {
             SkillsUI.render();
@@ -6457,6 +6810,109 @@ const Input = {
         }
     },
 
+    createPhongLoiBlinkBurst(x, y, directionX = 1, directionY = 0, { arrival = true } = {}) {
+        const artifactConfig = this.getArtifactConfig('PHONG_LOI_SI') || {};
+        const cfg = this.getPhongLoiBlinkConfig();
+        const primaryColor = artifactConfig.color || '#9fe8ff';
+        const secondaryColor = artifactConfig.secondaryColor || '#dffeff';
+        const auraColor = artifactConfig.auraColor || '#89a6ff';
+        const flashLife = Math.max(0.05, cfg.flashMs / 1000);
+        const rayPalette = arrival
+            ? ['#ffffff', primaryColor, '#d5d8ff', '#b48cff']
+            : [secondaryColor, primaryColor, auraColor, '#ffffff'];
+        const rayCount = arrival ? 16 : 10;
+        const sparkCount = arrival ? 24 : 16;
+        const directionAngle = Math.atan2(directionY, directionX || 0.0001);
+
+        visualParticles.push(
+            {
+                type: 'glow',
+                x,
+                y,
+                size: arrival ? 20 : 14,
+                sizeVelocity: arrival ? 2.1 : 1.2,
+                life: flashLife,
+                decay: flashLife > 0 ? (1 / flashLife) : 1,
+                opacity: arrival ? 0.9 : 0.38,
+                color: '#ffffff',
+                glow: arrival ? 28 : 18
+            },
+            {
+                type: 'ring',
+                x,
+                y,
+                radius: arrival ? 14 : 8,
+                radialVelocity: arrival ? 5.8 : 4.2,
+                lineWidth: arrival ? 3.2 : 2.2,
+                life: 0.96,
+                decay: arrival ? 0.046 : 0.062,
+                opacity: 0.9,
+                color: arrival ? primaryColor : secondaryColor,
+                glow: arrival ? 20 : 14
+            },
+            {
+                type: 'ring',
+                x,
+                y,
+                radius: arrival ? cfg.impactRadius : 18,
+                radialVelocity: arrival ? 6.2 : 4.4,
+                lineWidth: arrival ? 2.4 : 1.8,
+                life: 0.9,
+                decay: arrival ? 0.038 : 0.05,
+                opacity: 0.64,
+                color: auraColor,
+                glow: 16
+            }
+        );
+
+        for (let i = 0; i < rayCount; i++) {
+            const angle = arrival
+                ? ((Math.PI * 2 * i) / rayCount) + random(-0.08, 0.08)
+                : directionAngle + random(-0.55, 0.55);
+            visualParticles.push({
+                type: 'ray',
+                x,
+                y,
+                angle,
+                radius: random(arrival ? 4 : 2, arrival ? 14 : 8),
+                radialVelocity: random(arrival ? 3.8 : 2.8, arrival ? 6.4 : 4.8),
+                length: random(arrival ? 20 : 16, arrival ? 40 : 30),
+                lengthVelocity: random(0.18, 0.46),
+                lineWidth: random(arrival ? 1.6 : 1.2, arrival ? 3.2 : 2.4),
+                life: 0.9,
+                decay: random(0.04, 0.058),
+                opacity: arrival ? 0.92 : 0.82,
+                color: rayPalette[i % rayPalette.length],
+                glow: arrival ? 16 : 12
+            });
+        }
+
+        for (let i = 0; i < sparkCount; i++) {
+            const angle = arrival
+                ? random(0, Math.PI * 2)
+                : directionAngle + random(-0.72, 0.72);
+            const speed = random(arrival ? 2.6 : 1.8, arrival ? 7.8 : 5.6);
+            visualParticles.push({
+                type: i % 5 === 0 ? 'square' : 'spark',
+                x,
+                y,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed - random(0.1, arrival ? 1.3 : 0.8),
+                gravity: arrival ? 0.045 : 0.02,
+                friction: 0.95,
+                size: random(arrival ? 2.2 : 1.6, arrival ? 5.2 : 4.2),
+                sizeVelocity: -0.04,
+                life: 0.92,
+                decay: random(0.024, 0.04),
+                opacity: arrival ? 0.92 : 0.72,
+                color: rayPalette[i % rayPalette.length],
+                glow: arrival ? 14 : 10,
+                rotation: angle,
+                rotationSpeed: random(-0.18, 0.18)
+            });
+        }
+    },
+
     createLevelUpExplosion(x, y, color) {
         const accent = color || "#78f2ff";
         const palette = [accent, "#ffffff", "#8df6ff", "#ffe39b", "#7ad7ff"];
@@ -6960,6 +7416,215 @@ const Input = {
         ctx.restore();
     },
 
+    drawPhongLoiBlinkGhost(ctx, effect, scaleFactor, artifactConfig) {
+        const now = performance.now();
+        const progress = (now - effect.startedAt) / Math.max(1, effect.durationMs || 1);
+        if (progress >= 1) return;
+
+        const cursorStyle = artifactConfig?.cursorStyle || {};
+        const alpha = (1 - progress);
+        const wingOffsetX = Math.max(8, (cursorStyle.WING_OFFSET_X || 15) * scaleFactor * 0.92);
+        const wingOffsetY = (cursorStyle.WING_OFFSET_Y || -1.5) * scaleFactor;
+        const wingWidth = Math.max(7, (cursorStyle.WING_WIDTH || 15) * scaleFactor * 0.92);
+        const wingHeight = Math.max(9, (cursorStyle.WING_HEIGHT || 20) * scaleFactor * 0.92);
+        const glowBlur = Math.max(6, (cursorStyle.GLOW_BLUR || 16) * scaleFactor * 0.72);
+        const flapAmplitude = (Number(cursorStyle.FLAP_AMPLITUDE) || 0.12) * 0.7;
+        const time = (effect.startedAt + (progress * 120)) * (Number(cursorStyle.FLAP_SPEED) || 0.0052);
+        const spread = clampNumber(0.28 + (alpha * 0.42), 0.18, 0.92);
+        const secondaryColor = artifactConfig?.secondaryColor || '#dffeff';
+        const primaryColor = artifactConfig?.color || '#9fe8ff';
+        const auraColor = artifactConfig?.auraColor || '#89a6ff';
+        const lightningLight = CONFIG.COLORS?.SWORD_GOLD_LIGHT || '#FFF2C2';
+        const lightningMid = CONFIG.COLORS?.SWORD_GOLD_MID || '#E6C87A';
+        const lightningDark = CONFIG.COLORS?.SWORD_GOLD_DARK || '#B8944E';
+
+        ctx.save();
+        ctx.translate(effect.x, effect.y);
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.globalAlpha = 0.2 + (alpha * 0.32);
+        ctx.shadowBlur = 18 * scaleFactor;
+        ctx.shadowColor = withAlpha(auraColor, 0.65);
+
+        const halo = ctx.createRadialGradient(0, 0, 0, 0, 0, 28 * scaleFactor);
+        halo.addColorStop(0, withAlpha('#ffffff', 0.26 * alpha));
+        halo.addColorStop(0.34, withAlpha(primaryColor, 0.18 * alpha));
+        halo.addColorStop(1, withAlpha(auraColor, 0));
+        ctx.fillStyle = halo;
+        ctx.beginPath();
+        ctx.arc(0, 0, 28 * scaleFactor, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.globalAlpha = 0.16 + (alpha * 0.26);
+        [-1, 1].forEach(side => {
+            this.drawPhongLoiWing(ctx, {
+                side,
+                wingOffsetX,
+                wingOffsetY,
+                wingWidth,
+                wingHeight,
+                glowBlur,
+                flapAmplitude,
+                scaleFactor,
+                spread,
+                time,
+                primaryColor,
+                secondaryColor,
+                auraColor,
+                lightningLight,
+                lightningMid,
+                lightningDark
+            });
+        });
+
+        ctx.globalAlpha = 0.24 + (alpha * 0.24);
+        ctx.strokeStyle = withAlpha('#ffffff', 0.46 * alpha);
+        ctx.lineWidth = Math.max(1, 1.35 * scaleFactor);
+        ctx.beginPath();
+        ctx.arc(0, 0, (14 + (progress * 10)) * scaleFactor, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+    },
+
+    drawPhongLoiBlinkTrail(ctx, effect, scaleFactor, artifactConfig) {
+        const now = performance.now();
+        const progress = (now - effect.startedAt) / Math.max(1, effect.durationMs || 1);
+        if (progress >= 1) return;
+
+        const alpha = 1 - progress;
+        const primaryColor = artifactConfig?.color || '#9fe8ff';
+        const auraColor = artifactConfig?.auraColor || '#89a6ff';
+        const highlightColor = artifactConfig?.secondaryColor || '#dffeff';
+        const dx = effect.toX - effect.fromX;
+        const dy = effect.toY - effect.fromY;
+        const distance = Math.max(1, Math.hypot(dx, dy));
+        const normalX = -dy / distance;
+        const normalY = dx / distance;
+        const segmentCount = Math.max(5, Math.min(12, Math.round(distance / 28)));
+        const jitter = Math.max(5, 12 * scaleFactor) * alpha;
+
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        for (let lane = 0; lane < 3; lane++) {
+            ctx.beginPath();
+            ctx.moveTo(effect.fromX, effect.fromY);
+
+            for (let step = 1; step < segmentCount; step++) {
+                const ratio = step / segmentCount;
+                const baseX = effect.fromX + (dx * ratio);
+                const baseY = effect.fromY + (dy * ratio);
+                const laneDrift = (lane - 1) * jitter * 0.22;
+                const wander = Math.sin((ratio * Math.PI * 4) + (lane * 1.4) + progress * 18) * jitter;
+                const pointX = baseX + (normalX * (wander + laneDrift));
+                const pointY = baseY + (normalY * (wander + laneDrift));
+                ctx.lineTo(pointX, pointY);
+            }
+
+            ctx.lineTo(effect.toX, effect.toY);
+            ctx.strokeStyle = lane === 1
+                ? withAlpha(highlightColor, 0.84 * alpha)
+                : withAlpha(lane === 0 ? auraColor : primaryColor, (0.26 + (lane * 0.08)) * alpha);
+            ctx.lineWidth = Math.max(0.9, (lane === 1 ? 2.6 : 4.8) * scaleFactor * (0.8 + (alpha * 0.35)));
+            ctx.shadowBlur = lane === 1 ? 18 * scaleFactor : 10 * scaleFactor;
+            ctx.shadowColor = lane === 1 ? withAlpha(highlightColor, 0.9 * alpha) : withAlpha(primaryColor, 0.4 * alpha);
+            ctx.stroke();
+        }
+
+        ctx.restore();
+    },
+
+    drawPhongLoiBlinkCharge(ctx, charge, scaleFactor, artifactConfig) {
+        const cfg = this.getPhongLoiBlinkConfig();
+        const elapsed = performance.now() - charge.startedAt;
+        const progress = clampNumber(elapsed / Math.max(1, cfg.chargeMs), 0, 1);
+        const primaryColor = artifactConfig?.color || '#9fe8ff';
+        const auraColor = artifactConfig?.auraColor || '#89a6ff';
+        const secondaryColor = artifactConfig?.secondaryColor || '#dffeff';
+        const angle = Math.atan2(charge.directionY, charge.directionX || 0.0001);
+        const pulse = 0.82 + (Math.sin(performance.now() * 0.05) * 0.18);
+        const radius = (18 + (progress * 10)) * scaleFactor;
+
+        ctx.save();
+        ctx.translate(charge.originX, charge.originY);
+        ctx.globalCompositeOperation = 'lighter';
+
+        const halo = ctx.createRadialGradient(0, 0, 0, 0, 0, radius * 2.6);
+        halo.addColorStop(0, withAlpha('#ffffff', 0.18 + (progress * 0.16)));
+        halo.addColorStop(0.28, withAlpha(primaryColor, 0.22 + (progress * 0.18)));
+        halo.addColorStop(0.62, withAlpha(auraColor, 0.16));
+        halo.addColorStop(1, withAlpha(auraColor, 0));
+        ctx.fillStyle = halo;
+        ctx.beginPath();
+        ctx.arc(0, 0, radius * 2.6, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.save();
+        ctx.rotate(performance.now() * 0.0042);
+        ctx.strokeStyle = withAlpha(primaryColor, 0.52 + (progress * 0.16));
+        ctx.lineWidth = Math.max(1.2, 2.1 * scaleFactor);
+        ctx.setLineDash([6 * scaleFactor, 8 * scaleFactor]);
+        ctx.beginPath();
+        ctx.ellipse(0, 0, radius * (1.2 + (progress * 0.16)), radius * (0.76 + (progress * 0.08)), 0, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+
+        ctx.save();
+        ctx.rotate(angle);
+        ctx.beginPath();
+        ctx.moveTo(-4 * scaleFactor, 0);
+        ctx.lineTo((28 + (progress * 18)) * scaleFactor, 0);
+        ctx.strokeStyle = withAlpha('#ffffff', 0.84);
+        ctx.lineWidth = Math.max(1.2, 2 * scaleFactor);
+        ctx.shadowBlur = 16 * scaleFactor;
+        ctx.shadowColor = withAlpha(secondaryColor, 0.92);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo((10 + (progress * 4)) * scaleFactor, (-5 - (progress * 6)) * scaleFactor);
+        ctx.lineTo((20 + (progress * 10)) * scaleFactor, (-1 + (progress * 3)) * scaleFactor);
+        ctx.lineTo((16 + (progress * 8)) * scaleFactor, (7 + (progress * 6)) * scaleFactor);
+        ctx.strokeStyle = withAlpha(auraColor, 0.66);
+        ctx.lineWidth = Math.max(0.9, 1.5 * scaleFactor);
+        ctx.stroke();
+        ctx.restore();
+
+        for (let i = 0; i < 4; i++) {
+            const sparkAngle = angle + random(-1.1, 1.1);
+            const sparkDistance = random(radius * 0.3, radius * 1.6) * pulse;
+            const px = Math.cos(sparkAngle) * sparkDistance;
+            const py = Math.sin(sparkAngle) * sparkDistance;
+            ctx.beginPath();
+            ctx.fillStyle = withAlpha(i % 2 === 0 ? primaryColor : '#ffffff', 0.42 + (progress * 0.22));
+            ctx.shadowBlur = 10 * scaleFactor;
+            ctx.shadowColor = withAlpha(primaryColor, 0.72);
+            ctx.arc(px, py, Math.max(0.8, (1.6 + (progress * 1.2)) * scaleFactor), 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        ctx.restore();
+    },
+
+    drawPhongLoiBlinkEffects(ctx, scaleFactor) {
+        const state = this.prunePhongLoiBlinkEffects();
+        if (!state.charging && !state.trails.length && !state.afterimages.length) return;
+
+        const artifactConfig = this.getArtifactConfig('PHONG_LOI_SI') || {};
+
+        state.afterimages.forEach(effect => {
+            this.drawPhongLoiBlinkGhost(ctx, effect, scaleFactor, artifactConfig);
+        });
+
+        state.trails.forEach(effect => {
+            this.drawPhongLoiBlinkTrail(ctx, effect, scaleFactor, artifactConfig);
+        });
+
+        if (state.charging) {
+            this.drawPhongLoiBlinkCharge(ctx, state.charging, scaleFactor, artifactConfig);
+        }
+    },
+
     drawCursor(ctx, scaleFactor) {
         if (this.hasCanLamBangDiemUnlocked()) {
             this.drawFlame(ctx, scaleFactor);
@@ -7160,6 +7825,8 @@ function repairLegacyUiText() {
         ['#btn-move', 'aria-label', 'Luân bàn thân pháp'],
         ['#btn-ultimate img', 'alt', 'Tuyệt kỹ'],
         ['#btn-form img', 'alt', 'Đổi kiếm thức'],
+        ['#btn-phong-loi-blink', 'title', 'Phong Lôi Sí - OFF'],
+        ['#btn-phong-loi-blink img', 'alt', 'Phong Lôi Sí'],
         ['#btn-skill-list', 'title', 'Bảng bí pháp'],
         ['#btn-attack img', 'alt', 'Xuất kiếm']
     ].forEach(([selector, attribute, value]) => setAttrIfPresent(selector, attribute, value));
@@ -9733,6 +10400,21 @@ document.getElementById('btn-ultimate').addEventListener('pointerdown', (e) => {
     Input.startUltimate();
 });
 
+const phongLoiBlinkBtn = document.getElementById('btn-phong-loi-blink');
+if (phongLoiBlinkBtn) {
+    phongLoiBlinkBtn.addEventListener('pointerdown', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+
+        if (Input.isVoidCollapsed) {
+            showNotify('Thân thể đã tan vào hư vô, cần tải lại giới vực để hồi phục', '#a778ff');
+            return;
+        }
+
+        Input.togglePhongLoiBlink();
+    });
+}
+
 const moveBtn = document.getElementById('btn-move');
 const attackBtn = document.getElementById('btn-attack');
 
@@ -9969,16 +10651,31 @@ function updatePhysics(dt) {
     Camera.update();
     Input.update(dt);
     Input.regenMana();
+    const wasChargingBlink = Input.isPhongLoiBlinkCharging();
+    const prevGuardX = guardCenter.x;
+    const prevGuardY = guardCenter.y;
     const speedMultRaw = Input.getSpeedMultiplier();
     const speedMult = Number.isFinite(speedMultRaw) ? speedMultRaw : 16;
-    let dx = Input.x - guardCenter.x;
-    let dy = Input.y - guardCenter.y;
-    guardCenter.vx += dx * 0.04 * speedMult;
-    guardCenter.vy += dy * 0.04 * speedMult;
-    guardCenter.vx *= 0.82;
-    guardCenter.vy *= 0.82;
-    guardCenter.x += guardCenter.vx;
-    guardCenter.y += guardCenter.vy;
+
+    if (wasChargingBlink) {
+        guardCenter.vx = 0;
+        guardCenter.vy = 0;
+    } else {
+        let dx = Input.x - guardCenter.x;
+        let dy = Input.y - guardCenter.y;
+        guardCenter.vx += dx * 0.04 * speedMult;
+        guardCenter.vy += dy * 0.04 * speedMult;
+        guardCenter.vx *= 0.82;
+        guardCenter.vy *= 0.82;
+        guardCenter.x += guardCenter.vx;
+        guardCenter.y += guardCenter.vy;
+    }
+
+    Input.updatePhongLoiBlinkMotion(
+        guardCenter,
+        guardCenter.x - prevGuardX,
+        guardCenter.y - prevGuardY
+    );
 }
 
 function renderCursor() {
@@ -10070,6 +10767,7 @@ function animate() {
         Input.drawInsectUltimate(ctx, scaleFactor);
     }
 
+    Input.drawPhongLoiBlinkEffects(ctx, scaleFactor);
     renderCursor();
 
     // Vẽ và cập nhật hạt hiệu ứng

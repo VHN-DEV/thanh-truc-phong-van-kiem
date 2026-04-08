@@ -769,6 +769,112 @@ body.is-touch-device {
         }
     }
 
+    .btn-phong-loi-blink {
+        width: 46px;
+        height: 46px;
+        right: 95px;
+        bottom: -5px;
+        overflow: hidden;
+        isolation: isolate;
+        background:
+            radial-gradient(circle at 34% 28%, rgba(255, 255, 255, 0.26), transparent 28%),
+            linear-gradient(160deg, rgba(102, 235, 255, 0.28), rgba(71, 92, 255, 0.18) 52%, rgba(10, 18, 30, 0.94) 100%);
+        border: 1px solid rgba(#8bd9ff, 0.42);
+        box-shadow: 0 4px 0 rgba(0, 0, 0, 0.44), 0 0 16px rgba(#89a6ff, 0.18);
+
+        &::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.22), transparent 42%, rgba(137, 166, 255, 0.18) 100%),
+                radial-gradient(circle at 50% 115%, rgba(81, 227, 255, 0.3), transparent 54%);
+            opacity: 0.82;
+            transition: opacity 0.18s ease, transform 0.18s ease;
+            z-index: 0;
+        }
+
+        &.is-hidden {
+            display: none !important;
+        }
+
+        .icon-phong-loi {
+            position: relative;
+            z-index: 1;
+            width: 62%;
+            height: 62%;
+            filter: drop-shadow(0 0 5px rgba(#8de4ff, 0.72)) drop-shadow(0 0 10px rgba(#89a6ff, 0.44));
+            opacity: 0.82;
+            transition: transform 0.18s ease, opacity 0.18s ease, filter 0.18s ease;
+        }
+
+        .phong-loi-toggle__state {
+            position: absolute;
+            left: 50%;
+            bottom: 4px;
+            transform: translateX(-50%);
+            z-index: 2;
+            min-width: 24px;
+            padding: 1px 5px;
+            border-radius: 999px;
+            background: rgba(7, 16, 27, 0.84);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: rgba(229, 242, 255, 0.72);
+            font-size: 8px;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            line-height: 1.25;
+            text-transform: uppercase;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            transition: color 0.18s ease, border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+        }
+
+        &.is-active {
+            border-color: rgba(#b7fff9, 0.82);
+            box-shadow: 0 4px 0 rgba(0, 0, 0, 0.4), 0 0 20px rgba(#79ffd4, 0.28), 0 0 28px rgba(#89a6ff, 0.2);
+        }
+
+        &.is-active::before {
+            opacity: 1;
+        }
+
+        &.is-active .icon-phong-loi {
+            opacity: 1;
+            transform: scale(1.06);
+            filter: drop-shadow(0 0 8px rgba(#dffeff, 0.92)) drop-shadow(0 0 16px rgba(#79ffd4, 0.5));
+        }
+
+        &.is-active .phong-loi-toggle__state {
+            color: #f6fffd;
+            border-color: rgba(#b7fff9, 0.44);
+            background: linear-gradient(180deg, rgba(121, 255, 212, 0.26), rgba(37, 95, 109, 0.38));
+            box-shadow: 0 0 12px rgba(#79ffd4, 0.22);
+        }
+
+        &.is-charging {
+            animation: phong-loi-charge-pulse 0.3s ease-in-out infinite alternate;
+        }
+
+        &.is-charging .phong-loi-toggle__state {
+            color: #fff6d6;
+            border-color: rgba(#ffe8a6, 0.54);
+            background: linear-gradient(180deg, rgba(255, 211, 107, 0.28), rgba(124, 84, 14, 0.34));
+            box-shadow: 0 0 14px rgba(#ffd36b, 0.24);
+        }
+    }
+
+    @keyframes phong-loi-charge-pulse {
+        from {
+            transform: scale(1);
+            box-shadow: 0 4px 0 rgba(0, 0, 0, 0.42), 0 0 14px rgba(#89a6ff, 0.22);
+        }
+
+        to {
+            transform: scale(1.07);
+            box-shadow: 0 4px 0 rgba(0, 0, 0, 0.38), 0 0 20px rgba(#79ffd4, 0.3), 0 0 28px rgba(#ffe8a6, 0.16);
+        }
+    }
+
     .skill-list-glyph {
         display: flex;
         flex-direction: column;
@@ -4845,6 +4951,13 @@ select.shop-control-input {
             bottom: 153px;
         }
 
+        .btn-phong-loi-blink {
+            width: 48px;
+            height: 48px;
+            right: 90px;
+            bottom: 55px;
+        }
+
         .btn-attack {
             width: 84px;
             height: 84px;
@@ -5004,6 +5117,11 @@ select.shop-control-input {
     body.is-mobile-landscape .attack-group .btn-skill-list {
         right: 8px;
         bottom: 146px;
+    }
+
+    body.is-mobile-landscape .attack-group .btn-phong-loi-blink {
+        right: 96px;
+        bottom: 108px;
     }
 }
 
