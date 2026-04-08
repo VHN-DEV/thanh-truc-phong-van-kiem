@@ -37,7 +37,10 @@ body {
     overflow: hidden;
     cursor: none;
     touch-action: none;
+    width: 100%;
     height: 100%;
+    min-height: 100%;
+    overscroll-behavior: none;
 }
 
 body.game-native-cursor-hidden,
@@ -66,6 +69,9 @@ body.game-native-cursor-hidden.popup-cursor-active .popup-overlay select {
 
 canvas {
     display: block;
+    width: 100%;
+    height: 100%;
+    touch-action: none;
 }
 
 .game-ui {
@@ -4574,6 +4580,60 @@ select.shop-control-input {
     .shop-page-list {
         justify-content: center;
         width: 100%;
+    }
+}
+
+@media (orientation: landscape) and (max-height: 720px) {
+    body.is-mobile-landscape {
+        min-height: 100dvh;
+    }
+
+    body.is-mobile-landscape .controls-layer .setting-group {
+        top: max(12px, env(safe-area-inset-top));
+        right: max(12px, env(safe-area-inset-right));
+    }
+
+    body.is-mobile-landscape #mana-container {
+        top: max(12px, env(safe-area-inset-top));
+        left: max(12px, env(safe-area-inset-left));
+        width: min(320px, 44vw);
+    }
+
+    body.is-mobile-landscape #sword-counter {
+        top: max(92px, calc(env(safe-area-inset-top) + 82px));
+        right: max(12px, env(safe-area-inset-right));
+    }
+
+    body.is-mobile-landscape .breakthrough-group {
+        top: max(132px, calc(env(safe-area-inset-top) + 122px));
+        right: max(12px, env(safe-area-inset-right));
+    }
+
+    body.is-mobile-landscape .move-group {
+        left: max(22px, calc(env(safe-area-inset-left) + 10px));
+        bottom: max(18px, env(safe-area-inset-bottom));
+    }
+
+    body.is-mobile-landscape .attack-group {
+        right: max(12px, env(safe-area-inset-right));
+        bottom: max(10px, env(safe-area-inset-bottom));
+        width: 184px;
+        height: 184px;
+    }
+
+    body.is-mobile-landscape .attack-group .btn-ultimate {
+        right: 48px;
+        bottom: 96px;
+    }
+
+    body.is-mobile-landscape .attack-group .btn-form {
+        right: 0;
+        bottom: 90px;
+    }
+
+    body.is-mobile-landscape .attack-group .btn-skill-list {
+        right: 8px;
+        bottom: 146px;
     }
 }
 

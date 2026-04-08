@@ -2,6 +2,7 @@ const random = (min, max) => Math.random() * (max - min) + min;
 const canvas = document.getElementById("c");
 const enemyIcons = {};
 const ctx = canvas.getContext("2d", { alpha: false });
+const IS_TOUCH_ENVIRONMENT = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 
 let scaleFactor = 1;
 let width, height;
@@ -62,8 +63,14 @@ function resize() {
     width = canvas.width = window.innerWidth;
     height = canvas.height = window.innerHeight;
     scaleFactor = width / CONFIG.CORE.BASE_WIDTH;
+
+    if (document.body) {
+        document.body.classList.toggle('is-touch-device', IS_TOUCH_ENVIRONMENT);
+        document.body.classList.toggle('is-mobile-landscape', IS_TOUCH_ENVIRONMENT && window.innerWidth > window.innerHeight);
+    }
 }
 window.addEventListener("resize", resize);
+window.addEventListener("orientationchange", resize);
 resize();
 
 const QUALITY_ORDER = ['LOW', 'MEDIUM', 'HIGH', 'SUPREME'];
@@ -633,7 +640,7 @@ const Input = {
     guardForm: 1,
     attackTimer: null,
     // Kiểm tra xem thiết bị có hỗ trợ cảm ứng không
-    isTouchDevice: ('ontouchstart' in window) || (navigator.maxTouchPoints > 0),
+    isTouchDevice: IS_TOUCH_ENVIRONMENT,
     mana: CONFIG.MANA.START || 100,
     maxMana: CONFIG.MANA.MAX || 100,
     lastManaRegenTick: performance.now(),
@@ -694,6 +701,14 @@ const Input = {
         deadZone: 10,
         aimDistance: 180,
         button: null
+    },
+    touchCursor: {
+        active: false,
+        pointerId: null
+    },
+    pinchZoomActive: false,
+    landscapeMode: {
+        lastRequestAt: 0
     },
     bonusStats: {
         attackPct: 0,
@@ -2006,6 +2021,53 @@ const Input = {
         return Math.max(0.35, 1 + this.bonusStats.speedPct + active.speedPct);
     },
 
+    syncLandscapeMode() {
+        const isLandscape = this.isTouchDevice && window.innerWidth > window.innerHeight;
+
+        if (document.body) {
+            document.body.classList.toggle('is-mobile-landscape', isLandscape);
+        }
+
+        if (!isLandscape && screen.orientation?.unlock) {
+            try {
+                screen.orientation.unlock();
+            } catch (error) {
+                // Trình duyệt có thể từ chối unlock ngoài fullscreen.
+            }
+        }
+
+        return isLandscape;
+    },
+
+    requestLandscapeMode() {
+        if (!this.isTouchDevice || !this.syncLandscapeMode()) return;
+
+        const now = performance.now();
+        if (now - (this.landscapeMode.lastRequestAt || 0) < 600) return;
+        this.landscapeMode.lastRequestAt = now;
+
+        const root = document.documentElement;
+        let fullscreenTask = Promise.resolve(null);
+
+        if (!document.fullscreenElement) {
+            try {
+                if (typeof root.requestFullscreen === 'function') {
+                    fullscreenTask = Promise.resolve(root.requestFullscreen({ navigationUI: 'hide' })).catch(() => null);
+                } else if (typeof root.webkitRequestFullscreen === 'function') {
+                    root.webkitRequestFullscreen();
+                }
+            } catch (error) {
+                fullscreenTask = Promise.resolve(null);
+            }
+        }
+
+        Promise.resolve(fullscreenTask).finally(() => {
+            if (screen.orientation?.lock) {
+                screen.orientation.lock('landscape').catch(() => null);
+            }
+        });
+    },
+
     updateMoveJoystickVisual() {
         const button = this.moveJoystick.button || document.getElementById('btn-move');
         if (!button) return;
@@ -2094,6 +2156,59 @@ const Input = {
             x: Math.max(minVisible.x, Math.min(maxVisible.x, nextX)),
             y: Math.max(minVisible.y, Math.min(maxVisible.y, nextY))
         };
+    },
+
+    getTouchHitTarget(target = null, clientX = null, clientY = null) {
+        if (Number.isFinite(clientX) && Number.isFinite(clientY)) {
+            const pointTarget = document.elementFromPoint(clientX, clientY);
+            if (pointTarget instanceof Element) return pointTarget;
+        }
+
+        return target instanceof Element ? target : null;
+    },
+
+    isUiInteractionTarget(target) {
+        if (!(target instanceof Element)) return false;
+
+        return Boolean(
+            target.closest('.controls-layer') ||
+            target.closest('.popup-overlay') ||
+            target.closest('#mana-container') ||
+            target.closest('#exp-container') ||
+            target.closest('#sword-counter') ||
+            target.closest('button, input, select, textarea, label, a, summary')
+        );
+    },
+
+    updateTouchCursor(clientX, clientY) {
+        if (!Number.isFinite(clientX) || !Number.isFinite(clientY)) return;
+        this.screenX = clientX;
+        this.screenY = clientY;
+    },
+
+    startTouchCursor(pointerId, target, clientX, clientY) {
+        if (!this.isTouchDevice || pointerId == null) return false;
+        if (hasVisiblePopupOverlay()) return false;
+
+        const hitTarget = this.getTouchHitTarget(target, clientX, clientY);
+        if (this.isUiInteractionTarget(hitTarget)) return false;
+
+        this.touchCursor.active = true;
+        this.touchCursor.pointerId = pointerId;
+        this.updateTouchCursor(clientX, clientY);
+        return true;
+    },
+
+    stopTouchCursor(pointerId = null) {
+        if (!this.touchCursor.active) return;
+        if (pointerId !== null && this.touchCursor.pointerId !== pointerId) return;
+
+        this.touchCursor.active = false;
+        this.touchCursor.pointerId = null;
+    },
+
+    hasActiveTouchCursor() {
+        return this.touchCursor.active && !this.pinchZoomActive;
     },
 
     getAuraPalette() {
@@ -4399,6 +4514,8 @@ const Input = {
         if (this.isVoidCollapsed) {
             this.resetAttackState();
             this.stopMoveJoystick();
+            this.stopTouchCursor();
+            this.pinchZoomActive = false;
             return;
         }
 
@@ -4408,6 +4525,10 @@ const Input = {
         if (joystickTarget) {
             this.x = joystickTarget.x;
             this.y = joystickTarget.y;
+        } else if (this.isTouchDevice && this.hasActiveTouchCursor()) {
+            const worldPos = Camera.screenToWorld(this.screenX, this.screenY);
+            this.x = worldPos.x;
+            this.y = worldPos.y;
         } else if (this.isTouchDevice) {
             this.x = guardCenter.x;
             this.y = guardCenter.y;
@@ -4432,6 +4553,13 @@ const Input = {
 
     handleMove(e) {
         if (this.isVoidCollapsed) return;
+        const isTouchPointer = this.isTouchDevice && e.pointerType && e.pointerType !== 'mouse';
+        if (isTouchPointer) {
+            if (!this.touchCursor.active || this.touchCursor.pointerId !== e.pointerId || this.pinchZoomActive) return;
+            this.updateTouchCursor(e.clientX, e.clientY);
+            return;
+        }
+
         if (this.isTouchDevice) return;
         if (e.target.closest('.btn')) return;
 
@@ -4443,6 +4571,13 @@ const Input = {
 
     handleDown(e) {
         if (this.isVoidCollapsed) return;
+        const isTouchPointer = this.isTouchDevice && e.pointerType && e.pointerType !== 'mouse';
+
+        if (isTouchPointer) {
+            this.startTouchCursor(e.pointerId, e.target, e.clientX, e.clientY);
+            return;
+        }
+
         if (e.target.closest('.btn')) return;
 
         // LOGIC MỚI: Nếu là mobile, chạm màn hình KHÔNG kích hoạt tấn công
@@ -4462,6 +4597,11 @@ const Input = {
 
     handleUp(e) {
         if (this.isVoidCollapsed) return;
+        const isTouchPointer = this.isTouchDevice && e.pointerType && e.pointerType !== 'mouse';
+        if (isTouchPointer) {
+            this.stopTouchCursor(e.pointerId);
+            return;
+        }
         // Chỉ xử lý handleUp cho chuột trên desktop
         if (!this.isTouchDevice) {
             this.resetAttackState();
@@ -6111,9 +6251,28 @@ const Input = {
 };
 
 // Đăng ký sự kiện Hệ thống (Gộp Pointer Events để tối ưu)
-window.addEventListener('pointermove', e => { if (!e.touches) Input.handleMove(e); });
+function isTouchOverUiControl(touch) {
+    const hitTarget = Input.getTouchHitTarget(touch?.target, touch?.clientX, touch?.clientY);
+    return Input.isUiInteractionTarget(hitTarget);
+}
+
+function canUseTouchPinchZoom(touches) {
+    if (!Input.isTouchDevice || !touches || touches.length !== 2) return false;
+    if (Input.isVoidCollapsed || hasVisiblePopupOverlay()) return false;
+    if (Input.moveJoystick.active || Input.isAttacking) return false;
+
+    return Array.from(touches).every(touch => !isTouchOverUiControl(touch));
+}
+
+window.addEventListener('pointerdown', e => {
+    if (Input.isTouchDevice && e.pointerType && e.pointerType !== 'mouse') {
+        Input.requestLandscapeMode();
+    }
+}, { capture: true });
+window.addEventListener('pointermove', e => Input.handleMove(e));
 window.addEventListener('pointerdown', e => Input.handleDown(e));
 window.addEventListener('pointerup', e => Input.handleUp(e));
+window.addEventListener('pointercancel', e => Input.handleUp(e));
 window.addEventListener('wheel', e => {
     Camera.adjustZoom(-e.deltaY * CONFIG.ZOOM.SENSITIVITY);
 }, { passive: false });
@@ -6130,17 +6289,27 @@ window.addEventListener('keydown', e => {
 
 // 2. Touch Events (Mobile - Pinch to Zoom)
 window.addEventListener('touchstart', e => {
-    if (e.touches.length === 2) {
+    if (canUseTouchPinchZoom(e.touches)) {
+        Input.pinchZoomActive = true;
         Input.initialPinchDist = Math.hypot(
             e.touches[0].clientX - e.touches[1].clientX,
             e.touches[0].clientY - e.touches[1].clientY
         );
+        return;
+    }
+
+    Input.initialPinchDist = 0;
+    Input.pinchZoomActive = false;
+
+    if (e.touches.length >= 2 && (Input.moveJoystick.active || Input.isAttacking || Array.from(e.touches).some(isTouchOverUiControl))) {
+        e.preventDefault();
     }
 }, { passive: false });
 
 window.addEventListener('touchmove', e => {
-    if (e.touches.length === 2) {
+    if (canUseTouchPinchZoom(e.touches)) {
         e.preventDefault();
+        Input.pinchZoomActive = true;
         const currentDist = Math.hypot(
             e.touches[0].clientX - e.touches[1].clientX,
             e.touches[0].clientY - e.touches[1].clientY
@@ -6148,9 +6317,27 @@ window.addEventListener('touchmove', e => {
         const delta = (currentDist - Input.initialPinchDist) * 0.01;
         Camera.adjustZoom(delta);
         Input.initialPinchDist = currentDist;
-    } else {
-        Input.handleMove(e);
+        return;
     }
+
+    Input.initialPinchDist = 0;
+    Input.pinchZoomActive = false;
+
+    if (e.touches.length >= 2 && (Input.moveJoystick.active || Input.isAttacking || Array.from(e.touches).some(isTouchOverUiControl))) {
+        e.preventDefault();
+    }
+}, { passive: false });
+
+window.addEventListener('touchend', e => {
+    if (e.touches.length < 2) {
+        Input.initialPinchDist = 0;
+        Input.pinchZoomActive = false;
+    }
+}, { passive: false });
+
+window.addEventListener('touchcancel', () => {
+    Input.initialPinchDist = 0;
+    Input.pinchZoomActive = false;
 }, { passive: false });
 
 function hasVisiblePopupOverlay() {
@@ -8326,6 +8513,7 @@ function init() {
 
     document.body.classList.add('game-native-cursor-hidden');
     document.body.classList.toggle('is-touch-device', Input.isTouchDevice);
+    Input.syncLandscapeMode();
     syncPopupCursorState();
 
     SettingsUI.init();
@@ -8344,6 +8532,9 @@ function init() {
     syncSwordFormation({ rebuildAll: true });
     updateSwordCounter(swords);
 }
+
+document.addEventListener('fullscreenchange', () => Input.syncLandscapeMode());
+window.addEventListener('orientationchange', () => Input.syncLandscapeMode());
 
 function updateSwordCounter(swords) {
     const aliveSwords = swords.filter(s => !s.isDead).length;
