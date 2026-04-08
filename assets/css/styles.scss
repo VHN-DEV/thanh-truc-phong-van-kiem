@@ -6,7 +6,8 @@ $mana-color: #00d4ff;
 $danger-color: #ff4444;
 $bg-gradient: radial-gradient(circle at center, #0a1525, #000);
 $shadow-color: rgba(0, 0, 0, 0.4);
-$ui-font: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+$ui-font: 'Bookman Old Style', 'Palatino Linotype', 'Book Antiqua', Georgia, serif;
+$ui-font-display: 'STKaiti', 'DFKai-SB', 'Adobe Kaiti Std', 'Bookman Old Style', 'Palatino Linotype', serif;
 $ult-color: #ff3366;
 
 // ====================================================================
@@ -33,6 +34,7 @@ html,
 body {
     margin: 0;
     padding: 0;
+    font-family: $ui-font;
     background: $bg-gradient;
     overflow: hidden;
     cursor: none;
@@ -72,6 +74,28 @@ canvas {
     width: 100%;
     height: 100%;
     touch-action: none;
+}
+
+button,
+input,
+select,
+textarea {
+    font: inherit;
+}
+
+.popup-header h3,
+.panel-section h4,
+.shop-card h4,
+.inventory-slot h4,
+.slot-badge,
+.panel-tab,
+.btn-slot-action,
+.btn-reset,
+.btn-save,
+.btn-shop-reset,
+.btn-shop-page,
+#cultivation-rank {
+    font-family: $ui-font-display;
 }
 
 .game-ui {
@@ -997,7 +1021,8 @@ body.is-touch-device {
 
     #sword-count-text {
         color: #fff;
-        font-family: Arial, sans-serif;
+        font-family: $ui-font;
+        font-variant-numeric: tabular-nums;
         font-weight: bold;
         font-size: 15px;
         text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
@@ -1222,7 +1247,8 @@ body.is-touch-device {
             width: 100px; // Tăng độ rộng một chút để chứa số lớn
             border-radius: 4px;
             text-align: right; // Căn phải cho số dễ nhìn
-            font-family: monospace;
+            font-family: $ui-font;
+            font-variant-numeric: tabular-nums;
             outline: none;
             transition: all 0.2s;
 
