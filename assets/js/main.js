@@ -296,7 +296,36 @@ function buildMaterialArtMarkup(materialKey) {
     `;
 }
 
-function buildPillVisualMarkup(item, qualityConfig) {
+function buildPhongLoiArtifactVisualMarkup() {
+    const wingPath = 'M28.665 25.537c-1.966-1.094-3.116-2.962-3.232-4.673-0.619-9.164-15.889-10.357-23.662-19.509 0.403 11.661 13.204 11.604 20.744 17.449-4.879-2.113-12.876-1.649-18.664-5.404 2.7 8.775 12.332 5.886 19.406 8.271-4.212-0.411-9.768 1.968-15.02 0.086 4.638 7.31 10.654 2.427 16.483 2.47-2.94 0.749-5.977 4.025-10.036 3.718 4.946 4.76 7.536 0.139 11.079-1.633-0.357 0.425-0.583 0.967-0.61 1.565-0.064 1.443 1.054 2.665 2.497 2.73s2.665-1.054 2.73-2.497c0.052-1.169-0.672-2.193-1.716-2.574z';
+    const wingOuterTransform = 'translate(-18 -16) rotate(-45 16 16) scale(1.14 1.14)';
+    const wingInnerTransform = 'translate(-12 -11) rotate(-45 16 16) scale(0.84 0.84)';
+
+    return `
+        <div class="phong-loi-art" aria-hidden="true">
+            <span class="phong-loi-art__halo"></span>
+            <svg class="phong-loi-art__svg" viewBox="0 0 128 92" role="presentation" focusable="false">
+                <g class="phong-loi-art__wing phong-loi-art__wing--left" transform="translate(54 48) scale(-1 1)">
+                    <path class="phong-loi-art__wing-shadow" d="${wingPath}" transform="translate(-20 -18) rotate(-45 16 16) scale(1.26 1.24)"></path>
+                    <path class="phong-loi-art__wing-base" d="${wingPath}" transform="${wingOuterTransform}"></path>
+                    <path class="phong-loi-art__wing-inner" d="${wingPath}" transform="${wingInnerTransform}"></path>
+                    <path class="phong-loi-art__wing-vein" d="M2 1 C 10 -7, 20 -16, 31 -30 M6 4 C 14 -2, 22 -10, 29 -18 M5 8 C 11 7, 17 5, 23 0"></path>
+                </g>
+                <g class="phong-loi-art__wing phong-loi-art__wing--right" transform="translate(74 48)">
+                    <path class="phong-loi-art__wing-shadow" d="${wingPath}" transform="translate(-20 -18) rotate(-45 16 16) scale(1.26 1.24)"></path>
+                    <path class="phong-loi-art__wing-base" d="${wingPath}" transform="${wingOuterTransform}"></path>
+                    <path class="phong-loi-art__wing-inner" d="${wingPath}" transform="${wingInnerTransform}"></path>
+                    <path class="phong-loi-art__wing-vein" d="M2 1 C 10 -7, 20 -16, 31 -30 M6 4 C 14 -2, 22 -10, 29 -18 M5 8 C 11 7, 17 5, 23 0"></path>
+                </g>
+                <path class="phong-loi-art__shaft" d="M64 24 C68 33 70 42 70 50 C70 60 67 68 64 76 C61 68 58 60 58 50 C58 42 60 33 64 24 Z"></path>
+                <path class="phong-loi-art__core" d="M64 33 L70 47 L64 62 L58 47 Z"></path>
+                <path class="phong-loi-art__lightning" d="M63 35 L68 30 L65 42 L72 38 L61 58 L64 46 L57 50 Z"></path>
+            </svg>
+        </div>
+    `;
+}
+
+function buildPillVisualMarkup(item, qualityConfig, options = {}) {
     const visualMap = {
         EXP: { className: 'is-exp', aura: 'rgba(105, 240, 203, 0.32)' },
         INSIGHT: { className: 'is-insight', aura: 'rgba(208, 255, 124, 0.34)' },
@@ -327,7 +356,19 @@ function buildPillVisualMarkup(item, qualityConfig) {
     const visualKey = item.specialKey || item.category;
     const visual = visualMap[visualKey] || visualMap.EXP;
     const insectSpecies = item.category === 'INSECT_EGG' ? Input.getInsectSpecies(item.speciesKey) : null;
-    const centerMarkup = visual.className === 'is-insect-egg'
+    const artifactConfig = item.category === 'ARTIFACT' && item.uniqueKey
+        ? (CONFIG.ARTIFACTS?.[item.uniqueKey] || null)
+        : null;
+    const isPhongLoiArtifact = item.category === 'ARTIFACT' && item.uniqueKey === 'PHONG_LOI_SI';
+    const visualClasses = [visual.className];
+
+    if (isPhongLoiArtifact) {
+        visualClasses.push('is-artifact-phong-loi');
+    }
+
+    const centerMarkup = isPhongLoiArtifact
+        ? buildPhongLoiArtifactVisualMarkup()
+        : visual.className === 'is-insect-egg'
         ? `
             <div class="pill-visual__beast" style="${buildInsectVisualVars(insectSpecies, { egg: true })}">
                 ${buildInsectArtMarkup(item.speciesKey, { egg: true })}
@@ -370,8 +411,27 @@ function buildPillVisualMarkup(item, qualityConfig) {
             <span class="pill-visual__sigil"></span>
         `;
 
+    const styleVars = [
+        `--pill-accent:${qualityConfig.color}`,
+        `--pill-aura:${visual.aura}`
+    ];
+
+    if (artifactConfig?.secondaryColor) {
+        styleVars.push(`--artifact-secondary:${artifactConfig.secondaryColor}`);
+    }
+
+    if (artifactConfig?.auraColor) {
+        styleVars.push(`--artifact-aura:${artifactConfig.auraColor}`);
+    }
+
+    if (isPhongLoiArtifact) {
+        styleVars.push(`--artifact-lightning-light:${CONFIG.COLORS?.SWORD_GOLD_LIGHT || '#FFF2C2'}`);
+        styleVars.push(`--artifact-lightning-mid:${CONFIG.COLORS?.SWORD_GOLD_MID || '#E6C87A'}`);
+        styleVars.push(`--artifact-lightning-dark:${CONFIG.COLORS?.SWORD_GOLD_DARK || '#B8944E'}`);
+    }
+
     return `
-        <div class="pill-visual ${visual.className}" style="--pill-accent:${qualityConfig.color};--pill-aura:${visual.aura}" aria-hidden="true">
+        <div class="pill-visual ${visualClasses.join(' ')}" style="${styleVars.join(';')}" aria-hidden="true">
             <span class="pill-visual__backdrop"></span>
             <span class="pill-visual__orbit pill-visual__orbit--outer"></span>
             <span class="pill-visual__orbit pill-visual__orbit--inner"></span>
@@ -512,9 +572,12 @@ const ANIMAL_MATERIAL_DROP_TABLES = Object.freeze(CONFIG.ENEMY?.MATERIAL_DROPS |
 
 const Input = {
     screenX: width / 2, screenY: height / 2,
+    prevScreenX: width / 2, prevScreenY: height / 2,
     x: width / 2, y: height / 2,
     px: 0, py: 0,
     speed: 0,
+    screenSpeed: 0,
+    phongLoiWingSpread: 0,
     isAttacking: false,
     guardForm: 1,
     attackTimer: null,
@@ -4242,6 +4305,9 @@ const Input = {
         }
 
         // Tính tốc độ di chuyển của con trỏ/ngón tay
+        this.screenSpeed = Math.hypot(this.screenX - this.prevScreenX, this.screenY - this.prevScreenY);
+        this.prevScreenX = this.screenX;
+        this.prevScreenY = this.screenY;
         this.speed = Math.hypot(this.x - this.px, this.y - this.py);
         this.px = this.x; this.py = this.y;
 
@@ -5549,6 +5615,282 @@ const Input = {
         ctx.restore();
     },
 
+    getPhongLoiWingSpread() {
+        const motionSpeed = this.isTouchDevice ? this.speed : this.screenSpeed;
+        const targetSpread = this.isTouchDevice
+            ? clampNumber((motionSpeed - 0.08) / 1.15, 0, 1)
+            : clampNumber((motionSpeed - 1.25) / 13, 0, 1);
+        const currentSpread = Number(this.phongLoiWingSpread) || 0;
+        const smoothing = 0.16 + (targetSpread * 0.08);
+
+        this.phongLoiWingSpread = clampNumber(currentSpread + ((targetSpread - currentSpread) * smoothing), 0, 1);
+
+        return this.phongLoiWingSpread;
+    },
+
+    drawPhongLoiWingAura(ctx, options) {
+        const {
+            wingWidth,
+            wingHeight,
+            glowBlur,
+            scaleFactor,
+            spread,
+            time,
+            lightningLight,
+            lightningMid,
+            lightningDark
+        } = options;
+        const pulse = 0.58 + (Math.abs(Math.sin((time * 1.65) + (spread * 1.1))) * 0.42);
+        const auraCount = Math.max(2, Math.floor(random(2, 4.2 + (spread * 1.8))));
+
+        ctx.save();
+        ctx.shadowBlur = glowBlur * (0.22 + (pulse * 0.24));
+        ctx.shadowColor = withAlpha(lightningLight, 0.66);
+
+        for (let i = 0; i < auraCount; i++) {
+            const zoneRoll = Math.random();
+            const spanRatio = random(0.08, 0.94);
+            let px = 0;
+            let py = 0;
+            let driftX = 0;
+            let driftY = 0;
+
+            if (zoneRoll < 0.42) {
+                px = wingWidth * (0.08 + (spanRatio * (0.68 + (spread * 0.18)))) + random(-1.3, 1.3) * scaleFactor;
+                py = -wingHeight * (0.06 + (spanRatio * (0.62 + (spread * 0.18)))) + random(-2.4, -0.25) * scaleFactor;
+                driftX = random(-1.6, 2.8) * scaleFactor;
+                driftY = random(-2.2, 1.4) * scaleFactor;
+            } else if (zoneRoll < 0.8) {
+                px = wingWidth * (0.06 + (spanRatio * (0.58 + (spread * 0.12)))) + random(-1.2, 1.2) * scaleFactor;
+                py = wingHeight * (0.02 + (spanRatio * (0.18 + (spread * 0.08)))) + random(0.25, 2.6) * scaleFactor;
+                driftX = random(-1.8, 2.6) * scaleFactor;
+                driftY = random(-1.6, 2.2) * scaleFactor;
+            } else {
+                px = wingWidth * (0.58 + (spanRatio * (0.24 + (spread * 0.16)))) + random(-1.1, 1.6) * scaleFactor;
+                py = random(-wingHeight * (0.46 + (spread * 0.16)), wingHeight * (0.12 + (spread * 0.08)));
+                driftX = random(-2.2, 2.8) * scaleFactor;
+                driftY = random(-2.2, 2.2) * scaleFactor;
+            }
+
+            ctx.beginPath();
+            ctx.moveTo(px, py);
+
+            for (let step = 0; step < 3; step++) {
+                px += driftX + random(-1.8, 1.8) * scaleFactor;
+                py += driftY + random(-1.6, 1.6) * scaleFactor;
+                ctx.lineTo(px, py);
+            }
+
+            const alpha = random(0.22, 0.46) * pulse;
+            ctx.strokeStyle = withAlpha(i % 2 === 0 ? lightningLight : lightningMid, alpha);
+            ctx.lineWidth = Math.max(0.45, random(0.65, 1.02) * scaleFactor);
+            ctx.stroke();
+
+            if (Math.random() < 0.36) {
+                ctx.beginPath();
+                ctx.moveTo(px, py);
+                ctx.lineTo(
+                    px + random(-1.8, 1.8) * scaleFactor,
+                    py + random(-1.6, 1.6) * scaleFactor
+                );
+                ctx.strokeStyle = withAlpha(lightningDark, random(0.18, 0.34) * pulse);
+                ctx.lineWidth = Math.max(0.3, random(0.38, 0.62) * scaleFactor);
+                ctx.stroke();
+            }
+        }
+
+        ctx.restore();
+    },
+
+    drawPhongLoiWing(ctx, options) {
+        const {
+            side,
+            wingOffsetX,
+            wingOffsetY,
+            wingWidth,
+            wingHeight,
+            glowBlur,
+            flapAmplitude,
+            scaleFactor,
+            spread,
+            time,
+            primaryColor,
+            secondaryColor,
+            auraColor,
+            lightningLight,
+            lightningMid,
+            lightningDark
+        } = options;
+        const upperTipX = wingWidth * (0.88 + (spread * 0.28));
+        const upperTipY = -wingHeight * (0.7 + (spread * 0.18));
+        const lowerTailX = wingWidth * (0.52 + (spread * 0.08));
+        const lowerTailY = wingHeight * (0.16 + (spread * 0.12));
+        const flap = Math.sin((time * (1.02 + (spread * 0.32))) + (side < 0 ? 0.3 : 0.92))
+            * ((flapAmplitude * 0.22) + (spread * flapAmplitude * 0.78));
+        const rootSway = Math.sin(time + (side < 0 ? 0.45 : 1.08)) * wingHeight * (0.02 + (spread * 0.08));
+        const poseOffsetX = wingOffsetX * (0.7 + (spread * 0.42));
+        const poseOffsetY = wingOffsetY + (wingHeight * ((1 - spread) * 0.1)) + rootSway;
+        const wingTilt = 0.54 - (spread * 0.34) + flap;
+        const featherStrokes = [
+            {
+                startX: wingWidth * 0.06,
+                startY: wingHeight * 0.01,
+                controlX: wingWidth * 0.12,
+                controlY: -wingHeight * 0.08,
+                tipX: wingWidth * (0.24 + (spread * 0.04)),
+                tipY: -wingHeight * (0.18 + (spread * 0.08)),
+                color: secondaryColor,
+                alpha: 0.52
+            },
+            {
+                startX: wingWidth * 0.1,
+                startY: wingHeight * 0.02,
+                controlX: wingWidth * 0.22,
+                controlY: -wingHeight * 0.16,
+                tipX: wingWidth * (0.44 + (spread * 0.08)),
+                tipY: -wingHeight * (0.4 + (spread * 0.12)),
+                color: primaryColor,
+                alpha: 0.5
+            },
+            {
+                startX: wingWidth * 0.14,
+                startY: wingHeight * 0.03,
+                controlX: wingWidth * 0.3,
+                controlY: -wingHeight * 0.2,
+                tipX: wingWidth * (0.68 + (spread * 0.16)),
+                tipY: -wingHeight * (0.64 + (spread * 0.18)),
+                color: auraColor,
+                alpha: 0.6
+            },
+            {
+                startX: wingWidth * 0.1,
+                startY: wingHeight * 0.07,
+                controlX: wingWidth * 0.28,
+                controlY: wingHeight * 0.03,
+                tipX: wingWidth * (0.52 + (spread * 0.08)),
+                tipY: wingHeight * (0.04 + (spread * 0.04)),
+                color: primaryColor,
+                alpha: 0.44
+            },
+            {
+                startX: wingWidth * 0.08,
+                startY: wingHeight * 0.09,
+                controlX: wingWidth * 0.22,
+                controlY: wingHeight * 0.16,
+                tipX: wingWidth * (0.42 + (spread * 0.06)),
+                tipY: wingHeight * (0.16 + (spread * 0.08)),
+                color: auraColor,
+                alpha: 0.38
+            }
+        ];
+
+        ctx.save();
+        ctx.scale(side, 1);
+        ctx.translate(poseOffsetX, poseOffsetY);
+        ctx.rotate(wingTilt);
+        ctx.shadowBlur = glowBlur * (0.74 + (spread * 0.32));
+        ctx.shadowColor = withAlpha(auraColor, 0.72);
+
+        const wingGradient = ctx.createLinearGradient(0, -wingHeight * 0.9, upperTipX, lowerTailY);
+        wingGradient.addColorStop(0, withAlpha(secondaryColor, 0.98));
+        wingGradient.addColorStop(0.52, withAlpha(primaryColor, 0.94));
+        wingGradient.addColorStop(1, withAlpha(auraColor, 0.24));
+
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.bezierCurveTo(
+            wingWidth * (0.18 + (spread * 0.03)),
+            -wingHeight * (0.12 + (spread * 0.06)),
+            wingWidth * (0.42 + (spread * 0.12)),
+            -wingHeight * (0.56 + (spread * 0.14)),
+            upperTipX,
+            upperTipY
+        );
+        ctx.quadraticCurveTo(
+            wingWidth * (0.78 + (spread * 0.12)),
+            -wingHeight * (0.36 + (spread * 0.08)),
+            wingWidth * (0.6 + (spread * 0.08)),
+            -wingHeight * (0.06 + (spread * 0.04))
+        );
+        ctx.quadraticCurveTo(
+            wingWidth * (0.72 + (spread * 0.1)),
+            wingHeight * (0.08 + (spread * 0.04)),
+            lowerTailX,
+            lowerTailY
+        );
+        ctx.quadraticCurveTo(
+            wingWidth * (0.28 + (spread * 0.05)),
+            wingHeight * (0.24 + (spread * 0.08)),
+            wingWidth * 0.1,
+            wingHeight * (0.12 + (spread * 0.05))
+        );
+        ctx.quadraticCurveTo(wingWidth * 0.02, wingHeight * 0.05, 0, 0);
+        ctx.closePath();
+        ctx.fillStyle = wingGradient;
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(wingWidth * 0.02, wingHeight * 0.01);
+        ctx.quadraticCurveTo(
+            wingWidth * (0.2 + (spread * 0.04)),
+            -wingHeight * (0.16 + (spread * 0.04)),
+            wingWidth * (0.64 + (spread * 0.12)),
+            -wingHeight * (0.58 + (spread * 0.18))
+        );
+        ctx.quadraticCurveTo(
+            wingWidth * (0.54 + (spread * 0.06)),
+            -wingHeight * (0.28 + (spread * 0.08)),
+            wingWidth * (0.44 + (spread * 0.02)),
+            -wingHeight * 0.02
+        );
+        ctx.quadraticCurveTo(
+            wingWidth * (0.48 + (spread * 0.04)),
+            wingHeight * (0.04 + (spread * 0.03)),
+            wingWidth * 0.16,
+            wingHeight * (0.08 + (spread * 0.04))
+        );
+        ctx.closePath();
+        ctx.fillStyle = withAlpha('#ffffff', 0.16 + (spread * 0.12));
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.bezierCurveTo(
+            wingWidth * 0.18,
+            -wingHeight * 0.1,
+            wingWidth * (0.36 + (spread * 0.12)),
+            -wingHeight * (0.34 + (spread * 0.14)),
+            wingWidth * (0.68 + (spread * 0.16)),
+            -wingHeight * (0.62 + (spread * 0.2))
+        );
+        ctx.strokeStyle = withAlpha('#ffffff', 0.78);
+        ctx.lineWidth = Math.max(0.7, 1.02 * scaleFactor);
+        ctx.stroke();
+
+        featherStrokes.forEach((feather, index) => {
+            ctx.beginPath();
+            ctx.moveTo(feather.startX, feather.startY);
+            ctx.quadraticCurveTo(feather.controlX, feather.controlY, feather.tipX, feather.tipY);
+            ctx.strokeStyle = withAlpha(feather.color, feather.alpha);
+            ctx.lineWidth = Math.max(0.45, (0.9 - (index * 0.08)) * Math.max(scaleFactor, 0.9));
+            ctx.stroke();
+        });
+
+        this.drawPhongLoiWingAura(ctx, {
+            wingWidth,
+            wingHeight,
+            glowBlur,
+            scaleFactor,
+            spread,
+            time,
+            lightningLight,
+            lightningMid,
+            lightningDark
+        });
+
+        ctx.restore();
+    },
+
     drawPhongLoiArtifact(ctx, scaleFactor) {
         if (!this.isArtifactDeployed('PHONG_LOI_SI')) return;
 
@@ -5559,82 +5901,39 @@ const Input = {
         const wingWidth = Math.max(8, (cursorStyle.WING_WIDTH || 15) * scaleFactor);
         const wingHeight = Math.max(10, (cursorStyle.WING_HEIGHT || 20) * scaleFactor);
         const glowBlur = Math.max(8, (cursorStyle.GLOW_BLUR || 16) * scaleFactor);
-        const arcLength = Math.max(4, (cursorStyle.ARC_LENGTH || 9) * scaleFactor);
         const flapAmplitude = Number(cursorStyle.FLAP_AMPLITUDE) || 0.12;
         const time = performance.now() * (Number(cursorStyle.FLAP_SPEED) || 0.0052);
-        const flap = Math.sin(time) * flapAmplitude;
+        const spread = this.getPhongLoiWingSpread();
         const secondaryColor = artifactConfig?.secondaryColor || '#dffeff';
         const primaryColor = artifactConfig?.color || '#9fe8ff';
         const auraColor = artifactConfig?.auraColor || '#89a6ff';
+        const lightningLight = CONFIG.COLORS?.SWORD_GOLD_LIGHT || '#FFF2C2';
+        const lightningMid = CONFIG.COLORS?.SWORD_GOLD_MID || '#E6C87A';
+        const lightningDark = CONFIG.COLORS?.SWORD_GOLD_DARK || '#B8944E';
 
         ctx.save();
         ctx.translate(this.x, this.y);
 
         [-1, 1].forEach(side => {
-            const lift = Math.sin(time + (side < 0 ? 0.45 : 1.1)) * wingHeight * 0.08;
-
-            ctx.save();
-            ctx.scale(side, 1);
-            ctx.translate(wingOffsetX, wingOffsetY + lift);
-            ctx.rotate(0.16 + (flap * 0.8));
-            ctx.shadowBlur = glowBlur;
-            ctx.shadowColor = withAlpha(auraColor, 0.72);
-
-            const wingGradient = ctx.createLinearGradient(0, -wingHeight, wingWidth, wingHeight * 0.18);
-            wingGradient.addColorStop(0, withAlpha(secondaryColor, 0.98));
-            wingGradient.addColorStop(0.46, withAlpha(primaryColor, 0.92));
-            wingGradient.addColorStop(1, withAlpha(auraColor, 0.18));
-
-            ctx.beginPath();
-            ctx.moveTo(0, 0);
-            ctx.quadraticCurveTo(wingWidth * 0.34, -wingHeight * 0.28, wingWidth * 0.96, -wingHeight * 0.92);
-            ctx.quadraticCurveTo(wingWidth * 0.74, -wingHeight * 0.18, wingWidth * 0.58, -wingHeight * 0.02);
-            ctx.quadraticCurveTo(wingWidth * 0.48, wingHeight * 0.16, wingWidth * 0.22, wingHeight * 0.22);
-            ctx.quadraticCurveTo(wingWidth * 0.08, wingHeight * 0.12, 0, 0);
-            ctx.closePath();
-            ctx.fillStyle = wingGradient;
-            ctx.fill();
-
-            ctx.beginPath();
-            ctx.strokeStyle = withAlpha('#ffffff', 0.82);
-            ctx.lineWidth = Math.max(0.7, 1.05 * scaleFactor);
-            ctx.moveTo(0, 0);
-            ctx.quadraticCurveTo(wingWidth * 0.24, -wingHeight * 0.22, wingWidth * 0.72, -wingHeight * 0.72);
-            ctx.stroke();
-
-            ctx.beginPath();
-            ctx.strokeStyle = withAlpha(auraColor, 0.9);
-            ctx.lineWidth = Math.max(0.6, 0.85 * scaleFactor);
-            ctx.moveTo(wingWidth * 0.12, -wingHeight * 0.02);
-            ctx.lineTo(wingWidth * 0.34, -wingHeight * 0.28);
-            ctx.lineTo(wingWidth * 0.22, -wingHeight * 0.18);
-            ctx.lineTo(wingWidth * 0.52, -wingHeight * 0.54);
-            ctx.stroke();
-
-            ctx.beginPath();
-            ctx.strokeStyle = withAlpha(primaryColor, 0.82);
-            ctx.lineWidth = Math.max(0.5, 0.72 * scaleFactor);
-            ctx.moveTo(wingWidth * 0.1, wingHeight * 0.02);
-            ctx.lineTo(wingWidth * 0.18, wingHeight * 0.1);
-            ctx.lineTo(wingWidth * 0.34, wingHeight * 0.02);
-            ctx.stroke();
-
-            ctx.restore();
+            this.drawPhongLoiWing(ctx, {
+                side,
+                wingOffsetX,
+                wingOffsetY,
+                wingWidth,
+                wingHeight,
+                glowBlur,
+                flapAmplitude,
+                scaleFactor,
+                spread,
+                time,
+                primaryColor,
+                secondaryColor,
+                auraColor,
+                lightningLight,
+                lightningMid,
+                lightningDark
+            });
         });
-
-        ctx.save();
-        ctx.shadowBlur = glowBlur * 0.72;
-        ctx.shadowColor = withAlpha(auraColor, 0.66);
-        ctx.strokeStyle = withAlpha(auraColor, 0.76);
-        ctx.lineWidth = Math.max(0.7, 0.95 * scaleFactor);
-        ctx.beginPath();
-        ctx.moveTo(-arcLength, -2.4 * scaleFactor);
-        ctx.lineTo(-arcLength * 0.28, -7.2 * scaleFactor);
-        ctx.lineTo(0, -1.4 * scaleFactor);
-        ctx.lineTo(arcLength * 0.3, -6.4 * scaleFactor);
-        ctx.lineTo(arcLength, -1.6 * scaleFactor);
-        ctx.stroke();
-        ctx.restore();
 
         ctx.restore();
     },
@@ -6802,7 +7101,7 @@ ShopUI = {
             return `
                 <article class="shop-card has-pill-art" style="--slot-accent:${qualityConfig.color}">
                     <div class="slot-badge">${escapeHtml(Input.getItemCategoryLabel(item))}</div>
-                    ${buildPillVisualMarkup(item, qualityConfig)}
+                    ${buildPillVisualMarkup(item, qualityConfig, { context: 'shop' })}
                     <h4>${escapeHtml(Input.getItemDisplayName(item))}</h4>
                     <p class="item-description">${Input.getItemDescriptionMarkup(item)}</p>
                     <div class="slot-meta">Giá: ${formatNumber(item.priceLowStone)} hạ phẩm linh thạch</div>
@@ -7074,7 +7373,7 @@ InventoryUI = {
             return `
                 <article class="inventory-slot has-pill-art" style="--slot-accent:${qualityConfig.color}">
                     <div class="slot-badge">${formatNumber(item.count)}x</div>
-                    ${buildPillVisualMarkup(item, qualityConfig)}
+                    ${buildPillVisualMarkup(item, qualityConfig, { context: 'inventory' })}
                     <h4>${escapeHtml(Input.getItemDisplayName(item))}</h4>
                     <p class="item-description">${Input.getItemDescriptionMarkup(item)}</p>
                     <div class="slot-meta">Bán lại: ${formatNumber(sellPrice)} hạ phẩm linh thạch</div>

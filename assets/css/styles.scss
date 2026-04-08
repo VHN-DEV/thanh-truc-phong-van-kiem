@@ -3526,6 +3526,104 @@ select.shop-control-input {
     }
 }
 
+.pill-visual.is-artifact-phong-loi {
+    filter: drop-shadow(0 14px 24px rgba(0, 0, 0, 0.34));
+
+    .pill-visual__backdrop {
+        background:
+            radial-gradient(circle at 30% 24%, rgba(255, 255, 255, 0.24), transparent 18%),
+            radial-gradient(circle at 50% 52%, color-mix(in srgb, var(--artifact-aura, var(--pill-accent)) 32%, rgba(255, 255, 255, 0.12)), transparent 64%);
+        box-shadow:
+            0 0 30px color-mix(in srgb, var(--artifact-aura, var(--pill-accent)) 28%, transparent),
+            inset 0 0 26px rgba(255, 255, 255, 0.08);
+    }
+
+    .pill-visual__orbit {
+        border-color: color-mix(in srgb, var(--artifact-secondary, var(--pill-accent)) 78%, rgba(255, 255, 255, 0.16));
+    }
+
+    .pill-visual__orbit--inner {
+        inset: 15px;
+        opacity: 0.22;
+    }
+
+    .pill-visual__spark {
+        background: rgba(232, 248, 255, 0.88);
+        box-shadow: 0 0 12px rgba(176, 226, 255, 0.52);
+    }
+}
+
+.phong-loi-art {
+    position: absolute;
+    inset: 2px;
+    z-index: 4;
+    pointer-events: none;
+    filter: drop-shadow(0 0 18px color-mix(in srgb, var(--artifact-aura, var(--pill-accent)) 26%, transparent));
+}
+
+.phong-loi-art__halo {
+    position: absolute;
+    inset: 12px;
+    border-radius: 50%;
+    background:
+        radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.18), transparent 34%),
+        radial-gradient(circle at 50% 52%, color-mix(in srgb, var(--artifact-aura, var(--pill-accent)) 24%, rgba(255, 255, 255, 0.08)), transparent 72%);
+}
+
+.phong-loi-art__svg {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+}
+
+.phong-loi-art__wing-shadow {
+    fill: color-mix(in srgb, var(--artifact-aura, var(--pill-accent)) 52%, transparent);
+    opacity: 0.3;
+}
+
+.phong-loi-art__wing-base {
+    fill: color-mix(in srgb, var(--artifact-secondary, #dffeff) 68%, var(--pill-accent));
+    opacity: 0.96;
+}
+
+.phong-loi-art__wing-inner {
+    fill: rgba(255, 255, 255, 0.56);
+    opacity: 0.92;
+}
+
+.phong-loi-art__wing-vein {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.84);
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    opacity: 0.84;
+    vector-effect: non-scaling-stroke;
+}
+
+.phong-loi-art__shaft {
+    fill: color-mix(in srgb, var(--pill-accent) 62%, rgba(10, 18, 32, 0.84));
+    stroke: rgba(223, 254, 255, 0.72);
+    stroke-width: 1.1;
+}
+
+.phong-loi-art__core {
+    fill: rgba(247, 252, 255, 0.96);
+    stroke: color-mix(in srgb, var(--artifact-aura, var(--pill-accent)) 72%, rgba(255, 255, 255, 0.48));
+    stroke-width: 1.2;
+}
+
+.phong-loi-art__lightning {
+    fill: none;
+    stroke: var(--artifact-lightning-mid, #E6C87A);
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    filter:
+        drop-shadow(0 0 4px color-mix(in srgb, var(--artifact-lightning-light, #FFF2C2) 88%, transparent))
+        drop-shadow(0 0 8px color-mix(in srgb, var(--artifact-lightning-mid, #E6C87A) 72%, transparent));
+}
+
 .material-art {
     position: absolute;
     inset: 12px;
