@@ -551,7 +551,10 @@ const CONFIG = {
             FORTUNE: 11,
             SWORD_ART: 12,
             FLAME_ART: 13,
-            SPECIAL: 14
+            ARTIFACT: 14,
+            INSECT_SKILL: 15,
+            INSECT_ARTIFACT: 16,
+            SPECIAL: 17
         },
         CATEGORY_RATES: {
             NORMAL: { EXP: 0.17, INSIGHT: 0.07, BREAKTHROUGH: 0.10, ATTACK: 0.12, SHIELD_BREAK: 0.05, BERSERK: 0.06, RAGE: 0.09, MANA: 0.08, MAX_MANA: 0.07, REGEN: 0.06, SPEED: 0.08, FORTUNE: 0.05 },
@@ -669,6 +672,39 @@ const CONFIG = {
             buyPriceLowStone: 1000000,
             buttonLabel: "Mua",
             inventoryActionLabel: "Luyện hóa"
+        }
+    },
+    ARTIFACTS: {
+        PHONG_LOI_SI: {
+            fullName: "Phong Lôi Sí",
+            quality: "SUPREME",
+            color: "#9fe8ff",
+            secondaryColor: "#dffeff",
+            auraColor: "#89a6ff",
+            buyPriceLowStone: 1800000,
+            buttonLabel: "Mua",
+            inventoryActionLabel: "Luyện hóa",
+            deployLabel: "Triển khai",
+            stowLabel: "Thu hồi",
+            description: "Phong lôi song sí, sau khi luyện hóa sẽ hóa thành linh dực hộ tại thần niệm, bám hai bên tâm ấn mà tăng thêm vẻ thần tốc.",
+            cursorStyle: {
+                // Khoảng mở ngang của đôi cánh hai bên con trỏ
+                WING_OFFSET_X: 15,
+                // Độ nâng của cánh so với tâm con trỏ
+                WING_OFFSET_Y: -1.5,
+                // Bề ngang cánh chính
+                WING_WIDTH: 15,
+                // Độ cao vút của cánh
+                WING_HEIGHT: 20,
+                // Độ rung nhịp phong lôi
+                FLAP_AMPLITUDE: 0.12,
+                // Tốc độ nhịp rung
+                FLAP_SPEED: 0.0052,
+                // Mức sáng của lôi mang
+                GLOW_BLUR: 16,
+                // Chiều dài điện văn phụ trên cánh
+                ARC_LENGTH: 9
+            }
         }
     },
     INSECT: {

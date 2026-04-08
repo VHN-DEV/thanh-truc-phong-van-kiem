@@ -1821,6 +1821,15 @@ select.shop-control-input {
     gap: 12px;
 }
 
+.attack-skill-tabs {
+    width: fit-content;
+}
+
+.attack-skill-panel {
+    display: grid;
+    gap: 12px;
+}
+
 .attack-skill-state {
     padding: 16px 18px;
     border-radius: 18px;
@@ -2996,6 +3005,52 @@ select.shop-control-input {
         }
     }
 
+    &__core--artifact {
+        width: 18px;
+        height: 36px;
+        border-radius: 999px;
+        background:
+            radial-gradient(circle at 50% 16%, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.12) 22%, transparent 36%),
+            linear-gradient(180deg, rgba(226, 250, 255, 0.98), rgba(151, 232, 255, 0.82) 46%, rgba(53, 112, 182, 0.24) 100%);
+        box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.58),
+            inset 0 -12px 16px rgba(8, 20, 44, 0.22),
+            0 0 18px rgba(151, 232, 255, 0.34);
+    }
+
+    &__wing-artifact {
+        position: absolute;
+        z-index: 4;
+        top: 50%;
+        width: 26px;
+        height: 34px;
+        background:
+            linear-gradient(180deg, rgba(246, 255, 255, 0.96), rgba(159, 232, 255, 0.78) 46%, rgba(137, 166, 255, 0.16) 100%);
+        border: 1px solid rgba(223, 254, 255, 0.34);
+        box-shadow: 0 0 14px rgba(137, 166, 255, 0.24);
+        clip-path: polygon(0 52%, 34% 32%, 100% 0, 78% 40%, 66% 58%, 40% 78%, 18% 68%);
+        transform-origin: 12% 54%;
+
+        &::before {
+            content: '';
+            position: absolute;
+            inset: 5px 4px 6px 8px;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(192, 244, 255, 0.28));
+            clip-path: polygon(0 58%, 30% 34%, 100% 0, 76% 46%, 56% 70%, 18% 80%);
+            opacity: 0.92;
+        }
+    }
+
+    &__wing-artifact--left {
+        left: calc(50% - 24px);
+        transform: translate(-100%, -50%) scaleX(-1) rotate(-8deg);
+    }
+
+    &__wing-artifact--right {
+        left: calc(50% + 24px);
+        transform: translate(0, -50%) rotate(8deg);
+    }
+
     &__sigil {
         width: 18px;
         height: 18px;
@@ -3264,6 +3319,27 @@ select.shop-control-input {
 
         .pill-visual__sigil {
             display: none;
+        }
+    }
+
+    &.is-artifact {
+        .pill-visual__sigil {
+            display: none;
+        }
+
+        .pill-visual__backdrop {
+            background:
+                radial-gradient(circle at 30% 24%, rgba(255, 255, 255, 0.28), transparent 20%),
+                radial-gradient(circle at 50% 55%, rgba(159, 232, 255, 0.26), transparent 66%);
+        }
+
+        .pill-visual__orbit {
+            border-color: rgba(154, 229, 255, 0.42);
+        }
+
+        .pill-visual__orbit--inner {
+            inset: 13px;
+            opacity: 0.32;
         }
     }
 

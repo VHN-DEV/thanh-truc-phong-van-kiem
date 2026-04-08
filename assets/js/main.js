@@ -252,6 +252,7 @@ const ITEM_COLLECTION_TABS = Object.freeze([
     { key: 'NGUYEN_LIEU', label: 'Nguy\u00ean li\u1ec7u' },
     { key: 'TUI', label: 'T\u00fai' },
     { key: 'BI_PHAP', label: 'B\u00ed ph\u00e1p' },
+    { key: 'PHAP_BAO', label: 'Ph\u00e1p b\u1ea3o' },
     { key: 'KHAC', label: 'Kh\u00e1c' }
 ]);
 
@@ -271,7 +272,8 @@ function getItemCollectionTabKey(item) {
     if (category === 'MATERIAL') return 'NGUYEN_LIEU';
     if (['BAG', 'SPIRIT_BAG', 'SPIRIT_HABITAT'].includes(category)) return 'TUI';
     if (category === 'FLAME_ART' && item?.uniqueKey === 'CAN_LAM_BANG_DIEM') return 'KHAC';
-    if (['SWORD_ART', 'FLAME_ART', 'INSECT_SKILL', 'INSECT_ARTIFACT'].includes(category)) return 'BI_PHAP';
+    if (['SWORD_ART', 'FLAME_ART', 'INSECT_SKILL'].includes(category)) return 'BI_PHAP';
+    if (['ARTIFACT', 'INSECT_ARTIFACT'].includes(category)) return 'PHAP_BAO';
 
     return 'KHAC';
 }
@@ -311,6 +313,7 @@ function buildPillVisualMarkup(item, qualityConfig) {
         BAG: { className: 'is-bag', aura: 'rgba(151, 197, 255, 0.26)' },
         SWORD_ART: { className: 'is-sword-art', aura: 'rgba(121, 255, 212, 0.32)' },
         FLAME_ART: { className: 'is-flame-art', aura: 'rgba(104, 217, 255, 0.34)' },
+        ARTIFACT: { className: 'is-artifact', aura: 'rgba(159, 232, 255, 0.34)' },
         INSECT_SKILL: { className: 'is-insect-skill', aura: 'rgba(121, 255, 212, 0.32)' },
         INSECT_ARTIFACT: { className: 'is-insect-artifact', aura: 'rgba(255, 216, 113, 0.34)' },
         SPIRIT_BAG: { className: 'is-spirit-bag', aura: 'rgba(142, 191, 255, 0.30)' },
@@ -351,6 +354,12 @@ function buildPillVisualMarkup(item, qualityConfig) {
                 ? `
                     <span class="pill-visual__core pill-visual__core--flame"></span>
                     <span class="pill-visual__flame-mark"></span>
+                `
+            : visual.className === 'is-artifact'
+                ? `
+                    <span class="pill-visual__core pill-visual__core--artifact"></span>
+                    <span class="pill-visual__wing-artifact pill-visual__wing-artifact--left"></span>
+                    <span class="pill-visual__wing-artifact pill-visual__wing-artifact--right"></span>
                 `
             : visual.className === 'is-insect-artifact'
                 ? `
@@ -532,13 +541,18 @@ const Input = {
         DAI_CANH_KIEM_TRAN: false,
         CAN_LAM_BANG_DIEM: false,
         KHU_TRUNG_THUAT: false,
+        PHONG_LOI_SI: false,
         KY_TRUNG_BANG: false,
         LINH_THU_DAI: false
     },
     cultivationArts: {
         DAI_CANH_KIEM_TRAN: false,
         CAN_LAM_BANG_DIEM: false,
-        KHU_TRUNG_THUAT: false
+        KHU_TRUNG_THUAT: false,
+        PHONG_LOI_SI: false
+    },
+    activeArtifacts: {
+        PHONG_LOI_SI: false
     },
     insectEggs: {},
     tamedInsects: {},
@@ -1183,6 +1197,11 @@ const Input = {
             return false;
         }
 
+        if (item.category === 'ARTIFACT' && this.hasArtifactUnlocked(item.uniqueKey)) {
+            showNotify(`${this.getItemDisplayName(item)} đã được luyện hóa, chỉ cần vào Bảng Bí Pháp để triển khai.`, qualityConfig.color || '#9fe8ff');
+            return false;
+        }
+
         if (item.category === 'INSECT_SKILL' && this.hasKhuTrungThuatUnlocked()) {
             showNotify(`${this.getItemDisplayName(item)} đã lĩnh ngộ xong, không thể lĩnh ngộ thêm.`, qualityConfig.color || '#79ffd4');
             return false;
@@ -1240,6 +1259,12 @@ const Input = {
             case 'FLAME_ART':
                 this.unlockCultivationArt('CAN_LAM_BANG_DIEM');
                 showNotify(`Luyện hóa ${this.getItemDisplayName(item)}: lam diễm đã hiện nơi đầu niệm.`, qualityConfig.color);
+                this.refreshResourceUI();
+                return true;
+            case 'ARTIFACT':
+                this.unlockCultivationArt(item.uniqueKey);
+                this.setArtifactDeployment(item.uniqueKey, true, { silent: true, skipRefresh: true });
+                showNotify(`Luyện hóa ${this.getItemDisplayName(item)}: phong lôi linh dực đã hiện bên tâm ấn.`, qualityConfig.color || '#9fe8ff');
                 this.refreshResourceUI();
                 return true;
             case 'INSECT_SKILL':
@@ -1344,6 +1369,16 @@ const Input = {
             return false;
         }
 
+        if (item.category === 'ARTIFACT' && this.hasArtifactUnlocked(item.uniqueKey)) {
+            showNotify(`${this.getItemDisplayName(item)} đã được luyện hóa, chỉ cần vào Bảng Bí Pháp để triển khai.`, qualityConfig.color || '#9fe8ff');
+            return false;
+        }
+
+        if (item.category === 'INSECT_SKILL' && this.hasKhuTrungThuatUnlocked()) {
+            showNotify(`${this.getItemDisplayName(item)} đã lĩnh ngộ xong, không thể lĩnh ngộ thêm.`, qualityConfig.color || '#79ffd4');
+            return false;
+        }
+
         if (item.category === 'BREAKTHROUGH' && !this.isInventoryItemUsable(item)) {
             showNotify(`Đan này chỉ hợp để đột phá ${item.realmName}`, '#ffd36b');
             return false;
@@ -1396,6 +1431,18 @@ const Input = {
             case 'FLAME_ART':
                 this.unlockCultivationArt('CAN_LAM_BANG_DIEM');
                 showNotify(`Luyện hóa ${this.getItemDisplayName(item)}: lam diễm đã hiện nơi đầu niệm.`, qualityConfig.color);
+                this.refreshResourceUI();
+                return true;
+            case 'ARTIFACT':
+                this.unlockCultivationArt(item.uniqueKey);
+                this.setArtifactDeployment(item.uniqueKey, true, { silent: true, skipRefresh: true });
+                showNotify(`Luyện hóa ${this.getItemDisplayName(item)}: phong lôi linh dực đã hiện bên tâm ấn.`, qualityConfig.color || '#9fe8ff');
+                this.refreshResourceUI();
+                return true;
+            case 'INSECT_SKILL':
+                this.unlockCultivationArt('KHU_TRUNG_THUAT');
+                this.renderAttackModeUI();
+                showNotify(`Lĩnh ngộ ${this.getItemDisplayName(item)}: đã có thể điều linh trùng nhập trận.`, qualityConfig.color);
                 this.refreshResourceUI();
                 return true;
             case 'INSIGHT':
@@ -2537,6 +2584,97 @@ const Input = {
         return this.hasCultivationArt('KHU_TRUNG_THUAT');
     },
 
+    getArtifactConfig(uniqueKey) {
+        return CONFIG.ARTIFACTS?.[uniqueKey] || null;
+    },
+
+    hasArtifactPurchased(uniqueKey) {
+        return Boolean(uniqueKey && this.hasUniquePurchase(uniqueKey));
+    },
+
+    hasArtifactUnlocked(uniqueKey) {
+        return Boolean(uniqueKey && this.hasCultivationArt(uniqueKey));
+    },
+
+    isArtifactDeployed(uniqueKey) {
+        return Boolean(uniqueKey && this.activeArtifacts?.[uniqueKey] && this.hasArtifactUnlocked(uniqueKey));
+    },
+
+    hasKnownArtifact() {
+        return Object.keys(CONFIG.ARTIFACTS || {}).some(uniqueKey => {
+            return this.hasArtifactPurchased(uniqueKey) || this.hasArtifactUnlocked(uniqueKey);
+        });
+    },
+
+    hasActiveArtifact() {
+        return Object.keys(CONFIG.ARTIFACTS || {}).some(uniqueKey => this.isArtifactDeployed(uniqueKey));
+    },
+
+    getActiveArtifactNames() {
+        return Object.keys(CONFIG.ARTIFACTS || {})
+            .filter(uniqueKey => this.isArtifactDeployed(uniqueKey))
+            .map(uniqueKey => this.getArtifactConfig(uniqueKey)?.fullName || uniqueKey);
+    },
+
+    setArtifactDeployment(uniqueKey, nextActive, { silent = false, skipRefresh = false } = {}) {
+        const artifactConfig = this.getArtifactConfig(uniqueKey);
+        if (!artifactConfig || !this.hasArtifactUnlocked(uniqueKey)) return false;
+        if (!this.activeArtifacts) this.activeArtifacts = {};
+
+        const normalized = Boolean(nextActive);
+        if (Boolean(this.activeArtifacts[uniqueKey]) === normalized) return false;
+
+        this.activeArtifacts[uniqueKey] = normalized;
+
+        if (!silent) {
+            showNotify(
+                normalized
+                    ? `${artifactConfig.fullName} đã khai triển bên tâm ấn.`
+                    : `${artifactConfig.fullName} đã thu vào thần hải.`,
+                artifactConfig.color || '#9fe8ff'
+            );
+        }
+
+        if (skipRefresh) {
+            this.renderAttackModeUI();
+        } else {
+            this.refreshResourceUI();
+        }
+
+        return true;
+    },
+
+    toggleArtifactDeployment(uniqueKey) {
+        return this.setArtifactDeployment(uniqueKey, !this.isArtifactDeployed(uniqueKey));
+    },
+
+    getArtifactSkillList() {
+        return Object.entries(CONFIG.ARTIFACTS || {}).map(([uniqueKey, artifactConfig]) => {
+            const purchased = this.hasArtifactPurchased(uniqueKey);
+            const unlocked = this.hasArtifactUnlocked(uniqueKey);
+            const active = this.isArtifactDeployed(uniqueKey);
+
+            return {
+                key: uniqueKey,
+                uniqueKey,
+                name: artifactConfig.fullName || uniqueKey,
+                description: artifactConfig.description || 'Pháp bảo hộ thân có thể triển khai quanh tâm ấn.',
+                purchased,
+                unlocked,
+                active,
+                ready: unlocked,
+                accent: artifactConfig.color || '#9fe8ff',
+                note: active
+                    ? 'Linh dực phong lôi đang hộ tại hai bên con trỏ.'
+                    : unlocked
+                        ? 'Đã luyện hóa, có thể khai triển hoặc thu hồi bất kỳ lúc nào.'
+                        : purchased
+                            ? 'Đã kết duyên nhưng còn chờ luyện hóa trong túi trữ vật.'
+                            : 'Chưa từng kết duyên với pháp bảo này.'
+            };
+        });
+    },
+
     hasKyTrungBang() {
         return this.hasUniquePurchase('KY_TRUNG_BANG');
     },
@@ -2623,13 +2761,15 @@ const Input = {
     renderAttackModeUI() {
         const skillBtn = document.getElementById('btn-skill-list');
         if (skillBtn) {
-            skillBtn.classList.toggle('is-active', this.hasActiveAttackSkill());
-            skillBtn.classList.toggle('is-disabled', !this.hasDaiCanhKiemTranUnlocked() && !this.hasKhuTrungThuatUnlocked());
+            skillBtn.classList.toggle('is-active', this.hasActiveAttackSkill() || this.hasActiveArtifact());
+            skillBtn.classList.toggle('is-disabled', !this.hasDaiCanhKiemTranUnlocked() && !this.hasKhuTrungThuatUnlocked() && !this.hasKnownArtifact());
 
             if (this.attackMode === 'INSECT') {
                 skillBtn.title = `Khu Trùng Thuật - ${formatNumber(this.getCombatReadyInsectCount())} linh trùng xuất trận`;
             } else if (this.attackMode === 'SWORD') {
                 skillBtn.title = `Đại Canh Kiếm Trận - ${formatNumber(this.getAliveSwordStats().alive)} kiếm hộ trận`;
+            } else if (this.hasActiveArtifact()) {
+                skillBtn.title = `Pháp bảo hộ thể - ${this.getActiveArtifactNames().join(', ')}`;
             } else {
                 skillBtn.title = 'Bảng bí pháp';
             }
@@ -3010,6 +3150,7 @@ const Input = {
 
     getUniqueItemConfig(uniqueKey) {
         return CONFIG.SECRET_ARTS?.[uniqueKey]
+            || CONFIG.ARTIFACTS?.[uniqueKey]
             || CONFIG.INSECT?.UNIQUE_ITEMS?.[uniqueKey]
             || null;
     },
@@ -3031,6 +3172,7 @@ const Input = {
             BAG: CONFIG.ITEMS.STORAGE_BAGS,
             SWORD_ART: CONFIG.SECRET_ARTS,
             FLAME_ART: CONFIG.SECRET_ARTS,
+            ARTIFACT: CONFIG.ARTIFACTS,
             INSECT_SKILL: CONFIG.INSECT.UNIQUE_ITEMS,
             INSECT_ARTIFACT: CONFIG.INSECT.UNIQUE_ITEMS,
             SPIRIT_BAG: { HIGH: CONFIG.INSECT.BEAST_BAG }
@@ -3102,6 +3244,7 @@ const Input = {
             SPIRIT_HABITAT: 'Linh thú đại',
             BAG: 'Túi trữ vật',
             SPIRIT_BAG: 'Linh thú đại',
+            ARTIFACT: 'Pháp bảo',
             INSECT_SKILL: 'Trùng đạo bí pháp',
             INSECT_ARTIFACT: 'Kỳ trùng bảo vật',
             INSECT_EGG: 'Trùng noãn'
@@ -3178,6 +3321,8 @@ const Input = {
                 return 'Kiếm đạo bí pháp chỉ truyền một lần. Sau khi lĩnh ngộ mới từ một thanh bản mệnh kiếm hóa thành Đại Canh Kiếm Trận hộ thân như hiện tại.';
             case 'FLAME_ART':
                 return 'Thiên địa linh hỏa Càn Lam Băng Diễm. Sau khi luyện hóa, con trỏ tâm niệm mới hiển hóa thành lam diễm, trước đó chỉ là một điểm sáng nhỏ.';
+            case 'ARTIFACT':
+                return qualityConfig.description || 'Pháp bảo hộ thân sau khi luyện hóa có thể khai triển quanh tâm ấn trong Bảng Bí Pháp.';
             case 'INSECT_SKILL':
                 return 'Bí pháp điều động bầy linh trùng, cho phép thay kiếm trận bằng trùng vân công sát quanh con trỏ.';
             case 'INSECT_ARTIFACT':
@@ -3254,6 +3399,7 @@ const Input = {
             SPIRIT_HABITAT: 'Linh thú đại',
             BAG: 'Túi trữ vật',
             SPIRIT_BAG: 'Linh thú đại',
+            ARTIFACT: 'Pháp bảo',
             SWORD_ART: 'Kiếm đạo bí pháp',
             FLAME_ART: 'Thiên địa linh hỏa',
             INSECT_SKILL: 'Trùng đạo bí pháp',
@@ -3305,6 +3451,8 @@ const Input = {
                 return 'Kiếm đạo bí pháp chỉ truyền một lần. Sau khi lĩnh ngộ mới từ một thanh bản mệnh kiếm hóa thành Đại Canh Kiếm Trận như hiện tại.';
             case 'FLAME_ART':
                 return 'Thiên địa linh hỏa Càn Lam Băng Diễm. Sau khi luyện hóa, con trỏ tâm niệm mới hiển hóa thành lam diễm, trước đó chỉ là một điểm sáng nhỏ.';
+            case 'ARTIFACT':
+                return qualityConfig.description || 'Pháp bảo hộ thân sau khi luyện hóa có thể khai triển quanh tâm ấn trong Bảng Bí Pháp.';
             case 'INSECT_SKILL':
                 return 'Bí pháp điều động bầy linh trùng, cho phép thay kiếm trận bằng trùng vân công sát quanh con trỏ.';
             case 'INSECT_ARTIFACT':
@@ -3496,6 +3644,18 @@ const Input = {
             });
         });
 
+        Object.entries(CONFIG.ARTIFACTS || {}).forEach(([uniqueKey, artifactConfig]) => {
+            items.push({
+                id: `ARTIFACT:${uniqueKey}`,
+                kind: 'UNIQUE',
+                category: 'ARTIFACT',
+                quality: artifactConfig.quality || 'SUPREME',
+                uniqueKey,
+                priceLowStone: artifactConfig.buyPriceLowStone || 0,
+                isOneTime: true
+            });
+        });
+
         QUALITY_ORDER.forEach(quality => {
             const bagConfig = CONFIG.ITEMS.STORAGE_BAGS?.[quality];
             if (!bagConfig) return;
@@ -3569,6 +3729,7 @@ const Input = {
         const shopOrder = {
             SWORD_ART: -5,
             FLAME_ART: -4,
+            ARTIFACT: -3.5,
             INSECT_SKILL: -3,
             INSECT_ARTIFACT: -2,
             SPIRIT_BAG: -1.5,
@@ -3743,7 +3904,7 @@ const Input = {
 
     getInventorySellPrice(item) {
         if (!item) return 0;
-        if (['INSECT_ARTIFACT', 'INSECT_SKILL', 'SWORD_ART', 'FLAME_ART'].includes(item.category)) return 0;
+        if (['ARTIFACT', 'INSECT_ARTIFACT', 'INSECT_SKILL', 'SWORD_ART', 'FLAME_ART'].includes(item.category)) return 0;
 
         const qualityConfig = this.getItemQualityConfig(item);
         const buyPrice = Math.max(0, qualityConfig.buyPriceLowStone || 0);
@@ -3795,6 +3956,11 @@ const Input = {
 
         if (item.category === 'FLAME_ART' && this.hasCanLamBangDiemUnlocked()) {
             showNotify(`${this.getItemDisplayName(item)} đã được luyện hóa vào thần thức.`, qualityConfig.color || '#79d9ff');
+            return false;
+        }
+
+        if (item.category === 'ARTIFACT' && this.hasArtifactUnlocked(item.uniqueKey)) {
+            showNotify(`${this.getItemDisplayName(item)} đã được luyện hóa, chỉ cần vào Bảng Bí Pháp để triển khai.`, qualityConfig.color || '#9fe8ff');
             return false;
         }
 
@@ -3855,6 +4021,12 @@ const Input = {
             case 'FLAME_ART':
                 this.unlockCultivationArt('CAN_LAM_BANG_DIEM');
                 showNotify(`Luyện hóa ${this.getItemDisplayName(item)}: lam diễm đã hiện nơi đầu niệm.`, qualityConfig.color);
+                this.refreshResourceUI();
+                return true;
+            case 'ARTIFACT':
+                this.unlockCultivationArt(item.uniqueKey);
+                this.setArtifactDeployment(item.uniqueKey, true, { silent: true, skipRefresh: true });
+                showNotify(`Luyện hóa ${this.getItemDisplayName(item)}: phong lôi linh dực đã hiện bên tâm ấn.`, qualityConfig.color || '#9fe8ff');
                 this.refreshResourceUI();
                 return true;
             case 'INSECT_SKILL':
@@ -5377,13 +5549,104 @@ const Input = {
         ctx.restore();
     },
 
+    drawPhongLoiArtifact(ctx, scaleFactor) {
+        if (!this.isArtifactDeployed('PHONG_LOI_SI')) return;
+
+        const artifactConfig = this.getArtifactConfig('PHONG_LOI_SI');
+        const cursorStyle = artifactConfig?.cursorStyle || {};
+        const wingOffsetX = Math.max(9, (cursorStyle.WING_OFFSET_X || 15) * scaleFactor);
+        const wingOffsetY = (cursorStyle.WING_OFFSET_Y || -1.5) * scaleFactor;
+        const wingWidth = Math.max(8, (cursorStyle.WING_WIDTH || 15) * scaleFactor);
+        const wingHeight = Math.max(10, (cursorStyle.WING_HEIGHT || 20) * scaleFactor);
+        const glowBlur = Math.max(8, (cursorStyle.GLOW_BLUR || 16) * scaleFactor);
+        const arcLength = Math.max(4, (cursorStyle.ARC_LENGTH || 9) * scaleFactor);
+        const flapAmplitude = Number(cursorStyle.FLAP_AMPLITUDE) || 0.12;
+        const time = performance.now() * (Number(cursorStyle.FLAP_SPEED) || 0.0052);
+        const flap = Math.sin(time) * flapAmplitude;
+        const secondaryColor = artifactConfig?.secondaryColor || '#dffeff';
+        const primaryColor = artifactConfig?.color || '#9fe8ff';
+        const auraColor = artifactConfig?.auraColor || '#89a6ff';
+
+        ctx.save();
+        ctx.translate(this.x, this.y);
+
+        [-1, 1].forEach(side => {
+            const lift = Math.sin(time + (side < 0 ? 0.45 : 1.1)) * wingHeight * 0.08;
+
+            ctx.save();
+            ctx.scale(side, 1);
+            ctx.translate(wingOffsetX, wingOffsetY + lift);
+            ctx.rotate(0.16 + (flap * 0.8));
+            ctx.shadowBlur = glowBlur;
+            ctx.shadowColor = withAlpha(auraColor, 0.72);
+
+            const wingGradient = ctx.createLinearGradient(0, -wingHeight, wingWidth, wingHeight * 0.18);
+            wingGradient.addColorStop(0, withAlpha(secondaryColor, 0.98));
+            wingGradient.addColorStop(0.46, withAlpha(primaryColor, 0.92));
+            wingGradient.addColorStop(1, withAlpha(auraColor, 0.18));
+
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.quadraticCurveTo(wingWidth * 0.34, -wingHeight * 0.28, wingWidth * 0.96, -wingHeight * 0.92);
+            ctx.quadraticCurveTo(wingWidth * 0.74, -wingHeight * 0.18, wingWidth * 0.58, -wingHeight * 0.02);
+            ctx.quadraticCurveTo(wingWidth * 0.48, wingHeight * 0.16, wingWidth * 0.22, wingHeight * 0.22);
+            ctx.quadraticCurveTo(wingWidth * 0.08, wingHeight * 0.12, 0, 0);
+            ctx.closePath();
+            ctx.fillStyle = wingGradient;
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.strokeStyle = withAlpha('#ffffff', 0.82);
+            ctx.lineWidth = Math.max(0.7, 1.05 * scaleFactor);
+            ctx.moveTo(0, 0);
+            ctx.quadraticCurveTo(wingWidth * 0.24, -wingHeight * 0.22, wingWidth * 0.72, -wingHeight * 0.72);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.strokeStyle = withAlpha(auraColor, 0.9);
+            ctx.lineWidth = Math.max(0.6, 0.85 * scaleFactor);
+            ctx.moveTo(wingWidth * 0.12, -wingHeight * 0.02);
+            ctx.lineTo(wingWidth * 0.34, -wingHeight * 0.28);
+            ctx.lineTo(wingWidth * 0.22, -wingHeight * 0.18);
+            ctx.lineTo(wingWidth * 0.52, -wingHeight * 0.54);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.strokeStyle = withAlpha(primaryColor, 0.82);
+            ctx.lineWidth = Math.max(0.5, 0.72 * scaleFactor);
+            ctx.moveTo(wingWidth * 0.1, wingHeight * 0.02);
+            ctx.lineTo(wingWidth * 0.18, wingHeight * 0.1);
+            ctx.lineTo(wingWidth * 0.34, wingHeight * 0.02);
+            ctx.stroke();
+
+            ctx.restore();
+        });
+
+        ctx.save();
+        ctx.shadowBlur = glowBlur * 0.72;
+        ctx.shadowColor = withAlpha(auraColor, 0.66);
+        ctx.strokeStyle = withAlpha(auraColor, 0.76);
+        ctx.lineWidth = Math.max(0.7, 0.95 * scaleFactor);
+        ctx.beginPath();
+        ctx.moveTo(-arcLength, -2.4 * scaleFactor);
+        ctx.lineTo(-arcLength * 0.28, -7.2 * scaleFactor);
+        ctx.lineTo(0, -1.4 * scaleFactor);
+        ctx.lineTo(arcLength * 0.3, -6.4 * scaleFactor);
+        ctx.lineTo(arcLength, -1.6 * scaleFactor);
+        ctx.stroke();
+        ctx.restore();
+
+        ctx.restore();
+    },
+
     drawCursor(ctx, scaleFactor) {
         if (this.hasCanLamBangDiemUnlocked()) {
             this.drawFlame(ctx, scaleFactor);
-            return;
+        } else {
+            this.drawCursorSeed(ctx, scaleFactor);
         }
 
-        this.drawCursorSeed(ctx, scaleFactor);
+        this.drawPhongLoiArtifact(ctx, scaleFactor);
     },
 
     drawFlame(ctx, scaleFactor) {
@@ -6335,7 +6598,7 @@ ShopUI = {
     },
 
     getCategoryOptions() {
-        return ['ALL', 'SWORD_ART', 'FLAME_ART', 'INSECT_SKILL', 'INSECT_ARTIFACT', 'SPIRIT_BAG', 'SPIRIT_HABITAT', 'INSECT_EGG', 'MATERIAL', 'EXP', 'INSIGHT', 'ATTACK', 'SHIELD_BREAK', 'BERSERK', 'RAGE', 'MANA', 'MAX_MANA', 'REGEN', 'SPEED', 'FORTUNE', 'BREAKTHROUGH', 'BAG', 'SPECIAL'];
+        return ['ALL', 'SWORD_ART', 'FLAME_ART', 'ARTIFACT', 'INSECT_SKILL', 'INSECT_ARTIFACT', 'SPIRIT_BAG', 'SPIRIT_HABITAT', 'INSECT_EGG', 'MATERIAL', 'EXP', 'INSIGHT', 'ATTACK', 'SHIELD_BREAK', 'BERSERK', 'RAGE', 'MANA', 'MAX_MANA', 'REGEN', 'SPEED', 'FORTUNE', 'BREAKTHROUGH', 'BAG', 'SPECIAL'];
     },
 
     ensureToolbar() {
@@ -6520,6 +6783,10 @@ ShopUI = {
 
             if (item.category === 'SWORD_ART' || item.category === 'FLAME_ART') {
                 actionLabel = isOwnedUnique ? 'Đã mua' : (canStoreOrUpgrade ? 'Mua' : 'Túi đầy');
+            } else if (item.category === 'ARTIFACT') {
+                actionLabel = isOwnedUnique
+                    ? 'Đã mua'
+                    : (canStoreOrUpgrade ? (CONFIG.ARTIFACTS?.[item.uniqueKey]?.buttonLabel || 'Mua') : 'Túi đầy');
             } else if (item.category === 'SPIRIT_BAG') {
                 actionLabel = canStoreOrUpgrade ? 'Mở rộng' : 'Không hợp lệ';
             } else if (item.category === 'SPIRIT_HABITAT') {
@@ -6795,6 +7062,8 @@ InventoryUI = {
                 ? (CONFIG.SECRET_ARTS?.DAI_CANH_KIEM_TRAN?.inventoryActionLabel || 'Lĩnh ngộ')
                 : item.category === 'FLAME_ART'
                     ? (CONFIG.SECRET_ARTS?.CAN_LAM_BANG_DIEM?.inventoryActionLabel || 'Luyện hóa')
+                    : item.category === 'ARTIFACT'
+                        ? (CONFIG.ARTIFACTS?.[item.uniqueKey]?.inventoryActionLabel || 'Luyện hóa')
                     : item.category === 'INSECT_SKILL'
                         ? (CONFIG.INSECT?.UNIQUE_ITEMS?.KHU_TRUNG_THUAT?.inventoryActionLabel || 'Lĩnh ngộ')
                     : null;
@@ -6872,6 +7141,7 @@ SkillsUI = {
     btnOpen: document.getElementById('btn-skill-list'),
     btnClose: document.getElementById('close-skills'),
     list: document.getElementById('attack-skill-list'),
+    currentTab: 'BI_PHAP',
 
     isOpen() {
         return Boolean(this.overlay && this.overlay.classList.contains('show'));
@@ -6898,12 +7168,34 @@ SkillsUI = {
         }
 
         this.list.addEventListener('pointerdown', (e) => {
+            const tabBtn = e.target.closest('[data-skill-tab]');
+            if (tabBtn) {
+                e.stopPropagation();
+                const nextTab = tabBtn.getAttribute('data-skill-tab') || 'BI_PHAP';
+                if (this.currentTab !== nextTab) {
+                    this.currentTab = nextTab;
+                    this.render();
+                }
+                return;
+            }
+
             const toggleBtn = e.target.closest('[data-insect-toggle]');
             if (toggleBtn) {
                 e.stopPropagation();
                 e.preventDefault();
 
                 if (Input.toggleInsectSpeciesCombatEnabled(toggleBtn.getAttribute('data-insect-toggle'))) {
+                    this.render();
+                }
+                return;
+            }
+
+            const artifactBtn = e.target.closest('[data-artifact-toggle]');
+            if (artifactBtn) {
+                e.stopPropagation();
+                e.preventDefault();
+
+                if (Input.toggleArtifactDeployment(artifactBtn.getAttribute('data-artifact-toggle'))) {
                     this.render();
                 }
                 return;
@@ -6927,6 +7219,15 @@ SkillsUI = {
         this.overlay.addEventListener('pointerdown', (e) => {
             if (e.target === this.overlay) this.close();
         });
+    },
+
+    renderTabsMarkup() {
+        return `
+            <div class="panel-tabs attack-skill-tabs">
+                <button class="panel-tab ${this.currentTab === 'BI_PHAP' ? 'is-active' : ''}" type="button" data-skill-tab="BI_PHAP">Bí pháp</button>
+                <button class="panel-tab ${this.currentTab === 'PHAP_BAO' ? 'is-active' : ''}" type="button" data-skill-tab="PHAP_BAO">Pháp bảo</button>
+            </div>
+        `;
     },
 
     renderInsectRosterMarkup(skill) {
@@ -6968,6 +7269,7 @@ SkillsUI = {
     renderCurrentStateMarkup() {
         const currentMode = Input.attackMode;
         const title = Input.getAttackModeDisplayName(currentMode);
+        const activeArtifacts = Input.getActiveArtifactNames();
         const summary = currentMode === 'INSECT'
             ? `${formatNumber(Input.getCombatReadyInsectCount())} linh trùng đang bày trùng trận.`
             : currentMode === 'SWORD'
@@ -6978,6 +7280,9 @@ SkillsUI = {
             : currentMode === 'SWORD'
                 ? 'Kiếm ý đã khai trận, kiếm quang trấn thủ quanh thân.'
                 : 'Chưa vận chuyển bí pháp nào, kiếm tu đang trở về kiếm thế sơ khởi.';
+        const artifactText = activeArtifacts.length
+            ? `Pháp bảo hộ thể: ${activeArtifacts.join(', ')}.`
+            : 'Hiện chưa triển khai pháp bảo hộ thể nào.';
 
         return `
             <article class="attack-skill-state" style="--skill-accent:${currentMode === 'INSECT' ? '#79ffd4' : '#8fffe0'}">
@@ -6985,14 +7290,40 @@ SkillsUI = {
                 <strong class="attack-skill-state__title">${escapeHtml(title)}</strong>
                 <p class="attack-skill-state__description">${escapeHtml(description)}</p>
                 <span class="attack-skill-state__summary">${escapeHtml(summary)}</span>
+                <span class="attack-skill-state__summary">${escapeHtml(artifactText)}</span>
             </article>
         `;
     },
 
-    render() {
-        if (!this.list) return;
+    renderArtifactStateMarkup() {
+        const artifactList = Input.getArtifactSkillList();
+        const activeArtifacts = artifactList.filter(entry => entry.active);
+        const unlockedCount = artifactList.filter(entry => entry.unlocked).length;
+        const purchasedCount = artifactList.filter(entry => entry.purchased).length;
+        const title = activeArtifacts.length
+            ? activeArtifacts.map(entry => entry.name).join(', ')
+            : 'Chưa triển khai pháp bảo';
+        const description = activeArtifacts.length
+            ? 'Linh dực phong lôi đang bám theo tâm niệm, hộ trì hai bên con trỏ chuột.'
+            : 'Pháp bảo sau khi luyện hóa có thể khai triển hoặc thu hồi ngay trong bảng này.';
+        const summary = unlockedCount > 0
+            ? `${formatNumber(activeArtifacts.length)} đang triển khai | ${formatNumber(unlockedCount)} đã luyện hóa | ${formatNumber(purchasedCount)} đã kết duyên`
+            : purchasedCount > 0
+                ? `Đã kết duyên ${formatNumber(purchasedCount)} pháp bảo nhưng còn chờ luyện hóa`
+                : 'Chưa có pháp bảo nào nhập túi trữ vật';
 
-        this.list.innerHTML = this.renderCurrentStateMarkup() + Input.getAttackSkillList().map(skill => `
+        return `
+            <article class="attack-skill-state" style="--skill-accent:${activeArtifacts[0]?.accent || '#9fe8ff'}">
+                <span class="attack-skill-state__eyebrow">Pháp bảo hộ thể</span>
+                <strong class="attack-skill-state__title">${escapeHtml(title)}</strong>
+                <p class="attack-skill-state__description">${escapeHtml(description)}</p>
+                <span class="attack-skill-state__summary">${escapeHtml(summary)}</span>
+            </article>
+        `;
+    },
+
+    renderAttackSkillsMarkup() {
+        return Input.getAttackSkillList().map(skill => `
             <article class="attack-skill-card ${skill.active ? 'is-active' : ''} ${!skill.unlocked || !skill.ready ? 'is-disabled' : ''}" style="--skill-accent:${skill.accent}">
                 <div class="attack-skill-card__head">
                     <div>
@@ -7012,6 +7343,55 @@ SkillsUI = {
         `).join('');
     },
 
+    renderArtifactCardsMarkup() {
+        return Input.getArtifactSkillList().map(artifact => {
+            const artifactConfig = Input.getArtifactConfig(artifact.uniqueKey) || {};
+            const actionLabel = artifact.active
+                ? (artifactConfig.stowLabel || 'Thu hồi')
+                : (artifactConfig.deployLabel || 'Triển khai');
+            const statusLabel = artifact.active
+                ? 'Đang triển khai'
+                : artifact.unlocked
+                    ? 'Đã luyện hóa'
+                    : artifact.purchased
+                        ? 'Đã mua'
+                        : 'Chưa kết duyên';
+
+            return `
+                <article class="attack-skill-card ${artifact.active ? 'is-active' : ''} ${!artifact.unlocked ? 'is-disabled' : ''}" style="--skill-accent:${artifact.accent}">
+                    <div class="attack-skill-card__head">
+                        <div>
+                            <h4>${escapeHtml(artifact.name)}</h4>
+                            <p>${escapeHtml(artifact.description)}</p>
+                        </div>
+                        <span class="attack-skill-card__tag">${escapeHtml(statusLabel)}</span>
+                    </div>
+                    <div class="attack-skill-card__foot">
+                        <span>${escapeHtml(artifact.note)}</span>
+                        <button class="btn-slot-action" type="button" data-artifact-toggle="${escapeHtml(artifact.uniqueKey)}" ${artifact.unlocked ? '' : 'disabled'}>
+                            ${escapeHtml(actionLabel)}
+                        </button>
+                    </div>
+                </article>
+            `;
+        }).join('');
+    },
+
+    render() {
+        if (!this.list) return;
+
+        const panelMarkup = this.currentTab === 'PHAP_BAO'
+            ? this.renderArtifactStateMarkup() + this.renderArtifactCardsMarkup()
+            : this.renderCurrentStateMarkup() + this.renderAttackSkillsMarkup();
+
+        this.list.innerHTML = `
+            ${this.renderTabsMarkup()}
+            <div class="attack-skill-panel">
+                ${panelMarkup}
+            </div>
+        `;
+    },
+
     open() {
         this.render();
         openPopup(this.overlay);
@@ -7020,29 +7400,6 @@ SkillsUI = {
     close() {
         closePopup(this.overlay);
     }
-};
-
-SkillsUI.render = function () {
-    if (!this.list) return;
-
-    this.list.innerHTML = this.renderCurrentStateMarkup() + Input.getAttackSkillList().map(skill => `
-        <article class="attack-skill-card ${skill.active ? 'is-active' : ''} ${!skill.unlocked || !skill.ready ? 'is-disabled' : ''}" style="--skill-accent:${skill.accent}">
-            <div class="attack-skill-card__head">
-                <div>
-                    <h4>${escapeHtml(skill.name)}</h4>
-                    <p>${escapeHtml(skill.description)}</p>
-                </div>
-                <span class="attack-skill-card__tag">${skill.active ? 'Đang vận chuyển' : (skill.unlocked ? 'Đã lĩnh ngộ' : 'Chưa lĩnh ngộ')}</span>
-            </div>
-            <div class="attack-skill-card__foot">
-                <span>${escapeHtml(skill.note)}</span>
-                <button class="btn-slot-action" type="button" data-attack-skill="${escapeHtml(skill.key)}" ${skill.unlocked && skill.ready ? '' : 'disabled'}>
-                    ${skill.active ? 'Thu hồi' : 'Khai triển'}
-                </button>
-            </div>
-            ${this.renderInsectRosterMarkup(skill)}
-        </article>
-    `).join('');
 };
 
 InsectBookUI = {
