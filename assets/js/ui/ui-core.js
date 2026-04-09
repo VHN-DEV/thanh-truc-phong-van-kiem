@@ -6,7 +6,9 @@ let SkillsUI = null;
 let InsectBookUI = null;
 
 const TEXT_REPAIR_ATTRIBUTES = Object.freeze(['title', 'aria-label', 'placeholder', 'alt']);
-const BROKEN_TEXT_PATTERN = /(?:Ã.|Â.|Ä.|Ă.|Æ.|á.|â.|ð|Ð|Ñ|�)/;
+// Match common mojibake prefixes without flagging valid Vietnamese words
+// such as "pháp", "phẩm", or "đột phá".
+const BROKEN_TEXT_PATTERN = /(?:Ã[\u0080-\u00ff]|Â[\u0080-\u00ff]|Ä[\u0080-\u00ff]|Ă[\u0080-\u00ff]|Æ[\u0080-\u00ff]|á[\u0080-\u00ff]|â(?:€|€¦|€“|€”|€¢|€˜|€™|€œ|€�)|ð[\u0080-\u00ff]?|Ð[\u0080-\u00ff]|Ñ[\u0080-\u00ff]|�)/u;
 let legacyTextRepairObserver = null;
 
 const UI_TEXT = Object.freeze({
