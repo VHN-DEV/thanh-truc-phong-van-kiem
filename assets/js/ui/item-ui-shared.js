@@ -31,6 +31,23 @@ function getItemCollectionTabKey(item) {
 }
 
 function buildMaterialArtMarkup(materialKey) {
+    if (materialKey === 'KIM_LOI_TRUC_ROOT') {
+        return `
+            <div class="kim-loi-truc-mau-art" aria-hidden="true">
+                <span class="kim-loi-truc-mau-art__halo"></span>
+                <span class="kim-loi-truc-mau-art__core"></span>
+                <span class="kim-loi-truc-mau-art__stalk kim-loi-truc-mau-art__stalk--main"></span>
+                <span class="kim-loi-truc-mau-art__stalk kim-loi-truc-mau-art__stalk--side"></span>
+                <span class="kim-loi-truc-mau-art__leaf kim-loi-truc-mau-art__leaf--left"></span>
+                <span class="kim-loi-truc-mau-art__leaf kim-loi-truc-mau-art__leaf--right"></span>
+                <span class="kim-loi-truc-mau-art__root kim-loi-truc-mau-art__root--left"></span>
+                <span class="kim-loi-truc-mau-art__root kim-loi-truc-mau-art__root--right"></span>
+                <span class="kim-loi-truc-mau-art__spark kim-loi-truc-mau-art__spark--1"></span>
+                <span class="kim-loi-truc-mau-art__spark kim-loi-truc-mau-art__spark--2"></span>
+            </div>
+        `;
+    }
+
     const slug = String(materialKey || 'material')
         .trim()
         .toLowerCase()
@@ -44,6 +61,23 @@ function buildMaterialArtMarkup(materialKey) {
             <span class="material-art__piece material-art__piece--2"></span>
             <span class="material-art__piece material-art__piece--3"></span>
             <span class="material-art__piece material-art__piece--4"></span>
+        </div>
+    `;
+}
+
+function buildChuongThienBinhVisualMarkup() {
+    return `
+        <div class="chuong-thien-binh-art" aria-hidden="true">
+            <span class="chuong-thien-binh-art__halo"></span>
+            <span class="chuong-thien-binh-art__ring chuong-thien-binh-art__ring--outer"></span>
+            <span class="chuong-thien-binh-art__ring chuong-thien-binh-art__ring--inner"></span>
+            <span class="chuong-thien-binh-art__bottle"></span>
+            <span class="chuong-thien-binh-art__neck"></span>
+            <span class="chuong-thien-binh-art__mouth"></span>
+            <span class="chuong-thien-binh-art__liquid"></span>
+            <span class="chuong-thien-binh-art__sigil"></span>
+            <span class="chuong-thien-binh-art__droplet chuong-thien-binh-art__droplet--1"></span>
+            <span class="chuong-thien-binh-art__droplet chuong-thien-binh-art__droplet--2"></span>
         </div>
     `;
 }
@@ -130,14 +164,22 @@ function buildPillVisualMarkup(item, qualityConfig, options = {}) {
             ? (CONFIG.SWORD?.ARTIFACT_ITEM || null)
             : null;
     const isPhongLoiArtifact = item.category === 'ARTIFACT' && item.uniqueKey === 'PHONG_LOI_SI';
+    const isChuongThienBinhArtifact = item.category === 'ARTIFACT' && item.uniqueKey === 'CHUONG_THIEN_BINH';
     const isThanhTrucSwordArtifact = item.category === 'SWORD_ARTIFACT';
+    const isKimLoiTrucMau = item.category === 'MATERIAL' && item.materialKey === 'KIM_LOI_TRUC_ROOT';
     const visualClasses = [visual.className];
 
     if (isPhongLoiArtifact) {
         visualClasses.push('is-artifact-phong-loi');
     }
+    if (isChuongThienBinhArtifact) {
+        visualClasses.push('is-artifact-chuong-thien-binh');
+    }
     if (isThanhTrucSwordArtifact) {
         visualClasses.push('is-artifact-thanh-truc');
+    }
+    if (isKimLoiTrucMau) {
+        visualClasses.push('is-material-kim-loi-root');
     }
     if (visual.rainbow) {
         visualClasses.push('is-rainbow-bag');
@@ -145,6 +187,8 @@ function buildPillVisualMarkup(item, qualityConfig, options = {}) {
 
     const centerMarkup = isPhongLoiArtifact
         ? buildPhongLoiArtifactVisualMarkup()
+        : isChuongThienBinhArtifact
+        ? buildChuongThienBinhVisualMarkup()
         : isThanhTrucSwordArtifact
         ? buildThanhTrucSwordArtifactVisualMarkup()
         : visual.className === 'is-insect-egg'

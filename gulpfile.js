@@ -33,7 +33,8 @@ gulp.task('build-js', function () {
     'assets/js/ui/settings-ui.js',
     'assets/js/ui/cultivation-panels-ui.js',
     'assets/js/game-progress.js',
-    'assets/js/main.js'
+    'assets/js/main.js',
+    'assets/js/thunder-bamboo-system.js'
   ])
     .pipe(concat('scripts.js'))
     .pipe(terser())

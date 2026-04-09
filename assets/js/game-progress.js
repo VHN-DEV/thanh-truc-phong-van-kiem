@@ -1,15 +1,19 @@
 const GameProgress = {
     storageKey: 'thanh_truc_progress',
-    schemaVersion: 2,
+    schemaVersion: 3,
     saveTimer: null,
+    visibilityFlushTimer: null,
+    visibilityFlushDelayMs: 80,
     isRestoring: false,
     isResetting: false,
     lifecycleBound: false,
+    isDirty: false,
 
     getDefaultUniquePurchases() {
         return {
             DAI_CANH_KIEM_TRAN: false,
             CAN_LAM_BANG_DIEM: false,
+            CHUONG_THIEN_BINH: false,
             KHU_TRUNG_THUAT: false,
             PHONG_LOI_SI: false,
             KY_TRUNG_BANG: false,
@@ -94,6 +98,7 @@ const GameProgress = {
         if (this.lifecycleBound) return;
 
         const flush = () => {
+            if (!this.isDirty) return;
             this.flushSave();
         };
 
@@ -101,7 +106,7 @@ const GameProgress = {
         window.addEventListener('pagehide', flush);
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'hidden') {
-                this.flushSave();
+                this.scheduleVisibilityFlush();
             }
         });
 
@@ -158,6 +163,14 @@ const GameProgress = {
                 uniqueKey: entry.uniqueKey || null,
                 speciesKey: entry.speciesKey || null,
                 materialKey: entry.materialKey || null,
+                instanceKey: entry.instanceKey || null,
+                source: typeof entry.source === 'string' ? entry.source : null,
+                nurtureYears: Math.max(0, Math.floor(Number(entry.nurtureYears) || 0)),
+                nurtureProgressMs: Math.max(0, Math.floor(Number(entry.nurtureProgressMs) || 0)),
+                isNurturing: Boolean(entry.isNurturing),
+                refineYears: Math.max(0, Math.floor(Number(entry.refineYears) || 0)),
+                powerRating: Math.max(0, Math.floor(Number(entry.powerRating) || 0)),
+                sellPriceLowStone: Math.max(0, Math.floor(Number(entry.sellPriceLowStone) || 0)),
                 count
             };
         });
@@ -234,15 +247,18 @@ const GameProgress = {
             beastBagCapacityMigrated: Input.beastBagCapacityMigrated,
             bonusStats: Input.bonusStats,
             breakthroughBonus: Input.breakthroughBonus,
-            isReadyToBreak: Input.isReadyToBreak
+            isReadyToBreak: Input.isReadyToBreak,
+            chuongThienBinhCooldownEndsAt: Math.max(0, Math.floor(Number(Input.chuongThienBinhCooldownEndsAt) || 0))
         };
     },
 
     saveNow() {
         if (this.isRestoring || this.isResetting) return false;
+        if (!this.isDirty) return true;
 
         try {
             localStorage.setItem(this.storageKey, serializeForStorage(this.createSnapshot()));
+            this.isDirty = false;
             return true;
         } catch (error) {
             console.error('Không thể lưu tiến trình tu luyện:', error);
@@ -252,6 +268,7 @@ const GameProgress = {
 
     requestSave({ immediate = false } = {}) {
         if (this.isRestoring || this.isResetting) return false;
+        this.isDirty = true;
 
         if (immediate) {
             return this.flushSave();
@@ -269,7 +286,22 @@ const GameProgress = {
         return true;
     },
 
+    scheduleVisibilityFlush() {
+        if (this.isRestoring || this.isResetting || !this.isDirty || this.visibilityFlushTimer) return false;
+
+        this.visibilityFlushTimer = setTimeout(() => {
+            this.visibilityFlushTimer = null;
+            this.flushSave();
+        }, this.visibilityFlushDelayMs);
+
+        return true;
+    },
+
     flushSave() {
+        if (this.visibilityFlushTimer) {
+            clearTimeout(this.visibilityFlushTimer);
+            this.visibilityFlushTimer = null;
+        }
         if (this.saveTimer) {
             clearTimeout(this.saveTimer);
             this.saveTimer = null;
@@ -279,12 +311,17 @@ const GameProgress = {
     },
 
     clearStored() {
+        if (this.visibilityFlushTimer) {
+            clearTimeout(this.visibilityFlushTimer);
+            this.visibilityFlushTimer = null;
+        }
         if (this.saveTimer) {
             clearTimeout(this.saveTimer);
             this.saveTimer = null;
         }
 
         localStorage.removeItem(this.storageKey);
+        this.isDirty = false;
     },
 
     applyFreshStart() {
@@ -321,6 +358,7 @@ const GameProgress = {
             Input.bonusStats = this.getDefaultBonusStats();
             Input.breakthroughBonus = 0;
             Input.isReadyToBreak = false;
+            Input.chuongThienBinhCooldownEndsAt = 0;
             Input.combo = 0;
             Input.rage = 0;
             Input.maxRage = Math.max(1, parseInt(CONFIG.ULTIMATE.MAX_RAGE, 10) || 100);
@@ -411,6 +449,7 @@ const GameProgress = {
                 ...this.sanitizeNumberMap(parsed.bonusStats, { min: 0, integer: false })
             };
             Input.breakthroughBonus = Math.max(0, Number(parsed.breakthroughBonus) || 0);
+            Input.chuongThienBinhCooldownEndsAt = Math.max(0, Math.floor(Number(parsed.chuongThienBinhCooldownEndsAt) || 0));
             Input.combo = 0;
             Input.rage = Math.max(0, Number(parsed.rage) || 0);
             Input.maxRage = Math.max(1, parseInt(CONFIG.ULTIMATE.MAX_RAGE, 10) || 100);

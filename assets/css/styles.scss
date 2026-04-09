@@ -5621,3 +5621,412 @@ select.shop-control-input {
         text-align: center;
     }
 }
+
+@keyframes chuong-thien-binh-halo {
+    0%,
+    100% {
+        opacity: 0.44;
+        transform: scale(0.94);
+    }
+
+    50% {
+        opacity: 0.92;
+        transform: scale(1.08);
+    }
+}
+
+@keyframes chuong-thien-binh-ring {
+    from {
+        transform: translate(-50%, -50%) rotate(0deg);
+    }
+
+    to {
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
+}
+
+@keyframes chuong-thien-binh-liquid {
+    0%,
+    100% {
+        transform: translateX(-50%) scaleY(0.94);
+        opacity: 0.82;
+    }
+
+    50% {
+        transform: translateX(-50%) scaleY(1.04);
+        opacity: 1;
+    }
+}
+
+@keyframes chuong-thien-binh-droplet {
+    0%,
+    100% {
+        opacity: 0.24;
+        transform: translateY(0) scale(0.82);
+    }
+
+    40% {
+        opacity: 0.86;
+        transform: translateY(-4px) scale(1);
+    }
+}
+
+@keyframes kim-loi-truc-pulse {
+    0%,
+    100% {
+        opacity: 0.46;
+        transform: scale(0.96);
+    }
+
+    50% {
+        opacity: 0.94;
+        transform: scale(1.08);
+    }
+}
+
+@keyframes kim-loi-truc-spark {
+    0%,
+    100% {
+        opacity: 0.24;
+        transform: scaleY(0.86);
+    }
+
+    45% {
+        opacity: 0.92;
+        transform: scaleY(1.06);
+    }
+}
+
+.pill-visual.is-artifact-chuong-thien-binh {
+    --artifact-aura: #8cf4bc;
+    --artifact-secondary: #c9ffd9;
+    --pill-aura: rgba(140, 244, 188, 0.48);
+
+    .pill-visual__backdrop {
+        background:
+            radial-gradient(circle at 30% 24%, rgba(255, 255, 255, 0.36), transparent 20%),
+            radial-gradient(circle at 50% 54%, rgba(143, 255, 197, 0.28), transparent 48%),
+            radial-gradient(circle at 50% 56%, rgba(31, 76, 53, 0.48), transparent 78%);
+    }
+
+    .pill-visual__orbit {
+        border-color: rgba(182, 255, 214, 0.56);
+    }
+
+    .pill-visual__spark {
+        background: rgba(245, 255, 248, 0.92);
+        box-shadow: 0 0 12px rgba(143, 255, 197, 0.56);
+    }
+}
+
+.chuong-thien-binh-art {
+    position: absolute;
+    inset: 3px;
+    z-index: 4;
+    pointer-events: none;
+    filter: drop-shadow(0 0 18px color-mix(in srgb, var(--artifact-aura, var(--pill-accent)) 30%, transparent));
+}
+
+.chuong-thien-binh-art__halo,
+.chuong-thien-binh-art__ring,
+.chuong-thien-binh-art__bottle,
+.chuong-thien-binh-art__neck,
+.chuong-thien-binh-art__mouth,
+.chuong-thien-binh-art__liquid,
+.chuong-thien-binh-art__sigil,
+.chuong-thien-binh-art__droplet {
+    position: absolute;
+    display: block;
+}
+
+.chuong-thien-binh-art__halo {
+    inset: 12px;
+    border-radius: 50%;
+    background:
+        radial-gradient(circle at 50% 50%, rgba(235, 255, 240, 0.24), transparent 34%),
+        radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--artifact-aura, var(--pill-accent)) 34%, rgba(255, 255, 255, 0.12)), transparent 72%);
+    animation: chuong-thien-binh-halo 3s ease-in-out infinite;
+}
+
+.chuong-thien-binh-art__ring {
+    left: 50%;
+    top: 50%;
+    border-radius: 50%;
+    border: 1px solid rgba(221, 255, 229, 0.48);
+    transform: translate(-50%, -50%);
+}
+
+.chuong-thien-binh-art__ring--outer {
+    width: 56px;
+    height: 56px;
+    border-style: solid;
+    opacity: 0.42;
+    animation: chuong-thien-binh-ring 10s linear infinite;
+}
+
+.chuong-thien-binh-art__ring--inner {
+    width: 44px;
+    height: 44px;
+    border-style: dashed;
+    opacity: 0.6;
+    animation: chuong-thien-binh-ring 7s linear infinite reverse;
+}
+
+.chuong-thien-binh-art__bottle {
+    left: 50%;
+    top: 50%;
+    width: 32px;
+    height: 42px;
+    transform: translate(-50%, -42%);
+    border-radius: 42% 42% 38% 38% / 28% 28% 58% 58%;
+    background:
+        radial-gradient(circle at 34% 22%, rgba(255, 255, 255, 0.84), transparent 18%),
+        linear-gradient(180deg, rgba(228, 255, 235, 0.96), rgba(133, 230, 164, 0.88) 34%, rgba(34, 72, 53, 0.94) 100%);
+    border: 1px solid rgba(228, 255, 235, 0.68);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.46),
+        inset 0 -10px 14px rgba(18, 42, 29, 0.28),
+        0 0 14px rgba(140, 244, 188, 0.28);
+}
+
+.chuong-thien-binh-art__neck {
+    left: 50%;
+    top: 22px;
+    width: 12px;
+    height: 11px;
+    transform: translateX(-50%);
+    border-radius: 8px 8px 4px 4px;
+    background: linear-gradient(180deg, rgba(228, 255, 235, 0.94), rgba(66, 128, 91, 0.92));
+    border: 1px solid rgba(228, 255, 235, 0.52);
+}
+
+.chuong-thien-binh-art__mouth {
+    left: 50%;
+    top: 18px;
+    width: 18px;
+    height: 5px;
+    transform: translateX(-50%);
+    border-radius: 999px;
+    background: linear-gradient(90deg, rgba(235, 255, 240, 0.96), rgba(126, 229, 162, 0.74), rgba(235, 255, 240, 0.96));
+    box-shadow: 0 0 10px rgba(188, 255, 214, 0.28);
+}
+
+.chuong-thien-binh-art__liquid {
+    left: 50%;
+    bottom: 20px;
+    width: 18px;
+    height: 20px;
+    transform: translateX(-50%);
+    border-radius: 0 0 10px 10px;
+    background:
+        radial-gradient(circle at 50% 20%, rgba(238, 255, 244, 0.62), transparent 26%),
+        linear-gradient(180deg, rgba(202, 255, 214, 0.96), rgba(84, 220, 119, 0.92) 52%, rgba(26, 95, 49, 0.94) 100%);
+    box-shadow:
+        inset 0 2px 0 rgba(255, 255, 255, 0.36),
+        0 0 10px rgba(144, 255, 180, 0.24);
+    animation: chuong-thien-binh-liquid 2.4s ease-in-out infinite;
+}
+
+.chuong-thien-binh-art__sigil {
+    left: 50%;
+    top: 45px;
+    width: 14px;
+    height: 14px;
+    transform: translate(-50%, -50%) rotate(45deg);
+    border-radius: 4px;
+    border: 1px solid rgba(238, 255, 244, 0.76);
+    box-shadow: 0 0 10px rgba(201, 255, 217, 0.26);
+
+    &::before,
+    &::after {
+        content: '';
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        background: rgba(241, 255, 246, 0.88);
+        transform: translate(-50%, -50%) rotate(-45deg);
+    }
+
+    &::before {
+        width: 2px;
+        height: 8px;
+        border-radius: 999px;
+    }
+
+    &::after {
+        width: 8px;
+        height: 2px;
+        border-radius: 999px;
+    }
+}
+
+.chuong-thien-binh-art__droplet {
+    width: 8px;
+    height: 12px;
+    border-radius: 60% 60% 70% 70% / 38% 38% 62% 62%;
+    background: linear-gradient(180deg, rgba(235, 255, 240, 0.92), rgba(123, 236, 160, 0.24));
+    box-shadow: 0 0 10px rgba(173, 255, 203, 0.24);
+    animation: chuong-thien-binh-droplet 2.2s ease-in-out infinite;
+}
+
+.chuong-thien-binh-art__droplet--1 {
+    right: 16px;
+    top: 24px;
+}
+
+.chuong-thien-binh-art__droplet--2 {
+    left: 16px;
+    bottom: 20px;
+    animation-delay: -1.1s;
+}
+
+.pill-visual.is-material-kim-loi-root {
+    --kim-loi-glow: #93ffbf;
+    --kim-loi-deep: #2c744d;
+    --pill-aura: rgba(147, 255, 191, 0.46);
+
+    .pill-visual__backdrop {
+        background:
+            radial-gradient(circle at 34% 24%, rgba(255, 255, 255, 0.34), transparent 20%),
+            radial-gradient(circle at 50% 56%, rgba(135, 255, 185, 0.28), transparent 48%),
+            radial-gradient(circle at 50% 62%, rgba(28, 74, 48, 0.58), transparent 82%);
+    }
+
+    .pill-visual__orbit {
+        border-color: rgba(186, 255, 210, 0.54);
+    }
+
+    .pill-visual__spark {
+        background: rgba(245, 255, 248, 0.94);
+        box-shadow: 0 0 12px rgba(147, 255, 191, 0.56);
+    }
+}
+
+.kim-loi-truc-mau-art {
+    position: absolute;
+    inset: 5px;
+    z-index: 4;
+    pointer-events: none;
+    filter: drop-shadow(0 0 18px color-mix(in srgb, var(--kim-loi-glow, var(--pill-accent)) 30%, transparent));
+}
+
+.kim-loi-truc-mau-art__halo,
+.kim-loi-truc-mau-art__core,
+.kim-loi-truc-mau-art__stalk,
+.kim-loi-truc-mau-art__leaf,
+.kim-loi-truc-mau-art__root,
+.kim-loi-truc-mau-art__spark {
+    position: absolute;
+    display: block;
+}
+
+.kim-loi-truc-mau-art__halo {
+    inset: 12px;
+    border-radius: 50%;
+    background:
+        radial-gradient(circle at 50% 50%, rgba(241, 255, 233, 0.18), transparent 32%),
+        radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--kim-loi-glow, var(--pill-accent)) 34%, rgba(255, 255, 255, 0.12)), transparent 74%);
+    animation: kim-loi-truc-pulse 3.4s ease-in-out infinite;
+}
+
+.kim-loi-truc-mau-art__core {
+    left: 50%;
+    bottom: 17px;
+    width: 22px;
+    height: 20px;
+    transform: translateX(-50%);
+    border-radius: 55% 55% 48% 48% / 44% 44% 56% 56%;
+    background:
+        radial-gradient(circle at 40% 24%, rgba(248, 255, 240, 0.76), transparent 24%),
+        linear-gradient(180deg, rgba(228, 255, 210, 0.94), rgba(134, 232, 143, 0.86) 42%, rgba(40, 103, 58, 0.96) 100%);
+    border: 1px solid rgba(231, 255, 217, 0.58);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.38),
+        0 0 12px rgba(147, 255, 191, 0.24);
+}
+
+.kim-loi-truc-mau-art__stalk {
+    bottom: 28px;
+    border-radius: 999px;
+    background:
+        linear-gradient(180deg, rgba(241, 255, 232, 0.96), rgba(173, 255, 181, 0.86) 18%, rgba(83, 196, 102, 0.9) 60%, rgba(34, 86, 51, 0.96) 100%);
+    border: 1px solid rgba(233, 255, 220, 0.58);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.kim-loi-truc-mau-art__stalk--main {
+    left: 50%;
+    width: 11px;
+    height: 34px;
+    transform: translateX(-50%);
+}
+
+.kim-loi-truc-mau-art__stalk--side {
+    left: 50%;
+    width: 8px;
+    height: 28px;
+    transform: translateX(7px) rotate(10deg);
+    opacity: 0.82;
+}
+
+.kim-loi-truc-mau-art__leaf {
+    top: 28px;
+    width: 20px;
+    height: 11px;
+    border-radius: 100% 10% 100% 10% / 100% 10% 100% 10%;
+    background: linear-gradient(180deg, rgba(231, 255, 220, 0.92), rgba(97, 210, 115, 0.84) 56%, rgba(40, 103, 58, 0.92));
+    box-shadow: 0 0 10px rgba(147, 255, 191, 0.18);
+}
+
+.kim-loi-truc-mau-art__leaf--left {
+    left: 17px;
+    transform: rotate(-26deg);
+}
+
+.kim-loi-truc-mau-art__leaf--right {
+    right: 16px;
+    transform: scaleX(-1) rotate(-18deg);
+}
+
+.kim-loi-truc-mau-art__root {
+    bottom: 13px;
+    width: 14px;
+    height: 12px;
+    border-left: 2px solid rgba(228, 255, 210, 0.82);
+    border-bottom: 2px solid rgba(171, 255, 180, 0.52);
+    border-radius: 0 0 0 12px;
+    opacity: 0.82;
+}
+
+.kim-loi-truc-mau-art__root--left {
+    left: 26px;
+    transform: rotate(24deg);
+}
+
+.kim-loi-truc-mau-art__root--right {
+    right: 25px;
+    transform: scaleX(-1) rotate(16deg);
+}
+
+.kim-loi-truc-mau-art__spark {
+    width: 11px;
+    height: 20px;
+    background: linear-gradient(180deg, rgba(249, 255, 238, 0.94), rgba(237, 254, 200, 0.84) 44%, rgba(175, 255, 164, 0.18) 100%);
+    clip-path: polygon(54% 0, 100% 0, 64% 44%, 92% 44%, 30% 100%, 46% 60%, 14% 60%);
+    box-shadow: 0 0 12px rgba(239, 255, 170, 0.3);
+    mix-blend-mode: screen;
+    animation: kim-loi-truc-spark 1.7s steps(2, end) infinite;
+}
+
+.kim-loi-truc-mau-art__spark--1 {
+    left: 18px;
+    top: 20px;
+    transform: rotate(-18deg);
+}
+
+.kim-loi-truc-mau-art__spark--2 {
+    right: 17px;
+    top: 32px;
+    transform: rotate(16deg);
+    animation-delay: -0.8s;
+}

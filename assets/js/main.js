@@ -8,7 +8,9 @@ let scaleFactor = 1;
 let width, height;
 let frameCount = 0;
 let lastTime = performance.now();
+let frameNow = lastTime;
 let visualParticles = [];
+let swordRenderBuffer = [];
 
 function trimVisualParticles(limit = 320) {
     const safeLimit = Math.max(0, Math.floor(limit || 0));
@@ -118,6 +120,10 @@ function formatNumber(value) {
     if (Number.isNaN(numericValue)) return '0';
     if (!Number.isFinite(numericValue)) return '∞';
     return numberFormatter.format(Math.floor(numericValue));
+}
+
+function getFrameNow() {
+    return frameNow;
 }
 
 function formatBoostPercent(multiplier) {
@@ -8156,6 +8162,14 @@ Input.useInventoryItem = function (itemKey) {
     return true;
 };
 
+const hiddenSwordInputState = Object.assign(Object.create(Input), {
+    isAttacking: false,
+    isUltMode: false,
+    ultimatePhase: 'idle',
+    attackMode: 'SWORD',
+    ultimateMode: null
+});
+
 document.getElementById('btn-form').addEventListener('pointerdown', (e) => {
     e.stopPropagation();
     e.preventDefault();
@@ -8484,8 +8498,10 @@ function renderCursor() {
 function animate() {
     // 1. Tính Delta Time (dt) tính bằng giây
     const now = performance.now();
-    const dt = (now - lastTime) / 1000; // Chia 1000 để ra giây
+    const dt = (now - lastTime) / 1000;
     lastTime = now;
+    frameNow = now;
+    Input.lastFrameTime = now;
 
     frameCount++;
 
@@ -8508,7 +8524,7 @@ function animate() {
 
     ctx.save();
     ctx.translate(guardCenter.x, guardCenter.y);
-    ctx.rotate(performance.now() * 0.0002);
+    ctx.rotate(now * 0.0002);
     ctx.strokeStyle = "rgba(120,255,210,0.1)";
     ctx.lineWidth = 1.5 * scaleFactor;
     ctx.beginPath();
@@ -8517,12 +8533,14 @@ function animate() {
     ctx.restore();
 
     enemies.forEach(e => e.draw(ctx, scaleFactor));
-    pills = pills.filter(pill => {
+    let nextPillIndex = 0;
+    for (let i = 0; i < pills.length; i++) {
+        const pill = pills[i];
         const collected = pill.update(guardCenter.x, guardCenter.y);
 
         if (collected) {
             Input.collectDrop(collected);
-            return false;
+            continue;
             // Cộng vào đúng loại đan trong Input
             Input.pills[pill.typeKey]++;
 
@@ -8534,8 +8552,9 @@ function animate() {
         }
 
         pill.draw(ctx);
-        return true;
-    });
+        pills[nextPillIndex++] = pill;
+    }
+    pills.length = nextPillIndex;
 
     const renderSwarm = Input.isInsectSwarmActive();
     const renderInsectUltimate = Input.isInsectUltimateActive();
@@ -8543,18 +8562,33 @@ function animate() {
     Input.updateInsectUltimate(dt, enemies, scaleFactor);
 
     const hideSwords = renderSwarm || renderInsectUltimate;
-    const swordInput = hideSwords
-        ? { ...Input, isAttacking: false, isUltMode: false, ultimatePhase: 'idle', attackMode: 'SWORD', ultimateMode: null }
-        : Input;
+    let swordInput = Input;
+    if (hideSwords) {
+        hiddenSwordInputState.x = Input.x;
+        hiddenSwordInputState.y = Input.y;
+        hiddenSwordInputState.speed = Input.speed;
+        hiddenSwordInputState.mana = Input.mana;
+        hiddenSwordInputState.maxMana = Input.maxMana;
+        swordInput = hiddenSwordInputState;
+    }
 
-    swords.forEach(s => {
-        s.update(guardCenter, enemies, swordInput, scaleFactor);
-    });
+    for (let i = 0; i < swords.length; i++) {
+        swords[i].update(guardCenter, enemies, swordInput, scaleFactor, now);
+    }
 
     if (!hideSwords) {
-        [...swords]
-            .sort((leftSword, rightSword) => (leftSword.renderDepth || 0) - (rightSword.renderDepth || 0))
-            .forEach(s => s.draw(ctx, scaleFactor));
+        swordRenderBuffer.length = swords.length;
+        for (let i = 0; i < swords.length; i++) {
+            swordRenderBuffer[i] = swords[i];
+        }
+
+        if (swordRenderBuffer.length > 1) {
+            swordRenderBuffer.sort((leftSword, rightSword) => (leftSword.renderDepth || 0) - (rightSword.renderDepth || 0));
+        }
+
+        for (let i = 0; i < swordRenderBuffer.length; i++) {
+            swordRenderBuffer[i].draw(ctx, scaleFactor, now);
+        }
     }
 
     if (renderSwarm) {
@@ -8569,7 +8603,8 @@ function animate() {
     renderCursor();
 
     // Vẽ và cập nhật hạt hiệu ứng
-    for (let i = visualParticles.length - 1; i >= 0; i--) {
+    let nextParticleIndex = 0;
+    for (let i = 0; i < visualParticles.length; i++) {
         const p = visualParticles[i];
         const friction = p.friction ?? 1;
         const nextVx = (p.vx || 0) * friction;
@@ -8596,6 +8631,9 @@ function animate() {
         }
 
         p.life -= p.decay ?? 0.02;
+        if (p.life <= 0) {
+            continue;
+        }
 
         ctx.save();
         ctx.globalAlpha = Math.max(0, p.life) * (p.opacity ?? 1);
@@ -8637,8 +8675,9 @@ function animate() {
         }
 
         ctx.restore();
-        if (p.life <= 0) visualParticles.splice(i, 1);
+        visualParticles[nextParticleIndex++] = p;
     }
+    visualParticles.length = nextParticleIndex;
     ctx.globalAlpha = 1;
 
     ctx.restore();

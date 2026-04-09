@@ -114,7 +114,8 @@ const CONFIG = {
             color: "#66f0c2",
             secondaryColor: "#dffef2",
             auraColor: "#30b894",
-            buyPriceLowStone: 360,
+            buyPriceLowStone: 1800,
+            sellPriceLowStone: 900,
             buttonLabel: "Mua 1 thanh",
             inventoryActionLabel: "Triển khai",
             realmLabel: "Pháp bảo cao cấp",
@@ -131,6 +132,30 @@ const CONFIG = {
                 DODGE_SUPPRESS_MS: 1200,
                 SHIELD_BLOCK_MS: 1600
             }
+        },
+        NURTURE_SYSTEM: {
+            ROOT_MATERIAL_KEY: "KIM_LOI_TRUC_ROOT",
+            ROOT_INSTANCE_PREFIX: "KIM_LOI_TRUC_ROOT",
+            REFINED_INSTANCE_PREFIX: "THANH_TRUC_REFINED",
+            MIN_REFINE_YEARS: 120,
+            AUTO_YEARS_PER_SECOND: 2,
+            AUTO_UI_REFRESH_MS: 1000,
+            AUTO_SAVE_INTERVAL_MS: 5000,
+            CHUONG_ACCELERATION_YEARS: 180,
+            MAX_NURTURE_YEARS: 3600,
+            ROOT_SELLBACK_RATIO: 0.5,
+            REFINED_POWER_BASE: 100,
+            REFINED_POWER_PER_YEAR: 1.05,
+            REFINED_SELL_BASE: 800,
+            REFINED_SELL_PER_POWER: 10,
+            STAGE_THRESHOLDS: [
+                { years: 0, label: "Mẫu căn sơ tỉnh" },
+                { years: 60, label: "Lôi văn hiện mạch" },
+                { years: 120, label: "Mẫu trúc ngưng hình" },
+                { years: 360, label: "Kim lôi sơ thành" },
+                { years: 720, label: "Kim lôi đại thành" },
+                { years: 1440, label: "Lôi mộc viên mãn" }
+            ]
         }
     },
     ULTIMATE: {
@@ -506,6 +531,16 @@ const CONFIG = {
                 dropWeight: 0.64,
                 nutrition: 0,
                 description: "Ngà cổ của tượng yêu, cứng bền mà chứa linh văn tự nhiên, là vật hiếm cho luyện khí và khắc trận văn."
+            },
+            KIM_LOI_TRUC_ROOT: {
+                fullName: "Kim Lôi Trúc Mẫu",
+                quality: "SUPREME",
+                color: "#8ff7bf",
+                radius: 6.2,
+                buyPriceLowStone: 2400,
+                dropWeight: 0,
+                nutrition: 0,
+                description: "Mẫu căn của Kim Lôi Trúc, mang lôi tức và mộc nguyên tinh thuần. Sau nhiều năm ôn dưỡng có thể khai luyện thành Thanh Trúc Phong Vân Kiếm."
             }
         },
         MATERIAL_DROP: {
@@ -807,6 +842,20 @@ const CONFIG = {
         }
     },
     ARTIFACTS: {
+        CHUONG_THIEN_BINH: {
+            fullName: "Chưởng Thiên Bình",
+            quality: "SUPREME",
+            color: "#8fffe0",
+            secondaryColor: "#cffff1",
+            auraColor: "#6ce5ba",
+            buyPriceLowStone: 8800000,
+            buttonLabel: "Mua",
+            inventoryActionLabel: "Gia tốc",
+            isOneTime: true,
+            cooldownMs: 60000,
+            nurtureBoostYears: 180,
+            description: "Bình nhỏ màu lục cổ, phủ kín hoa văn huyền ảo và tỏa khí tức thời gian. Có thể gia tốc thời quang, tích trữ lục dịch, thúc sinh cơ và bồi dưỡng linh dược. Đây là một Huyền thiên chi bảo chạm đến pháp tắc thời gian."
+        },
         PHONG_LOI_SI: {
             fullName: "Phong Lôi Sí",
             quality: "SUPREME",

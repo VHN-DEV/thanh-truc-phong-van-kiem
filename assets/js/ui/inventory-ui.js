@@ -48,6 +48,10 @@ InventoryUI = {
 
                 if (action === 'sell') {
                     Input.sellInventoryItem(itemKey);
+                } else if (action === 'special') {
+                    if (typeof Input.useInventoryItemSpecial === 'function') {
+                        Input.useInventoryItemSpecial(itemKey);
+                    }
                 } else {
                     Input.useInventoryItem(itemKey);
                 }
@@ -103,20 +107,17 @@ InventoryUI = {
             const sellPrice = Input.getInventorySellPrice(item);
             const sellPriceMarkup = Input.renderSpiritStoneCostMarkup(sellPrice);
             const isArtifactBook = item.category === 'INSECT_ARTIFACT';
-            const inventoryActionLabel = item.category === 'SWORD_ARTIFACT'
-                ? (CONFIG.SWORD?.ARTIFACT_ITEM?.inventoryActionLabel || 'Triển khai')
-                : item.category === 'SWORD_ART'
-                ? (CONFIG.SECRET_ARTS?.DAI_CANH_KIEM_TRAN?.inventoryActionLabel || 'Lĩnh ngộ')
-                : item.category === 'FLAME_ART'
-                    ? (CONFIG.SECRET_ARTS?.CAN_LAM_BANG_DIEM?.inventoryActionLabel || 'Luyện hóa')
-                    : item.category === 'ARTIFACT'
-                        ? (CONFIG.ARTIFACTS?.[item.uniqueKey]?.inventoryActionLabel || 'Luyện hóa')
-                        : item.category === 'INSECT_SKILL'
-                            ? (CONFIG.INSECT?.UNIQUE_ITEMS?.KHU_TRUNG_THUAT?.inventoryActionLabel || 'Lĩnh ngộ')
-                            : null;
-            const label = item.category === 'BREAKTHROUGH' && !usable
-                ? `Chờ ${item.realmName}`
-                : 'Dùng';
+            const inventoryActionLabel = typeof Input.getInventoryItemActionLabel === 'function'
+                ? Input.getInventoryItemActionLabel(item)
+                : (item.category === 'BREAKTHROUGH' && !usable ? `Chờ ${item.realmName}` : 'Dùng');
+            const secondaryAction = typeof Input.getInventoryItemSecondaryAction === 'function'
+                ? Input.getInventoryItemSecondaryAction(item)
+                : null;
+            const secondaryActionLabel = secondaryAction?.label || 'Bán';
+            const secondaryActionType = secondaryAction?.type || 'sell';
+            const secondaryActionDisabled = secondaryAction
+                ? Boolean(secondaryAction.disabled)
+                : sellPrice <= 0;
 
             return `
                 <article class="inventory-slot has-pill-art" style="--slot-accent:${qualityConfig.color}">
@@ -130,8 +131,8 @@ InventoryUI = {
                         ${sellPriceMarkup}
                     </div>
                     <div class="slot-actions">
-                        <button class="btn-slot-action" data-action="use" data-item-key="${escapeHtml(item.key)}" ${usable ? '' : 'disabled'}>${escapeHtml(isArtifactBook ? 'Xem' : (inventoryActionLabel || label))}</button>
-                        <button class="btn-slot-action is-secondary" data-action="sell" data-item-key="${escapeHtml(item.key)}" ${sellPrice > 0 ? '' : 'disabled'}>Bán</button>
+                        <button class="btn-slot-action" data-action="use" data-item-key="${escapeHtml(item.key)}" ${usable ? '' : 'disabled'}>${escapeHtml(isArtifactBook ? 'Xem' : inventoryActionLabel)}</button>
+                        <button class="btn-slot-action is-secondary" data-action="${escapeHtml(secondaryActionType)}" data-item-key="${escapeHtml(item.key)}" ${secondaryActionDisabled ? 'disabled' : ''}>${escapeHtml(secondaryActionLabel)}</button>
                     </div>
                 </article>
             `;
