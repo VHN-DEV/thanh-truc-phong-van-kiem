@@ -24,6 +24,9 @@ gulp.task('build-js', function () {
     'assets/js/classes/pill.js',
     'assets/js/classes/camera.js',
     'assets/js/ui/ui-core.js',
+    'assets/js/ui/insect-ui-shared.js',
+    'assets/js/ui/item-ui-shared.js',
+    'assets/js/ui/resource-ui-shared.js',
     'assets/js/ui/shop-ui.js',
     'assets/js/ui/inventory-ui.js',
     'assets/js/ui/beast-bag-ui.js',
@@ -37,7 +40,7 @@ gulp.task('build-js', function () {
 
 // 3. Copy hình ảnh sang public
 gulp.task('copy-images', function () {
-  return gulp.src('assets/images/**/*')
+  return gulp.src('assets/images/**/*', { encoding: false })
     .pipe(gulp.dest('public/assets/images'));
 });
 
@@ -46,7 +49,7 @@ gulp.task('copy-fonts', function () {
   return gulp.src([
     'assets/fonts/**/*.{otf,ttf,woff,woff2}',
     '!assets/fonts/._*'
-  ])
+  ], { encoding: false })
     .pipe(gulp.dest('public/assets/fonts'));
 });
 
