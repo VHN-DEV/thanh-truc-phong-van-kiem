@@ -350,14 +350,78 @@ function normalizeSearchText(value) {
 
 function getQualityLabel(quality) {
     const labels = {
-        LOW: t('quality.low'),
-        MEDIUM: t('quality.medium'),
-        HIGH: t('quality.high'),
-        SUPREME: t('quality.supreme')
+        LOW: 'Hạ phẩm',
+        MEDIUM: 'Trung phẩm',
+        HIGH: 'Thượng phẩm',
+        SUPREME: 'Cực phẩm'
     };
 
     return labels[quality] || quality;
 }
+
+const ATTACK_MODE_LABELS = Object.freeze({
+    BASE: 'Thanh Trúc Phong Vân Kiếm',
+    SWORD: 'Đại Canh Kiếm Trận',
+    INSECT: 'Khu Trùng Thuật'
+});
+
+const SWORD_UI_TEXT = Object.freeze({
+    CATEGORY_LABEL: 'Pháp bảo kiếm trận',
+    SKILL_NAME: 'Đại Canh Kiếm Trận',
+    SKILL_DESCRIPTION: 'Khai đại trận hộ thân, ngự kiếm quang trấn thủ và công phạt bốn phương.',
+    readyNotifyLearned(required) {
+        return `Thanh Trúc Phong Vân Kiếm đã đủ ${required}/${required} thanh, có thể khai triển Đại Canh Kiếm Trận.`;
+    },
+    readyNotifyNeedArt(required) {
+        return `Thanh Trúc Phong Vân Kiếm đã đủ ${required}/${required} thanh, nhưng vẫn cần lĩnh ngộ bí pháp Đại Canh Kiếm Trận.`;
+    },
+    noteActive(alive) {
+        return `${alive} kiếm đang hộ trận`;
+    },
+    noteReady(bonded, required) {
+        return `${bonded} thanh hộ thân, Đại Canh dùng ${required} thanh`;
+    },
+    noteLearnedPending(bonded, required) {
+        return `Đã lĩnh ngộ bí pháp, cần đủ ${required} thanh để khai triển (${bonded}/${required}).`;
+    },
+    noteInInventory(required) {
+        return `Bí pháp đang nằm trong túi, hãy lĩnh ngộ trước rồi mới khai triển khi đủ ${required} thanh.`;
+    },
+    noteRecovering(bonded, required) {
+        return `Đã kết duyên bí pháp nhưng chưa thể phục hồi vật dẫn, hiện có ${bonded}/${required} thanh.`;
+    },
+    noteCollecting(bonded, required, stockedSuffix = '') {
+        return `Đã triển khai ${bonded}/${required} thanh${stockedSuffix}`;
+    },
+    noteUnknown(required) {
+        return `Chưa kết duyên Thanh Trúc Phong Vân Kiếm (${required} thanh)`;
+    },
+    titleLearned(bonded, required) {
+        return `Đại Canh Kiếm Trận - đã lĩnh ngộ, hiện có ${bonded}/${required} thanh`;
+    },
+    needCount(bonded, required) {
+        return `Cần triển khai đủ ${required} thanh Thanh Trúc Phong Vân Kiếm trước khi khai triển Đại Canh Kiếm Trận (${bonded}/${required}).`;
+    },
+    NEED_ART: 'Chưa lĩnh ngộ bí pháp Đại Canh Kiếm Trận.',
+    secretArtDescription(required) {
+        return `Kiếm đạo bí pháp chỉ truyền một lần. Mua xong sẽ giữ lại trong túi; chỉ sau khi lĩnh ngộ và đã triển khai đủ ${required} thanh Thanh Trúc Phong Vân Kiếm mới có thể khai triển Đại Canh Kiếm Trận.`;
+    },
+    deployReady(name, bonded, required) {
+        return `Triển khai ${name}: hiện có ${bonded} thanh hộ thân, đã đủ ${required} thanh để khai triển Đại Canh Kiếm Trận.`;
+    },
+    deployNeedArt(name, bonded, required) {
+        return `Triển khai ${name}: hiện có ${bonded} thanh hộ thân, đã đủ ${required} thanh nhưng vẫn cần lĩnh ngộ bí pháp Đại Canh Kiếm Trận.`;
+    },
+    deployCount(name, bonded) {
+        return `Triển khai ${name}: hiện có ${bonded} thanh đang xạ quanh tâm.`;
+    },
+    learnReady(name, required) {
+        return `Lĩnh ngộ ${name}: kiếm trận sẽ vận dụng ${required} thanh, còn phân kiếm hộ thân vẫn giữ theo số đã kết duyên.`;
+    },
+    learnPending(name, bonded, required) {
+        return `Lĩnh ngộ ${name}: đã hiểu kiếm ý, nhưng vẫn cần đủ ${required} thanh Thanh Trúc Phong Vân Kiếm để khai triển kiếm trận (${bonded}/${required}).`;
+    }
+});
 
 function getStartingSpiritStoneCounts() {
     const source = CONFIG.SPIRIT_STONE?.STARTING_COUNTS || {};
@@ -371,17 +435,17 @@ function getStartingSpiritStoneCounts() {
 }
 
 const ITEM_COLLECTION_TABS = Object.freeze([
-    { key: 'DAN_DUOC', label: t('tabs.dan_duoc') },
-    { key: 'TRUNG_NOAN', label: t('tabs.trung_noan') },
-    { key: 'NGUYEN_LIEU', label: t('tabs.nguyen_lieu') },
-    { key: 'TUI', label: t('tabs.tui') },
-    { key: 'BI_PHAP', label: t('tabs.bi_phap') },
-    { key: 'PHAP_BAO', label: t('tabs.phap_bao') },
-    { key: 'KHAC', label: t('tabs.khac') }
+    { key: 'DAN_DUOC', label: 'Đan dược' },
+    { key: 'TRUNG_NOAN', label: 'Trùng noãn' },
+    { key: 'NGUYEN_LIEU', label: 'Nguyên liệu' },
+    { key: 'TUI', label: 'Túi' },
+    { key: 'BI_PHAP', label: 'Bí pháp' },
+    { key: 'PHAP_BAO', label: 'Pháp bảo' },
+    { key: 'KHAC', label: 'Khác' }
 ]);
 
 function getItemCollectionTabLabel(tabKey) {
-    return ITEM_COLLECTION_TABS.find(tab => tab.key === tabKey)?.label || t('tabs.khac');
+    return ITEM_COLLECTION_TABS.find(tab => tab.key === tabKey)?.label || 'Khác';
 }
 
 function getItemCollectionTabKey(item) {
@@ -3982,8 +4046,8 @@ const Input = {
         if (notifyUnlock && progress.ready) {
             showNotify(
                 this.hasDaiCanhKiemTranUnlocked()
-                    ? t('sword.ready_notify_learned', { required: formatNumber(progress.required) })
-                    : t('sword.ready_notify_need_art', { required: formatNumber(progress.required) }),
+                    ? SWORD_UI_TEXT.readyNotifyLearned(formatNumber(progress.required))
+                    : SWORD_UI_TEXT.readyNotifyNeedArt(formatNumber(progress.required)),
                 this.getThanhTrucSwordArtifactConfig()?.color || '#66f0c2'
             );
         }
@@ -4366,9 +4430,9 @@ const Input = {
     },
 
     getAttackModeDisplayName(mode = this.attackMode) {
-        if (mode === 'SWORD') return t('attack_mode.sword');
-        if (mode === 'INSECT') return t('attack_mode.insect');
-        return t('attack_mode.base');
+        if (mode === 'SWORD') return ATTACK_MODE_LABELS.SWORD;
+        if (mode === 'INSECT') return ATTACK_MODE_LABELS.INSECT;
+        return ATTACK_MODE_LABELS.BASE;
     },
 
     canUseInsectAttackMode() {
@@ -4392,38 +4456,29 @@ const Input = {
         return [
             {
                 key: 'SWORD',
-                name: t('sword.skill_name'),
-                description: t('sword.skill_description'),
+                name: SWORD_UI_TEXT.SKILL_NAME,
+                description: SWORD_UI_TEXT.SKILL_DESCRIPTION,
                 unlocked: formationLearned,
                 active: this.attackMode === 'SWORD',
                 ready: formationReady,
                 accent: '#8fffe0',
                 note: formationReady
                     ? this.attackMode === 'SWORD'
-                        ? t('sword.note_active', { alive: formatNumber(swordStats.alive) })
-                        : t('sword.note_ready', {
-                            bonded: formatNumber(swordProgress.bonded),
-                            required: formatNumber(swordProgress.required)
-                        })
+                        ? SWORD_UI_TEXT.noteActive(formatNumber(swordStats.alive))
+                        : SWORD_UI_TEXT.noteReady(formatNumber(swordProgress.bonded), formatNumber(swordProgress.required))
                     : formationLearned
-                        ? t('sword.note_learned_pending', {
-                            bonded: formatNumber(swordProgress.bonded),
-                            required: formatNumber(swordProgress.required)
-                        })
+                        ? SWORD_UI_TEXT.noteLearnedPending(formatNumber(swordProgress.bonded), formatNumber(swordProgress.required))
                         : hasSwordArtInInventory
-                            ? t('sword.note_in_inventory', { required: formatNumber(swordProgress.required) })
+                            ? SWORD_UI_TEXT.noteInInventory(formatNumber(swordProgress.required))
                             : this.hasUniquePurchase('DAI_CANH_KIEM_TRAN')
-                                ? t('sword.note_recovering', {
-                                    bonded: formatNumber(swordProgress.bonded),
-                                    required: formatNumber(swordProgress.required)
-                                })
-                    : swordProgress.bonded > 0 || swordProgress.stocked > 0
-                        ? t('sword.note_collecting', {
-                            bonded: formatNumber(swordProgress.bonded),
-                            required: formatNumber(swordProgress.required),
-                            stockedSuffix: swordProgress.stocked > 0 ? ` | ${formatNumber(swordProgress.stocked)} thanh còn trong túi` : ''
-                        })
-                        : t('sword.note_unknown', { required: formatNumber(swordProgress.required) })
+                                ? SWORD_UI_TEXT.noteRecovering(formatNumber(swordProgress.bonded), formatNumber(swordProgress.required))
+                                : swordProgress.bonded > 0 || swordProgress.stocked > 0
+                                    ? SWORD_UI_TEXT.noteCollecting(
+                                        formatNumber(swordProgress.bonded),
+                                        formatNumber(swordProgress.required),
+                                        swordProgress.stocked > 0 ? ` | ${formatNumber(swordProgress.stocked)} thanh còn trong túi` : ''
+                                    )
+                                    : SWORD_UI_TEXT.noteUnknown(formatNumber(swordProgress.required))
             },
             {
                 key: 'INSECT',
@@ -4460,10 +4515,7 @@ const Input = {
             } else if (this.attackMode === 'SWORD') {
                 skillBtn.title = `Đại Canh Kiếm Trận - ${formatNumber(this.getAliveSwordStats().alive)} kiếm hộ trận`;
             } else if (this.hasDaiCanhKiemTranUnlocked()) {
-                skillBtn.title = t('sword.title_learned', {
-                    bonded: formatNumber(swordProgress.bonded),
-                    required: formatNumber(swordProgress.required)
-                });
+                skillBtn.title = SWORD_UI_TEXT.titleLearned(formatNumber(swordProgress.bonded), formatNumber(swordProgress.required));
             } else if (swordProgress.bonded > 0 || swordProgress.stocked > 0) {
                 skillBtn.title = `Thanh Trúc Phong Vân Kiếm - ${formatNumber(swordProgress.bonded)} thanh đã triển khai, Đại Canh dùng ${formatNumber(swordProgress.required)} thanh`;
             } else if (this.hasActiveArtifact()) {
@@ -4536,11 +4588,8 @@ const Input = {
                 const progress = this.getSwordFormationProgress();
                 showNotify(
                     this.hasDaiCanhKiemTranUnlocked()
-                        ? t('sword.need_count', {
-                            bonded: formatNumber(progress.bonded),
-                            required: formatNumber(progress.required)
-                        })
-                        : t('sword.need_art'),
+                        ? SWORD_UI_TEXT.needCount(formatNumber(progress.bonded), formatNumber(progress.required))
+                        : SWORD_UI_TEXT.NEED_ART,
                     '#ffd36b'
                 );
             } else {
@@ -5076,7 +5125,7 @@ const Input = {
                 return `Mở rộng Linh Thú Đại thêm ${formatNumber(extraSlots)} ô, tăng chỗ cho linh trùng đã nở. Có thể mua nhiều lần để cộng dồn dung lượng.`;
             }
             case 'SWORD_ART':
-                return t('sword.secret_art_description', { required: formatNumber(getConfiguredSwordCount()) });
+                return SWORD_UI_TEXT.secretArtDescription(formatNumber(getConfiguredSwordCount()));
             case 'FLAME_ART':
                 return 'Thiên địa linh hỏa Càn Lam Băng Diễm. Sau khi luyện hóa, con trỏ tâm niệm mới hiện hóa thành lam diễm.';
             case 'ARTIFACT':
@@ -9007,7 +9056,7 @@ const GameProgress = {
 const baseGetItemCategoryLabel = Input.getItemCategoryLabel;
 Input.getItemCategoryLabel = function (item) {
     if (item?.category === 'SWORD_ARTIFACT') {
-        return t('sword.category_label');
+        return SWORD_UI_TEXT.CATEGORY_LABEL;
     }
 
     return baseGetItemCategoryLabel.call(this, item);
@@ -9048,21 +9097,21 @@ Input.useInventoryItem = function (itemKey) {
         syncSwordFormation();
         showNotify(
             deployable && !wasDeployable
-                ? t('sword.deploy_ready', {
-                    name: this.getItemDisplayName(item),
-                    bonded: formatNumber(progress.bonded),
-                    required: formatNumber(progress.required)
-                })
+                ? SWORD_UI_TEXT.deployReady(
+                    this.getItemDisplayName(item),
+                    formatNumber(progress.bonded),
+                    formatNumber(progress.required)
+                )
                 : progress.ready && !this.hasDaiCanhKiemTranUnlocked()
-                    ? t('sword.deploy_need_art', {
-                        name: this.getItemDisplayName(item),
-                        bonded: formatNumber(progress.bonded),
-                        required: formatNumber(progress.required)
-                    })
-                : t('sword.deploy_count', {
-                    name: this.getItemDisplayName(item),
-                    bonded: formatNumber(progress.bonded)
-                }), 
+                    ? SWORD_UI_TEXT.deployNeedArt(
+                        this.getItemDisplayName(item),
+                        formatNumber(progress.bonded),
+                        formatNumber(progress.required)
+                    )
+                    : SWORD_UI_TEXT.deployCount(
+                        this.getItemDisplayName(item),
+                        formatNumber(progress.bonded)
+                    ),
             qualityConfig.color || '#66f0c2'
         );
         this.refreshResourceUI();
@@ -9085,15 +9134,15 @@ Input.useInventoryItem = function (itemKey) {
     syncSwordFormation();
     showNotify(
         this.canDeployDaiCanhKiemTran()
-            ? t('sword.learn_ready', {
-                name: this.getItemDisplayName(item),
-                required: formatNumber(this.getUnlockedSwordTargetCount())
-            })
-            : t('sword.learn_pending', {
-                name: this.getItemDisplayName(item),
-                bonded: formatNumber(progress.bonded),
-                required: formatNumber(progress.required)
-            }), 
+            ? SWORD_UI_TEXT.learnReady(
+                this.getItemDisplayName(item),
+                formatNumber(this.getUnlockedSwordTargetCount())
+            )
+            : SWORD_UI_TEXT.learnPending(
+                this.getItemDisplayName(item),
+                formatNumber(progress.bonded),
+                formatNumber(progress.required)
+            ),
         qualityConfig.color || '#8fffe0'
     );
     this.refreshResourceUI();

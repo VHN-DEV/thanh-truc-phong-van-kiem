@@ -10,20 +10,48 @@ const BROKEN_TEXT_PATTERN = /(?:Ã.|Â.|Ä.|Ă.|Æ.|á.|â.|ð|Ð|Ñ|�)/;
 let legacyTextRepairObserver = null;
 
 const UI_TEXT = Object.freeze({
+    ATTACK_MODE_SWORD: 'Đại Canh Kiếm Trận',
+    ATTACK_MODE_BASE: 'Thanh Trúc Phong Vân Kiếm',
     PHONG_LOI_SI_STATES: Object.freeze({
-        INACTIVE: t('ui.phong_loi_si.inactive'),
-        ACTIVE: t('ui.phong_loi_si.active'),
-        CHARGING: t('ui.phong_loi_si.charging')
+        INACTIVE: 'THU',
+        ACTIVE: 'KHAI',
+        CHARGING: 'TỤ'
     }),
-    PHONG_LOI_SI_RESTING: t('ui.phong_loi_si.resting'),
-    SHOP_RESET_FILTERS: t('ui.shop.reset_filters'),
-    SHOP_EMPTY: t('ui.shop.empty'),
-    BEAST_FOOD_SELECT_HINT: t('ui.beast.food_select_hint'),
-    BEAST_FOOD_AMOUNT_HINT: t('ui.beast.food_amount_hint'),
-    BEAST_FOOD_NOT_ENOUGH_INVENTORY: t('ui.beast.food_not_enough_inventory'),
-    BEAST_FOOD_RAINBOW_NOT_NEEDED: t('ui.beast.rainbow_not_needed'),
-    BEAST_FOOD_SLOT_NOT_ENOUGH: t('ui.beast.food_slot_not_enough'),
-    VOID_COLLAPSED: t('ui.void_collapsed')
+    PHONG_LOI_SI_RESTING: 'Phong Lôi Sí đang thu liễm',
+    SHOP_RESET_FILTERS: 'Tẩy điều kiện',
+    SHOP_EMPTY: 'Không có bảo vật nào ứng với điều kiện đã định.',
+    BEAST_FOOD_SELECT_HINT: 'Hãy chọn linh liệu phù hợp.',
+    BEAST_FOOD_AMOUNT_HINT: 'Hãy nhập số phần linh liệu hợp lệ.',
+    BEAST_FOOD_NOT_ENOUGH_INVENTORY: 'Túi trữ vật không đủ linh liệu này.',
+    BEAST_FOOD_RAINBOW_NOT_NEEDED: 'Thất Sắc Linh Thú Đại không cần nạp linh liệu.',
+    BEAST_FOOD_SLOT_NOT_ENOUGH: 'Ô linh liệu của mục này chưa đủ linh dưỡng.',
+    VOID_COLLAPSED: 'THÂN THỂ ĐÃ TAN VÀO HƯ VÔ - HÃY TÁI NHẬP GIỚI VỰC ĐỂ TRỌNG TỤ CHÂN THÂN',
+    POPUP_TITLES: Object.freeze({
+        SETTINGS: 'THIÊN ĐẠO QUY TẮC',
+        SHOP: 'LINH THỊ CỬA HÀNG',
+        INVENTORY: 'TÚI KHÔNG GIAN TRỮ VẬT',
+        SKILLS: 'BẢNG BÍ PHÁP',
+        INSECT_BOOK: 'KỲ TRÙNG BẢNG',
+        PROFILE: 'HỒ SƠ KIẾM TU'
+    }),
+    INVENTORY_TABS: Object.freeze({
+        ITEMS: 'Vật phẩm',
+        STONES: 'Linh thạch'
+    }),
+    ARIA: Object.freeze({
+        PROFILE: 'Mở hồ sơ kiếm tu',
+        SETTINGS: 'Thiên đạo quy tắc',
+        SHOP: 'Linh thị',
+        INVENTORY: 'Túi trữ vật',
+        BEAST_BAG: 'Linh thú đại',
+        BREAKTHROUGH: 'Độ kiếp đột phá',
+        MOVE: 'Luân bàn thân pháp',
+        ULTIMATE: 'Tuyệt kỹ',
+        FORM: 'Đổi kiếm thức',
+        PHONG_LOI_SI: 'Phong Lôi Sí',
+        SKILL_LIST: 'Bảng bí pháp',
+        ATTACK: 'Xuất kiếm'
+    })
 });
 
 function formatShopSummaryText(filteredCount, totalCount) {
@@ -202,38 +230,38 @@ function setAttrIfPresent(selector, attribute, value) {
 
 function repairLegacyUiText() {
     if (document?.title != null) {
-        document.title = `${t('attack_mode.sword')} - 72 ${t('attack_mode.base')}`;
+        document.title = `${UI_TEXT.ATTACK_MODE_SWORD} - 72 ${UI_TEXT.ATTACK_MODE_BASE}`;
     }
 
     [
-        ['#settings-popup .popup-header h3', t('ui.popup.settings')],
-        ['#shop-popup .popup-header h3', t('ui.popup.shop')],
-        ['#inventory-popup .popup-header h3', t('ui.popup.inventory')],
-        ['#skills-popup .popup-header h3', t('ui.popup.skills')],
-        ['#insect-book-popup .popup-header h3', t('ui.popup.insect_book')],
-        ['#profile-popup .popup-header h3', t('ui.popup.profile')],
-        ['#inventory-tabs [data-inventory-tab="items"]', t('ui.inventory.items')],
-        ['#inventory-tabs [data-inventory-tab="stones"]', t('ui.inventory.stones')],
-        ['#inventory-panel-items h4', t('ui.inventory.items')],
-        ['#inventory-panel-stones h4', t('ui.inventory.stones')],
+        ['#settings-popup .popup-header h3', UI_TEXT.POPUP_TITLES.SETTINGS],
+        ['#shop-popup .popup-header h3', UI_TEXT.POPUP_TITLES.SHOP],
+        ['#inventory-popup .popup-header h3', UI_TEXT.POPUP_TITLES.INVENTORY],
+        ['#skills-popup .popup-header h3', UI_TEXT.POPUP_TITLES.SKILLS],
+        ['#insect-book-popup .popup-header h3', UI_TEXT.POPUP_TITLES.INSECT_BOOK],
+        ['#profile-popup .popup-header h3', UI_TEXT.POPUP_TITLES.PROFILE],
+        ['#inventory-tabs [data-inventory-tab="items"]', UI_TEXT.INVENTORY_TABS.ITEMS],
+        ['#inventory-tabs [data-inventory-tab="stones"]', UI_TEXT.INVENTORY_TABS.STONES],
+        ['#inventory-panel-items h4', UI_TEXT.INVENTORY_TABS.ITEMS],
+        ['#inventory-panel-stones h4', UI_TEXT.INVENTORY_TABS.STONES],
         ['#btn-phong-loi-blink .phong-loi-toggle__state', UI_TEXT.PHONG_LOI_SI_STATES.INACTIVE]
     ].forEach(([selector, text]) => setTextIfPresent(selector, text));
 
     [
-        ['#btn-profile', 'aria-label', t('ui.aria.profile')],
-        ['#btn-settings img', 'alt', t('ui.aria.settings')],
-        ['#btn-shop img', 'alt', t('ui.aria.shop')],
-        ['#btn-inventory img', 'alt', t('ui.aria.inventory')],
-        ['#btn-beast-bag img', 'alt', t('ui.aria.beast_bag')],
-        ['#btn-breakthrough img', 'alt', t('ui.aria.breakthrough')],
-        ['#btn-move', 'aria-label', t('ui.aria.move')],
-        ['#btn-ultimate img', 'alt', t('ui.aria.ultimate')],
-        ['#btn-form img', 'alt', t('ui.aria.form')],
+        ['#btn-profile', 'aria-label', UI_TEXT.ARIA.PROFILE],
+        ['#btn-settings img', 'alt', UI_TEXT.ARIA.SETTINGS],
+        ['#btn-shop img', 'alt', UI_TEXT.ARIA.SHOP],
+        ['#btn-inventory img', 'alt', UI_TEXT.ARIA.INVENTORY],
+        ['#btn-beast-bag img', 'alt', UI_TEXT.ARIA.BEAST_BAG],
+        ['#btn-breakthrough img', 'alt', UI_TEXT.ARIA.BREAKTHROUGH],
+        ['#btn-move', 'aria-label', UI_TEXT.ARIA.MOVE],
+        ['#btn-ultimate img', 'alt', UI_TEXT.ARIA.ULTIMATE],
+        ['#btn-form img', 'alt', UI_TEXT.ARIA.FORM],
         ['#btn-phong-loi-blink', 'title', UI_TEXT.PHONG_LOI_SI_RESTING],
         ['#btn-phong-loi-blink', 'aria-label', UI_TEXT.PHONG_LOI_SI_RESTING],
-        ['#btn-phong-loi-blink img', 'alt', t('ui.aria.phong_loi_si')],
-        ['#btn-skill-list', 'title', t('ui.aria.skill_list')],
-        ['#btn-attack img', 'alt', t('ui.aria.attack')]
+        ['#btn-phong-loi-blink img', 'alt', UI_TEXT.ARIA.PHONG_LOI_SI],
+        ['#btn-skill-list', 'title', UI_TEXT.ARIA.SKILL_LIST],
+        ['#btn-attack img', 'alt', UI_TEXT.ARIA.ATTACK]
     ].forEach(([selector, attribute, value]) => setAttrIfPresent(selector, attribute, value));
 
     repairLegacyTextTree(document.body || document.documentElement);
