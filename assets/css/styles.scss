@@ -4233,6 +4233,10 @@ select.shop-control-input {
     position: absolute;
     inset: 2px;
     z-index: 4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    isolation: isolate;
     pointer-events: none;
     filter: drop-shadow(0 0 18px color-mix(in srgb, var(--artifact-aura, var(--pill-accent)) 26%, transparent));
 }
@@ -4244,6 +4248,18 @@ select.shop-control-input {
     background:
         radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.18), transparent 34%),
         radial-gradient(circle at 50% 52%, color-mix(in srgb, var(--artifact-aura, var(--pill-accent)) 24%, rgba(255, 255, 255, 0.08)), transparent 72%);
+}
+
+.phong-loi-art__image {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 124%;
+    height: auto;
+    max-width: none;
+    display: block;
+    object-fit: contain;
+    transform: translate(-50%, -50%);
 }
 
 .phong-loi-art__svg {

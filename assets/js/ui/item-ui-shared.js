@@ -78,30 +78,10 @@ function buildChuongThienBinhVisualMarkup() {
 }
 
 function buildPhongLoiArtifactVisualMarkup() {
-    const wingPath = 'M28.665 25.537c-1.966-1.094-3.116-2.962-3.232-4.673-0.619-9.164-15.889-10.357-23.662-19.509 0.403 11.661 13.204 11.604 20.744 17.449-4.879-2.113-12.876-1.649-18.664-5.404 2.7 8.775 12.332 5.886 19.406 8.271-4.212-0.411-9.768 1.968-15.02 0.086 4.638 7.31 10.654 2.427 16.483 2.47-2.94 0.749-5.977 4.025-10.036 3.718 4.946 4.76 7.536 0.139 11.079-1.633-0.357 0.425-0.583 0.967-0.61 1.565-0.064 1.443 1.054 2.665 2.497 2.73s2.665-1.054 2.73-2.497c0.052-1.169-0.672-2.193-1.716-2.574z';
-    const wingOuterTransform = 'translate(-18 -16) rotate(-45 16 16) scale(1.14 1.14)';
-    const wingInnerTransform = 'translate(-12 -11) rotate(-45 16 16) scale(0.84 0.84)';
-
     return `
         <div class="phong-loi-art" aria-hidden="true">
             <span class="phong-loi-art__halo"></span>
-            <svg class="phong-loi-art__svg" viewBox="0 0 128 92" role="presentation" focusable="false">
-                <g class="phong-loi-art__wing phong-loi-art__wing--left" transform="translate(54 48) scale(-1 1)">
-                    <path class="phong-loi-art__wing-shadow" d="${wingPath}" transform="translate(-20 -18) rotate(-45 16 16) scale(1.26 1.24)"></path>
-                    <path class="phong-loi-art__wing-base" d="${wingPath}" transform="${wingOuterTransform}"></path>
-                    <path class="phong-loi-art__wing-inner" d="${wingPath}" transform="${wingInnerTransform}"></path>
-                    <path class="phong-loi-art__wing-vein" d="M2 1 C 10 -7, 20 -16, 31 -30 M6 4 C 14 -2, 22 -10, 29 -18 M5 8 C 11 7, 17 5, 23 0"></path>
-                </g>
-                <g class="phong-loi-art__wing phong-loi-art__wing--right" transform="translate(74 48)">
-                    <path class="phong-loi-art__wing-shadow" d="${wingPath}" transform="translate(-20 -18) rotate(-45 16 16) scale(1.26 1.24)"></path>
-                    <path class="phong-loi-art__wing-base" d="${wingPath}" transform="${wingOuterTransform}"></path>
-                    <path class="phong-loi-art__wing-inner" d="${wingPath}" transform="${wingInnerTransform}"></path>
-                    <path class="phong-loi-art__wing-vein" d="M2 1 C 10 -7, 20 -16, 31 -30 M6 4 C 14 -2, 22 -10, 29 -18 M5 8 C 11 7, 17 5, 23 0"></path>
-                </g>
-                <path class="phong-loi-art__shaft" d="M64 24 C68 33 70 42 70 50 C70 60 67 68 64 76 C61 68 58 60 58 50 C58 42 60 33 64 24 Z"></path>
-                <path class="phong-loi-art__core" d="M64 33 L70 47 L64 62 L58 47 Z"></path>
-                <path class="phong-loi-art__lightning" d="M63 35 L68 30 L65 42 L72 38 L61 58 L64 46 L57 50 Z"></path>
-            </svg>
+            <img src="./assets/images/phong-loi-si.svg" class="phong-loi-art__image" alt="">
         </div>
     `;
 }
