@@ -4921,10 +4921,6 @@ const Input = {
 
         this.renderPhongLoiBlinkButton();
 
-        if (SkillsUI && typeof SkillsUI.render === 'function' && SkillsUI.isOpen()) {
-            SkillsUI.render();
-        }
-
         GameProgress.requestSave();
     },
 
@@ -9477,4 +9473,3 @@ function animate() {
     animate();
 })();
 // <!-- Create By: Vũ Hoài Nam -->
-
