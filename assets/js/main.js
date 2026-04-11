@@ -4746,6 +4746,15 @@ const Input = {
 
         const normalized = Boolean(nextActive);
         if (Boolean(this.activeArtifacts[uniqueKey]) === normalized) return false;
+        if (uniqueKey === 'PHONG_LOI_SI' && normalized) {
+            const equippedSwordCount = Array.isArray(this.getEquippedSwordArtifacts?.())
+                ? this.getEquippedSwordArtifacts().length
+                : 0;
+            if (equippedSwordCount < 1) {
+                showNotify('Cần trang bị ít nhất 1 Thanh Trúc Phong Vân Kiếm mới có thể triển khai Phong Lôi Sí.', artifactConfig.color || '#9fe8ff');
+                return false;
+            }
+        }
 
         this.activeArtifacts[uniqueKey] = normalized;
 
@@ -4920,10 +4929,6 @@ const Input = {
         }
 
         this.renderPhongLoiBlinkButton();
-
-        if (SkillsUI && typeof SkillsUI.render === 'function' && SkillsUI.isOpen()) {
-            SkillsUI.render();
-        }
 
         GameProgress.requestSave();
     },
@@ -6047,9 +6052,8 @@ const Input = {
             ProfileUI.render();
         }
 
-        if (SkillsUI && typeof SkillsUI.isOpen === 'function' && SkillsUI.isOpen()) {
-            SkillsUI.render();
-        }
+        // Không render SkillsUI liên tục trong refresh tổng để tránh giật danh sách kiếm khi người dùng đang cuộn.
+        // SkillsUI sẽ tự render khi mở popup hoặc khi người dùng tương tác trực tiếp trong popup.
 
         if (InsectBookUI && typeof InsectBookUI.isOpen === 'function' && InsectBookUI.isOpen()) {
             InsectBookUI.render();
@@ -8887,9 +8891,14 @@ Input.renderAttackModeUI = function () {
     baseRenderAttackModeUIWithThanhLinh.call(this);
 
     const skillBtn = document.getElementById('btn-skill-list');
+    const formBtn = document.getElementById('btn-form');
     if (!skillBtn) return;
 
     const swordProgress = this.getSwordFormationProgress();
+    const canShowFormButton = this.attackMode === 'SWORD' && this.canDeployDaiCanhKiemTran();
+    if (formBtn) {
+        formBtn.classList.toggle('is-hidden', !canShowFormButton);
+    }
     skillBtn.classList.toggle(
         'is-disabled',
         !this.hasDaiCanhKiemTranUnlocked()
@@ -9478,5 +9487,3 @@ function animate() {
     animate();
 })();
 // <!-- Create By: Vũ Hoài Nam -->
-
-
