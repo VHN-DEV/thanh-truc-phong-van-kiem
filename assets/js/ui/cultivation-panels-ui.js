@@ -1112,6 +1112,12 @@ Object.assign(SkillsUI, {
 
     render() {
         if (!this.list) return;
+        if (Date.now() < (this.swordRosterScrollLockUntil || 0)) return;
+
+        const previousRosterList = this.list.querySelector('.attack-skill-card__sword-roster-list');
+        if (previousRosterList) {
+            this.swordRosterScrollTop = previousRosterList.scrollTop;
+        }
 
         const previousRosterList = this.list.querySelector('.attack-skill-card__sword-roster-list');
         if (previousRosterList) {
