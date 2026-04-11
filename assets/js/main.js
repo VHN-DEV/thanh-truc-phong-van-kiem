@@ -4395,6 +4395,10 @@ const Input = {
 
     castCanLamBangDiem() {
         if (this.isVoidCollapsed || !this.hasCanLamBangDiemUnlocked()) return false;
+        if (!this.isArtifactDeployed('CAN_LAM_BANG_DIEM')) {
+            showNotify('Càn Lam Băng Diễm chưa triển khai, hãy khai triển tại mục Pháp bảo trước.', '#69d9ff');
+            return false;
+        }
         const livingEnemies = (Array.isArray(enemies) ? enemies : []).filter(enemy => enemy && enemy.hp > 0);
         if (!livingEnemies.length) {
             showNotify('Không có mục tiêu để thi triển Càng Lam Băng Diễm.', '#69d9ff');
@@ -4484,7 +4488,9 @@ const Input = {
     },
 
     getArtifactConfig(uniqueKey) {
-        return CONFIG.ARTIFACTS?.[uniqueKey] || null;
+        return CONFIG.ARTIFACTS?.[uniqueKey]
+            || (uniqueKey === 'CAN_LAM_BANG_DIEM' ? CONFIG.SECRET_ARTS?.CAN_LAM_BANG_DIEM : null)
+            || null;
     },
 
     getArtifactAttunementNote(uniqueKey) {
@@ -4562,17 +4568,18 @@ const Input = {
     },
 
     hasKnownArtifact() {
-        return Object.keys(CONFIG.ARTIFACTS || {}).some(uniqueKey => {
-            return this.hasArtifactPurchased(uniqueKey) || this.hasArtifactUnlocked(uniqueKey);
-        });
+        const artifactKeys = new Set([...Object.keys(CONFIG.ARTIFACTS || {}), 'CAN_LAM_BANG_DIEM']);
+        return Array.from(artifactKeys).some(uniqueKey => this.hasArtifactPurchased(uniqueKey) || this.hasArtifactUnlocked(uniqueKey));
     },
 
     hasActiveArtifact() {
-        return Object.keys(CONFIG.ARTIFACTS || {}).some(uniqueKey => this.isArtifactDeployed(uniqueKey));
+        const artifactKeys = new Set([...Object.keys(CONFIG.ARTIFACTS || {}), 'CAN_LAM_BANG_DIEM']);
+        return Array.from(artifactKeys).some(uniqueKey => this.isArtifactDeployed(uniqueKey));
     },
 
     getActiveArtifactNames() {
-        return Object.keys(CONFIG.ARTIFACTS || {})
+        const artifactKeys = new Set([...Object.keys(CONFIG.ARTIFACTS || {}), 'CAN_LAM_BANG_DIEM']);
+        return Array.from(artifactKeys)
             .filter(uniqueKey => this.isArtifactDeployed(uniqueKey))
             .map(uniqueKey => this.getArtifactConfig(uniqueKey)?.fullName || uniqueKey);
     },
@@ -4764,6 +4771,30 @@ const Input = {
         button.setAttribute('aria-label', title);
     },
 
+    renderCanLamCastButton() {
+        const button = document.getElementById('btn-can-lam-cast');
+        if (!button) return;
+
+        const label = button.querySelector('.can-lam-toggle__state');
+        const available = this.isArtifactDeployed('CAN_LAM_BANG_DIEM');
+
+        button.classList.toggle('is-hidden', !available);
+        button.classList.toggle('is-active', available);
+        button.style.display = available ? 'flex' : 'none';
+        button.setAttribute('aria-pressed', available ? 'true' : 'false');
+
+        if (label) {
+            label.textContent = available ? 'KHAI' : 'THU';
+        }
+
+        const title = available
+            ? 'Thi triển Càn Lam Băng Diễm vào mục tiêu gần nhất'
+            : 'Càn Lam Băng Diễm chưa triển khai';
+
+        button.title = title;
+        button.setAttribute('aria-label', title);
+    },
+
     setPhongLoiBlinkEnabled(nextEnabled, { silent = false, force = false } = {}) {
         const state = this.ensurePhongLoiBlinkState();
         const available = this.hasPhongLoiBlinkSkill();
@@ -4834,6 +4865,9 @@ const Input = {
         }
         if (uniqueKey === 'HUYET_SAC_PHI_PHONG') {
             this.clearHuyetSacPhiPhongTrail();
+        }
+        if (uniqueKey === 'CAN_LAM_BANG_DIEM') {
+            this.renderCanLamCastButton();
         }
 
         if (!silent) {
@@ -8641,7 +8675,7 @@ const Input = {
 
     drawCursor(ctx, scaleFactor) {
         this.drawHuyetSacPhiPhongCloak(ctx, scaleFactor);
-        if (this.hasCanLamBangDiemUnlocked()) {
+        if (this.isArtifactDeployed('CAN_LAM_BANG_DIEM')) {
             this.drawFlame(ctx, scaleFactor);
         } else {
             this.drawCursorSeed(ctx, scaleFactor);
@@ -9030,6 +9064,7 @@ Input.renderAttackModeUI = function () {
     if (formBtn) {
         formBtn.classList.toggle('is-hidden', !canShowFormButton);
     }
+    this.renderCanLamCastButton();
     skillBtn.classList.toggle(
         'is-disabled',
         !this.hasDaiCanhKiemTranUnlocked()
@@ -9137,6 +9172,21 @@ if (phongLoiBlinkBtn) {
         }
 
         Input.togglePhongLoiBlink();
+    });
+}
+
+const canLamCastBtn = document.getElementById('btn-can-lam-cast');
+if (canLamCastBtn) {
+    canLamCastBtn.addEventListener('pointerdown', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+
+        if (Input.isVoidCollapsed) {
+            showNotify('Thân thể đã tan vào hư vô, cần tải lại giới vực để hồi phục', '#a778ff');
+            return;
+        }
+
+        Input.castCanLamBangDiem();
     });
 }
 
