@@ -145,41 +145,41 @@ const CONFIG = {
             description: "Bộ kiếm tre xanh có thể tách hợp linh hoạt. Mỗi lần luyện hóa sẽ thêm một thanh hộ thân; đủ 72 thanh mới có thể khai triển Đại Canh Kiếm Trận.",
             gradeSystem: "Pháp khí: hạ, trung, thượng, cực phẩm • Pháp bảo: phổ thông, cao cấp, đỉnh cấp • Cổ bảo • Linh bảo, Thông thiên linh bảo • Huyền thiên chi bảo.",
             thunderStrike: {
-                TRIGGER_CHANCE: 0.18,
-                FORMATION_TRIGGER_CHANCE: 0.32,
-                MOVEMENT_LOCK_MS: 180,
-                SLOW_MS: 1000,
-                SLOW_FACTOR: 0.72,
-                DODGE_SUPPRESS_MS: 1200,
-                SHIELD_BLOCK_MS: 1600
+                TRIGGER_CHANCE: 0.18, // Tỉ lệ kích hoạt
+                FORMATION_TRIGGER_CHANCE: 0.32, // Tỉ lệ kích hoạt khi hình thành
+                MOVEMENT_LOCK_MS: 180, // Thời gian khóa di chuyển
+                SLOW_MS: 1000, // Thời gian làm chậm
+                SLOW_FACTOR: 0.72, // Hệ số làm chậm
+                DODGE_SUPPRESS_MS: 1200, // Thời gian áp chế né tránh
+                SHIELD_BLOCK_MS: 1600 // Thời gian chặn khiên
             }
         },
         INSTANCE_SYSTEM: {
-            BASE_POWER_RATING: 100,
-            BREAKS_PER_DURABILITY_LOSS: 4,
-            MIN_DURABILITY: 1,
-            REFINED_DURABILITY_BASE: 8,
-            REFINED_DURABILITY_PER_120_YEARS: 2
+            BASE_POWER_RATING: 100, // Công lực cơ bản của mỗi instance kiếm
+            BREAKS_PER_DURABILITY_LOSS: 4, // Số lần gãy khi mất độ bền
+            MIN_DURABILITY: 1, // Độ bền tối thiểu trước khi kiếm vỡ hoàn toàn
+            REFINED_DURABILITY_BASE: 8, // Độ bền cơ bản của instance trúc luyện hóa
+            REFINED_DURABILITY_PER_120_YEARS: 2 // Độ bền tăng thêm mỗi 120 năm nuôi dưỡng (tương đương mỗi giai đoạn) cho instance trúc luyện hóa
         },
         CONTROL: {
-            WITHOUT_SECRET_ART: 1,
-            MAX_CONSCIOUSNESS_CONTROL: 72
+            WITHOUT_SECRET_ART: 1, // Không có nghệ thuật bí mật
+            MAX_CONSCIOUSNESS_CONTROL: 72 // Số lượng kiếm tối đa có thể điều khiển ý thức (tương đương với số kiếm tối đa)
         },
         NURTURE_SYSTEM: {
-            ROOT_MATERIAL_KEY: "KIM_LOI_TRUC_ROOT",
-            ROOT_INSTANCE_PREFIX: "KIM_LOI_TRUC_ROOT",
-            REFINED_INSTANCE_PREFIX: "THANH_TRUC_REFINED",
-            MIN_REFINE_YEARS: 120,
-            AUTO_YEARS_PER_SECOND: 2,
-            AUTO_UI_REFRESH_MS: 1000,
-            AUTO_SAVE_INTERVAL_MS: 5000,
-            CHUONG_ACCELERATION_YEARS: 180,
-            MAX_NURTURE_YEARS: 3600,
-            ROOT_SELLBACK_RATIO: 0.5,
-            REFINED_POWER_BASE: 100,
-            REFINED_POWER_PER_YEAR: 1.05,
-            REFINED_SELL_BASE: 800,
-            REFINED_SELL_PER_POWER: 10,
+            ROOT_MATERIAL_KEY: "KIM_LOI_TRUC_ROOT", // Mã định danh nguyên liệu gốc trong kho
+            ROOT_INSTANCE_PREFIX: "KIM_LOI_TRUC_ROOT", // Tiền tố để tạo instance gốc khi bắt đầu nuôi dưỡng
+            REFINED_INSTANCE_PREFIX: "THANH_TRUC_REFINED", // Tiền tố để tạo instance trúc luyện hóa khi hoàn thành mỗi giai đoạn
+            MIN_REFINE_YEARS: 120, // Số năm tối thiểu để hoàn thành giai đoạn luyện hóa đầu tiên
+            AUTO_YEARS_PER_SECOND: 2, // Số năm tự động gia tăng mỗi giây
+            AUTO_UI_REFRESH_MS: 1000, // Thời gian làm mới giao diện người dùng tự động
+            AUTO_SAVE_INTERVAL_MS: 5000, // Thời gian tự động lưu tiến trình nuôi dưỡng
+            CHUONG_ACCELERATION_YEARS: 180, // Số năm tăng tốc khi dùng Chuông Thiên Bình
+            MAX_NURTURE_YEARS: 3600, // Số năm tối đa để hoàn thành toàn bộ quá trình nuôi dưỡng (tương đương 30 giai đoạn)
+            ROOT_SELLBACK_RATIO: 0.5, // Tỉ lệ hoàn lại khi bán nguyên liệu gốc (50% giá mua)
+            REFINED_POWER_BASE: 100, // Công lực cơ bản của trúc luyện hóa
+            REFINED_POWER_PER_YEAR: 1.05, // Tăng công lực theo từng năm
+            REFINED_SELL_BASE: 800, // Giá bán cơ bản của trúc luyện hóa
+            REFINED_SELL_PER_POWER: 10, // Giá bán tăng theo công lực
             STAGE_THRESHOLDS: [
                 {
                     years: 0,
@@ -226,22 +226,22 @@ const CONFIG = {
         DURATION_MS: 10000, // Thời gian duy trì trạng thái ultimate
         TRANSITION_MS: 1000, // Thời gian hợp kiếm hoặc tách kiếm
         CHARGE_STEPS: 10,   // Số nấc hiển thị tiến độ nộ trên nút ultimate
-        CORE_HIT_INTERVAL_MS: 42,
-        ATTACK_BURST_INTERVAL_MS: 32,
-        ATTACK_BURST_PARTICLE_COUNT: 8,
-        MAX_ACTIVE_BURST_PARTICLES: 220
+        CORE_HIT_INTERVAL_MS: 42, // Khoảng thời gian giữa các lần kiếm chính đánh trúng mục tiêu khi ở trạng thái ultimate
+        ATTACK_BURST_INTERVAL_MS: 32, // Khoảng thời gian giữa các lần phóng ra hạt tấn công khi ở trạng thái ultimate
+        ATTACK_BURST_PARTICLE_COUNT: 8, // Số lượng hạt tấn công được phóng ra mỗi lần
+        MAX_ACTIVE_BURST_PARTICLES: 220 // Số lượng hạt tấn công tối đa có thể tồn tại cùng lúc để tránh quá tải hiệu ứng
     },
     INPUT: {
         JOYSTICK_CURSOR_SPEED: 0.01, // Hệ số độ nhạy/tốc độ con trỏ khi điều khiển bằng joystick mobile
         DOUBLE_TAP_DELAY: 300   // Khoảng cách tối đa giữa 2 lần chạm để tính là double tap
     },
     CURSOR: {
-        BASE_DOT_RADIUS: 3.2,
-        BASE_RING_RADIUS: 7.5,
-        BASE_DOT_COLOR: "#f3fffd",
-        BASE_RING_COLOR: "rgba(143, 255, 224, 0.32)",
-        BASE_GLOW_COLOR: "rgba(143, 255, 224, 0.42)",
-        BASE_GLOW_BLUR: 10
+        BASE_DOT_RADIUS: 3.2, // Bán kính của chấm sáng ở tâm con trỏ
+        BASE_RING_RADIUS: 7.5, // Bán kính của vòng tròn xung quanh chấm sáng
+        BASE_DOT_COLOR: "#f3fffd", // Màu của chấm sáng ở tâm con trỏ
+        BASE_RING_COLOR: "rgba(143, 255, 224, 0.32)", // Màu của vòng tròn xung quanh chấm sáng
+        BASE_GLOW_COLOR: "rgba(143, 255, 224, 0.42)", // Màu của hào quang phát ra từ con trỏ
+        BASE_GLOW_BLUR: 10 // Độ mờ của hào quang phát ra từ con trỏ
     },
     COLORS: {
         BG_FADE: "rgba(0, 0, 8, 0.25)",         // Màu nền phủ (tạo hiệu ứng lưu ảnh/motion blur)
@@ -430,9 +430,9 @@ const CONFIG = {
                 quality: "HIGH",
                 color: "#f5c87a",
                 radius: 4.8,
-                buyPriceLowStone: 120,
-                dropWeight: 1.05,
-                nutrition: 0,
+                buyPriceLowStone: 120, // Giá mua tính theo Low Stone
+                dropWeight: 1.05, // Tỉ lệ rơi khi đánh quái (càng cao càng dễ rơi)
+                nutrition: 0, // Giá trị dinh dưỡng khi dùng làm thức ăn cho kỳ trùng
                 description: "Sừng yêu thú cứng như linh thiết, thường dùng làm nguyên liệu ấp nở kỳ trùng giáp xác."
             },
             YEU_HUYET: {
@@ -879,7 +879,7 @@ const CONFIG = {
                 fullName: "Tẫn Đạo Diệt Nguyên Đan",
                 quality: "SUPREME",
                 auraMode: "void",
-                durationMs: 10000,
+                durationMs: 10000, // Thời gian tồn tại của hiệu ứng sau khi sử dụng
                 color: "#231130",
                 radius: 8,
                 buyPriceLowStone: 4444444
@@ -926,9 +926,9 @@ const CONFIG = {
             buyPriceLowStone: 8800000,
             buttonLabel: "Mua",
             inventoryActionLabel: "Gia tốc",
-            isOneTime: true,
-            cooldownMs: 60000,
-            nurtureBoostYears: 180,
+            isOneTime: true, // Chỉ sử dụng được một lần, sau khi dùng sẽ biến mất khỏi kho
+            cooldownMs: 60000, // Thời gian hồi chiêu sau khi sử dụng
+            nurtureBoostYears: 180, // Số năm gia tăng vào thời điểm hiện tại sau khi sử dụng
             description: "Bình nhỏ màu lục cổ, phủ kín hoa văn huyền ảo và tỏa khí tức thời gian. Có thể gia tốc thời quang, tích trữ lục dịch, thúc sinh cơ và bồi dưỡng linh dược. Đây là một Huyền thiên chi bảo chạm đến pháp tắc thời gian."
         },
         PHONG_LOI_SI: {
@@ -944,37 +944,29 @@ const CONFIG = {
             stowLabel: "Thu hồi",
             description: "Phong lôi song sí, sau khi luyện hóa sẽ hóa thành linh dực hộ tại thần niệm, bám hai bên tâm ấn mà tăng thêm vẻ thần tốc.",
             cursorStyle: {
-                // Khoảng mở ngang của đôi cánh hai bên con trỏ
-                WING_OFFSET_X: 15,
-                // Độ nâng của cánh so với tâm con trỏ
-                WING_OFFSET_Y: -1.5,
-                // Bề ngang cánh chính
-                WING_WIDTH: 15,
-                // Độ cao vút của cánh
-                WING_HEIGHT: 20,
-                // Độ rung nhịp phong lôi
-                FLAP_AMPLITUDE: 0.12,
-                // Tốc độ nhịp rung
-                FLAP_SPEED: 0.0052,
-                // Mức sáng của lôi mang
-                GLOW_BLUR: 16,
-                // Chiều dài điện văn phụ trên cánh
-                ARC_LENGTH: 9
+                WING_OFFSET_X: 15, // Khoảng mở ngang của đôi cánh hai bên con trỏ
+                WING_OFFSET_Y: -1.5, // Độ nâng của cánh so với tâm con trỏ
+                WING_WIDTH: 15, // Bề ngang cánh chính
+                WING_HEIGHT: 20, // Độ cao vút của cánh
+                FLAP_AMPLITUDE: 0.12, // Độ rung nhịp phong lôi
+                FLAP_SPEED: 0.0052, // Tốc độ nhịp rung
+                GLOW_BLUR: 16, // Mức sáng của lôi mang
+                ARC_LENGTH: 9 // Chiều dài điện văn phụ trên cánh
             },
             teleportSkill: {
                 NAME: "Phong Lôi Độn",
-                CHARGE_MS: 90,
-                TRANSITION_MS: 48,
-                COOLDOWN_MS: 320,
-                MANA_COST: 18,
-                TRIGGER_TRAVEL_DISTANCE: 140,
-                BLINK_DISTANCE: 220,
-                MIN_BLINK_DISTANCE: 88,
-                MIN_MOVE_SPEED: 0.8,
-                AFTERIMAGE_MS: 280,
-                TRAIL_MS: 260,
-                FLASH_MS: 80,
-                IMPACT_RADIUS: 26
+                CHARGE_MS: 90, // Thời gian tích trữ trước khi dịch chuyển
+                TRANSITION_MS: 48, // Thời gian chuyển tiếp giữa vị trí cũ và mới
+                COOLDOWN_MS: 320, // Thời gian hồi chiêu
+                MANA_COST: 18, // Mana tiêu hao khi sử dụng
+                TRIGGER_TRAVEL_DISTANCE: 140, // Khoảng cách tối thiểu để kích hoạt hiệu ứng sau khi dịch chuyển
+                BLINK_DISTANCE: 220, // Khoảng cách dịch chuyển tối đa
+                MIN_BLINK_DISTANCE: 88, // Khoảng cách dịch chuyển tối thiểu để kích hoạt hiệu ứng
+                MIN_MOVE_SPEED: 0.8, // Tốc độ di chuyển tối thiểu để kích hoạt hiệu ứng
+                AFTERIMAGE_MS: 280, // Thời gian tồn tại của ảnh sau khi dịch chuyển
+                TRAIL_MS: 260, // Thời gian tồn tại của vệt lôi sau khi dịch chuyển
+                FLASH_MS: 80, // Thời gian tồn tại của hiệu ứng sáng chớp sau khi dịch chuyển
+                IMPACT_RADIUS: 26 // Bán kính ảnh hưởng của vụ nổ điện sau khi dịch chuyển
             }
         },
         HUYET_SAC_PHI_PHONG: {
@@ -989,10 +981,10 @@ const CONFIG = {
             deployLabel: "Triển khai",
             stowLabel: "Thu hồi",
             imagePath: IMAGE_PATHS.ARTIFACTS.HUYET_SAC_PHI_PHONG,
-            speedBonusPct: 0.42,
-            trailOffsetStanding: 18,
-            trailOffsetMoving: 9,
-            movingAnchorFollow: 0.78,
+            speedBonusPct: 0.42, // Tỉ lệ gia tăng tốc độ di chuyển khi triển khai
+            trailOffsetStanding: 18, // Khoảng cách giữa nhân vật và vệt máu khi đứng yên
+            trailOffsetMoving: 9, // Khoảng cách giữa nhân vật và vệt máu khi di chuyển
+            movingAnchorFollow: 0.78, // Tỉ lệ bám theo tâm ấn khi di chuyển (giá trị càng cao thì vệt máu càng bám sát tâm ấn)
             description: "Huyết sắc phi phong như dải máu hóa gió. Sau khi luyện hóa sẽ bám theo tâm ấn, gia tăng thân pháp và kéo ra huyết quang đỏ rực phía sau mỗi lần di chuyển."
         }
     },
@@ -1045,61 +1037,55 @@ const CONFIG = {
             ELITE_COUNT: 2 // Số lượng trứng tinh anh
         },
         HATCH: {
-            MIN_MANA_COST: 0,
+            MIN_MANA_COST: 0, // Mana tối thiểu để có thể ấp trứng
             NOTIFY_COLOR: "#79ffd4"
         },
         CARE: {
-            FEED_INTERVAL_MS: 30000,
-            FOOD_PER_INSECT: 1,
-            STARVATION_DEATH_CHANCE: 0.24,
-            WRONG_HABITAT_DEATH_CHANCE: 0.18,
-            BREED_CHANCE_PER_CYCLE: 0.26,
-            MAX_CYCLES_PER_UPDATE: 5,
-            ALERT_COOLDOWN_MS: 12000
+            FEED_INTERVAL_MS: 30000, // Thời gian giữa các lần cho ăn
+            FOOD_PER_INSECT: 1, // Số lượng thức ăn cần thiết cho mỗi con trùng
+            STARVATION_DEATH_CHANCE: 0.24, // Tỉ lệ chết đói
+            WRONG_HABITAT_DEATH_CHANCE: 0.18, // Tỉ lệ chết do môi trường không phù hợp
+            BREED_CHANCE_PER_CYCLE: 0.26, // Tỉ lệ sinh sản mỗi chu kỳ
+            MAX_CYCLES_PER_UPDATE: 5, // Số chu kỳ tối đa được xử lý trong một lần cập nhật (giúp giảm lag khi có nhiều trùng)
+            ALERT_COOLDOWN_MS: 12000 // Thời gian chờ giữa các lần cảnh báo khi trùng có nguy cơ chết (giúp tránh spam thông báo)
         },
         ATTACK: {
-            HIT_INTERVAL_MS: 220,
-            TARGET_RANGE: 220,
-            BASE_DAMAGE_FACTOR: 0.45,
-            BONUS_DAMAGE_PER_5: 0.08,
-            VISUAL_LIMIT: 36,
-            VISUAL_MIN_RADIUS: 20,
-            VISUAL_MAX_RADIUS: 74,
+            HIT_INTERVAL_MS: 220, // Thời gian giữa các lần tấn công
+            TARGET_RANGE: 220, // Khoảng cách tối đa để bầy trùng có thể tấn công mục tiêu
+            BASE_DAMAGE_FACTOR: 0.45, // Hệ số sát thương cơ bản (sát thương thực tế = base damage factor * attack stat của người chơi)
+            BONUS_DAMAGE_PER_5: 0.08, // Hệ số sát thương cộng thêm cho mỗi 5 điểm tấn công (sát thương thực tế = base damage factor * attack stat + bonus damage per 5 * floor(attack stat / 5))
+            VISUAL_LIMIT: 36, // Giới hạn số lượng hình ảnh trực quan hiển thị
+            VISUAL_MIN_RADIUS: 20, // Bán kính tối thiểu của hình ảnh trực quan
+            VISUAL_MAX_RADIUS: 74, // Bán kính tối đa của hình ảnh trực quan
             VISUAL_JITTER: 14,              // Độ rung ngẫu nhiên của quỹ đạo bầy trùng
-            // Tốc độ nền của từng con khi bay trong Khu Trùng Thuật.
-            // Giảm các giá trị này nếu muốn nhìn rõ đường bay hơn.
-            VISUAL_SPEED_MIN: 0.72,
-            VISUAL_SPEED_MAX: 1.6,
-            // Tốc độ lắc cánh / đảo nhịp phụ của quỹ đạo.
-            VISUAL_WOBBLE_SPEED_MIN: 0.6,
-            VISUAL_WOBBLE_SPEED_MAX: 1.35,
-            // Tốc độ quay quanh chủ nhân hoặc quanh địch.
+            VISUAL_SPEED_MIN: 0.72, // Tốc độ tối thiểu của bầy trùng
+            VISUAL_SPEED_MAX: 1.6,  // Tốc độ tối đa của bầy trùng
+            VISUAL_WOBBLE_SPEED_MIN: 0.6, // Tốc độ rung tối thiểu của quỹ đạo bầy trùng
+            VISUAL_WOBBLE_SPEED_MAX: 1.35, // Tốc độ rung tối đa của quỹ đạo bầy trùng
             VISUAL_IDLE_ORBIT_SPEED: 1.05,  // Khi không công kích
             VISUAL_ATTACK_ORBIT_SPEED: 1.45,// Khi đang công kích nhưng chưa bám mục tiêu
             VISUAL_TARGET_ORBIT_SPEED: 1.7, // Khi đã bám quanh mục tiêu
-            // Tốc độ lao/bám theo điểm đích.
-            // Đây là nhóm nên hạ trước nếu bầy trùng lao quá nhanh.
-            VISUAL_IDLE_FOLLOW_SPEED: 6.2,
-            VISUAL_TARGET_FOLLOW_SPEED: 6.8,
-            REPRODUCE_ON_KILL_CHANCE: 0.16,
-            DEATH_ON_HIT_CHANCE: 0.04,
-            DEATH_ON_SHIELD_CHANCE: 0.12
+            VISUAL_IDLE_FOLLOW_SPEED: 6.2, // Tốc độ bầy trùng di chuyển khi không công kích
+            VISUAL_TARGET_FOLLOW_SPEED: 6.8, // Tốc độ bầy trùng di chuyển khi đã bám quanh mục tiêu
+            REPRODUCE_ON_KILL_CHANCE: 0.16, // Tỉ lệ sinh sản thêm một con trùng mới khi bầy trùng hiện tại giết được một mục tiêu
+            DEATH_ON_HIT_CHANCE: 0.04, // Tỉ lệ chết khi bầy trùng tấn công trúng mục tiêu (do quá sức hoặc phản đòn)
+            DEATH_ON_SHIELD_CHANCE: 0.12 // Tỉ lệ chết khi bầy trùng bị chắn bởi khiên hoặc lá chắn (do va chạm hoặc phản đòn)
         },
         ULTIMATE: {
             NAME: "Vạn Trùng Phệ Giới",
             NOTIFY_COLOR: "#ff7bc3",
-            DURATION_MS: 9000,
-            HIT_INTERVAL_MS: 120,
-            TARGET_RANGE: 320,
-            DAMAGE_MULTIPLIER: 1.72,
-            STRIKES_PER_SPECIES: 2,
-            MAX_TARGETS: 7,
-            VISUAL_LIMIT: 54,
-            VISUAL_RADIUS: 118,
-            VISUAL_JITTER: 24,
-            REPRODUCE_ON_KILL_CHANCE: 0.38,
-            DEATH_ON_HIT_CHANCE: 0.01,
-            DEATH_ON_SHIELD_CHANCE: 0.04
+            DURATION_MS: 9000, // Thời gian hiệu lực của chiêu thức
+            HIT_INTERVAL_MS: 120, // Thời gian giữa các lần tấn công
+            TARGET_RANGE: 320, // Khoảng cách tối đa để bầy trùng có thể tấn công mục tiêu
+            DAMAGE_MULTIPLIER: 1.72, // Hệ số sát thương của chiêu thức (sát thương thực tế = damage multiplier * sát thương cơ bản của bầy trùng)
+            STRIKES_PER_SPECIES: 2, // Số lần tấn công tối đa trên mỗi loài trùng trong một lần sử dụng chiêu thức (giúp tăng tính đa dạng của mục tiêu bị tấn công)
+            MAX_TARGETS: 7, // Số lượng mục tiêu tối đa có thể bị tấn công trong một lần sử dụng chiêu thức (giúp cân bằng sức mạnh của chiêu thức)
+            VISUAL_LIMIT: 54, // Giới hạn số lượng hình ảnh trực quan hiển thị (chiêu thức mạnh hơn nên có thể hiển thị nhiều hơn)
+            VISUAL_RADIUS: 118, // Bán kính cố định của hình ảnh trực quan (chiêu thức mạnh hơn nên có bán kính lớn hơn)
+            VISUAL_JITTER: 24,             // Độ rung ngẫu nhiên của quỹ đạo bầy trùng (chiêu thức mạnh hơn nên có thể có độ rung lớn hơn)
+            REPRODUCE_ON_KILL_CHANCE: 0.38, // Tỉ lệ sinh sản thêm một con trùng mới khi bầy trùng hiện tại giết được một mục tiêu (chiêu thức mạnh hơn nên có tỉ lệ sinh sản cao hơn)
+            DEATH_ON_HIT_CHANCE: 0.01, // Tỉ lệ chết khi bầy trùng tấn công trúng mục tiêu (do quá sức hoặc phản đòn) (chiêu thức mạnh hơn nên có tỉ lệ chết thấp hơn)
+            DEATH_ON_SHIELD_CHANCE: 0.04 // Tỉ lệ chết khi bầy trùng bị chắn bởi khiên hoặc lá chắn (do va chạm hoặc phản đòn) (chiêu thức mạnh hơn nên có tỉ lệ chết thấp hơn)
         },
         SPECIES: {
             KIEN_THIEN_TINH: {
@@ -1113,12 +1099,11 @@ const CONFIG = {
                 styleLabel: "Thiên thạch quang đàn",
                 styleHint: "Kiến phát sáng, quần thể lao xuống như mưa sao sa.",
                 weight: 7,
-                attackFactor: 1.28,
-                vitality: 0.84,
-                fertility: 0.68,
+                attackFactor: 1.28, // Hệ số sát thương của loài trùng này (sát thương thực tế = attack factor * sát thương cơ bản của bầy trùng)
+                vitality: 0.84, // Khả năng sống sót của loài trùng này
+                fertility: 0.68, // Khả năng sinh sản của loài trùng này
                 description: "Thiên trùng mang tinh quang trong giáp xác, hợp thành đàn thì công phạt đồng bộ như mưa sao sa."
             },
-        
             PHE_KIM_TRUNG: {
                 rank: 10,
                 name: "Phệ Kim Trùng",
@@ -1136,7 +1121,6 @@ const CONFIG = {
                 fertility: 0.52,
                 description: "Danh trùng hung danh hiển hách, lấy kim thạch làm thức ăn, bầy lớn đủ sức cắn xuyên linh tài và pháp bảo."
             },
-        
             PHI_THIEN_TU_VAN_HAT: {
                 rank: 14,
                 name: "Phi Thiên Tử Văn Hạt",
@@ -1153,7 +1137,6 @@ const CONFIG = {
                 fertility: 0.82,
                 description: "Dị hạt thân nhỏ nhưng linh mẫn dị thường, đuôi độc tím văn có thể liên tục bám theo khí cơ của con mồi."
             },
-        
             HUYET_NGOC_TRI_CHU: {
                 rank: 16,
                 name: "Huyết Ngọc Tri Chu",
@@ -1171,7 +1154,6 @@ const CONFIG = {
                 fertility: 0.9,
                 description: "Linh chu toàn thân đỏ như ngọc máu, giỏi dệt tơ khóa mục tiêu rồi rút sinh cơ từng chút một."
             },
-        
             HUYEN_DIEM_NGA: {
                 rank: 17,
                 name: "Huyễn Diệm Nga",
@@ -1188,7 +1170,6 @@ const CONFIG = {
                 fertility: 1.05,
                 description: "Yêu nga cánh mỏng mang huyễn hỏa nhàn sắc, thường dùng để quấy nhiễu thần thức và bủa mây mê hoặc đối thủ."
             },
-        
             KIM_TAM: {
                 rank: "Không rõ",
                 name: "Kim Tằm",
@@ -1205,7 +1186,6 @@ const CONFIG = {
                 fertility: 0.6,
                 description: "Cổ trùng dạng tằm, có thể ký sinh và âm thầm thôn phệ linh lực, cực kỳ nguy hiểm trong ám toán."
             },
-        
             THIET_HOA_NGHI: {
                 rank: "Không rõ",
                 name: "Thiết Hỏa Nghĩ",
@@ -1222,7 +1202,6 @@ const CONFIG = {
                 fertility: 1.2,
                 description: "Kiến lửa thân kim loại, số lượng đông đảo, có thể tự bạo hoặc thiêu đốt mục tiêu."
             },
-        
             KIM_GIAP_HAT: {
                 rank: "Không rõ",
                 name: "Kim Giáp Hạt",
@@ -1239,7 +1218,6 @@ const CONFIG = {
                 fertility: 0.7,
                 description: "Bọ cạp giáp vàng, phòng ngự cực mạnh, đuôi chứa kịch độc, thiên về cận chiến."
             },
-        
             HUYET_THUC_NGHI: {
                 rank: "Không rõ",
                 name: "Huyết Thực Nghĩ",
@@ -1256,7 +1234,6 @@ const CONFIG = {
                 fertility: 1.3,
                 description: "Kiến hút máu, nuốt sinh linh để tăng trưởng, càng giết càng mạnh."
             },
-        
             BANG_TAM: {
                 rank: "Không rõ",
                 name: "Băng Tằm",
@@ -1273,7 +1250,6 @@ const CONFIG = {
                 fertility: 0.75,
                 description: "Tằm mang hàn khí, có thể đóng băng linh lực và làm chậm mọi chuyển động xung quanh."
             },
-
             LUC_DUC_SUONG_CONG: {
                 rank: "Không rõ",
                 name: "Lục Dực Sương Công",
@@ -1291,7 +1267,6 @@ const CONFIG = {
                 fertility: 0.74,
                 description: "Dị công sáu cánh mang hàn vụ và sương độc. Khi nhập đàn sẽ kéo băng vụ khóa thân pháp mục tiêu rồi rỉa dần sinh cơ."
             },
-        
             THON_LINH_TRUNG: {
                 rank: "Không rõ",
                 name: "Thôn Linh Trùng",
@@ -1311,11 +1286,11 @@ const CONFIG = {
         }
     },
     SPIRIT_STONE: {
-        CHANCE: 0.35,
-        ELITE_CHANCE: 1.0,
-        COLLECT_DELAY_MS: 500,
-        MAGNET_SPEED: 16,
-        TRAIL_LENGTH: 12,
+        CHANCE: 0.35, // Tỉ lệ rơi linh thạch khi đánh quái
+        ELITE_CHANCE: 1.0, // Tỉ lệ rơi linh thạch khi đánh quái tinh anh
+        COLLECT_DELAY_MS: 500, // Thời gian chờ giữa các lần thu thập linh thạch (giúp tránh spam thu thập)
+        MAGNET_SPEED: 16, // Tốc độ di chuyển của linh thạch khi bị hút
+        TRAIL_LENGTH: 12, // Số lượng điểm trong vệt sáng của linh thạch khi di chuyển
         STARTING_COUNTS: {
             LOW: 400,     // Số lượng hạ phẩm linh thạch ban đầu để dev test nhanh
             MEDIUM: 200,   // Số lượng trung phẩm linh thạch ban đầu
@@ -1323,23 +1298,23 @@ const CONFIG = {
             SUPREME: 50   // Số lượng cực phẩm linh thạch ban đầu
         },
         DROP_COUNT: {
-            NORMAL: 1,
-            ELITE: 3
+            NORMAL: 1, // Số lượng linh thạch rơi ra khi đánh quái thường
+            ELITE: 3 // Số lượng linh thạch rơi ra khi đánh quái tinh anh
         },
         QUALITY_RATES: {
-            NORMAL: { LOW: 0.88, MEDIUM: 0.10, HIGH: 0.019, SUPREME: 0.001 },
-            ELITE: { LOW: 0.50, MEDIUM: 0.34, HIGH: 0.13, SUPREME: 0.03 }
+            NORMAL: { LOW: 0.88, MEDIUM: 0.10, HIGH: 0.019, SUPREME: 0.001 }, // Tỉ lệ rơi theo chất lượng khi đánh quái thường
+            ELITE: { LOW: 0.50, MEDIUM: 0.34, HIGH: 0.13, SUPREME: 0.03 } // Tỉ lệ rơi theo chất lượng khi đánh quái tinh anh
         },
         TYPES: {
-            LOW: { label: "Hạ phẩm linh thạch", shortLabel: "Hạ phẩm", value: 1, color: "#62f0d9", radius: 4.5 },
-            MEDIUM: { label: "Trung phẩm linh thạch", shortLabel: "Trung phẩm", value: 100, color: "#59b6ff", radius: 5.5 },
-            HIGH: { label: "Thượng phẩm linh thạch", shortLabel: "Thượng phẩm", value: 10000, color: "#b78cff", radius: 6.5 },
-            SUPREME: { label: "Cực phẩm linh thạch", shortLabel: "Cực phẩm", value: 1000000, color: "#ffd76f", radius: 7.5 }
+            LOW: { label: "Hạ phẩm linh thạch", shortLabel: "Hạ phẩm", value: 1, color: "#62f0d9", radius: 4.5 }, // Thông tin hiển thị và giá trị của linh thạch hạ phẩm
+            MEDIUM: { label: "Trung phẩm linh thạch", shortLabel: "Trung phẩm", value: 100, color: "#59b6ff", radius: 5.5 }, // Thông tin hiển thị và giá trị của linh thạch trung phẩm
+            HIGH: { label: "Thượng phẩm linh thạch", shortLabel: "Thượng phẩm", value: 10000, color: "#b78cff", radius: 6.5 }, // Thông tin hiển thị và giá trị của linh thạch thượng phẩm
+            SUPREME: { label: "Cực phẩm linh thạch", shortLabel: "Cực phẩm", value: 1000000, color: "#ffd76f", radius: 7.5 } // Thông tin hiển thị và giá trị của linh thạch cực phẩm
         }
     }
 };
-CONFIG.ENEMY.MAX_SHIELD_CRACK_LINES = 48;
-CONFIG.ENEMY.MAX_SHIELD_CRACK_RINGS = 4;
+CONFIG.ENEMY.MAX_SHIELD_CRACK_LINES = 48; // Số lượng đường nứt tối đa trên khiên hoặc lá chắn của quái vật (giúp cân bằng hiệu ứng nứt khi có nhiều đòn đánh liên tiếp)
+CONFIG.ENEMY.MAX_SHIELD_CRACK_RINGS = 4; // Số lượng vòng nứt tối đa trên khiên hoặc lá chắn của quái vật
 // <!-- Create By: Vũ Hoài Nam -->
 
 
