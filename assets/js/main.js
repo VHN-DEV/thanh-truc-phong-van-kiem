@@ -4355,6 +4355,7 @@ const Input = {
             syncSwordFormation({ rebuildAll: true });
         }
 
+        this.enforcePhongLoiSiSwordRequirement();
         this.ensureValidAttackMode();
         showNotify(
             `${this.getItemDisplayName({ category: 'SWORD_ARTIFACT', quality: spec.quality })} đã được gỡ trang bị và đưa về túi trữ vật.`,
@@ -4780,6 +4781,20 @@ const Input = {
 
     toggleArtifactDeployment(uniqueKey) {
         return this.setArtifactDeployment(uniqueKey, !this.isArtifactDeployed(uniqueKey));
+    },
+
+    enforcePhongLoiSiSwordRequirement({ silent = false } = {}) {
+        if (!this.isArtifactDeployed('PHONG_LOI_SI')) return false;
+        const equippedSwordCount = Array.isArray(this.getEquippedSwordArtifacts?.())
+            ? this.getEquippedSwordArtifacts().length
+            : 0;
+        if (equippedSwordCount > 0) return false;
+
+        this.setArtifactDeployment('PHONG_LOI_SI', false, { silent: true, skipRefresh: true });
+        if (!silent) {
+            showNotify('Đã thu hồi Phong Lôi Sí vì không còn Thanh Trúc Phong Vân Kiếm để dẫn lôi vận hành.', this.getArtifactConfig('PHONG_LOI_SI')?.color || '#9fe8ff');
+        }
+        return true;
     },
 
     getArtifactSkillList() {
@@ -6030,6 +6045,7 @@ const Input = {
     },
 
     refreshResourceUI() {
+        this.enforcePhongLoiSiSwordRequirement({ silent: true });
         this.renderExpUI();
 
         if (BeastBagUI && typeof BeastBagUI.syncAvailability === 'function') {
