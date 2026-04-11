@@ -647,9 +647,11 @@ const Input = {
         HUYET_SAC_PHI_PHONG: false
     },
     activeArtifacts: {
+        CAN_LAM_BANG_DIEM: false,
         PHONG_LOI_SI: false,
         HUYET_SAC_PHI_PHONG: false
     },
+    canLamProjectiles: [],
     phongLoiBlink: {
         enabled: false,
         accumulatedDistance: 0,
@@ -4401,30 +4403,43 @@ const Input = {
         }
         const livingEnemies = (Array.isArray(enemies) ? enemies : []).filter(enemy => enemy && enemy.hp > 0);
         if (!livingEnemies.length) {
-            showNotify('Không có mục tiêu để thi triển Càng Lam Băng Diễm.', '#69d9ff');
+            showNotify('Không có mục tiêu để thi triển Càn Lam Băng Diễm.', '#69d9ff');
             return false;
         }
 
-        const anchorX = Number.isFinite(this.x) ? this.x : guardCenter.x;
-        const anchorY = Number.isFinite(this.y) ? this.y : guardCenter.y;
+        const startX = Number.isFinite(this.x) ? this.x : guardCenter.x;
+        const startY = Number.isFinite(this.y) ? this.y : guardCenter.y;
         const target = livingEnemies.reduce((closest, enemy) => {
             if (!closest) return enemy;
-            const currentDist = Math.hypot((enemy.x || 0) - anchorX, (enemy.y || 0) - anchorY);
-            const bestDist = Math.hypot((closest.x || 0) - anchorX, (closest.y || 0) - anchorY);
+            const currentDist = Math.hypot((enemy.x || 0) - startX, (enemy.y || 0) - startY);
+            const bestDist = Math.hypot((closest.x || 0) - startX, (closest.y || 0) - startY);
             return currentDist < bestDist ? enemy : closest;
         }, null);
         if (!target) return false;
 
-        guardCenter.x = target.x;
-        guardCenter.y = target.y;
-        this.x = target.x;
-        this.y = target.y;
-        this.px = this.x;
-        this.py = this.y;
+        this.canLamProjectiles.push({
+            fromX: startX,
+            fromY: startY,
+            targetRef: target,
+            x: startX,
+            y: startY,
+            startAt: performance.now(),
+            travelMs: 260
+        });
 
-        target.applyMovementLock?.(900);
+        showNotify('Càn Lam Băng Diễm: tách một nhúm lam hỏa truy kích mục tiêu gần nhất.', '#69d9ff');
+        this.refreshResourceUI();
+        return true;
+    },
+
+    applyCanLamImpact(target) {
+        if (!target || target.hp <= 0) return false;
+
+        target.applyMovementLock?.(1200);
         target.applySlow?.(3000, 0.08);
-        target.applyDodgeSuppression?.(3000);
+        target.suppressDodge?.(3000);
+        target.canLamFreezeUntil = Math.max(target.canLamFreezeUntil || 0, performance.now() + 1300);
+        target.canLamBurnUntil = Math.max(target.canLamBurnUntil || 0, performance.now() + 3000);
 
         const dotSword = { powerPenalty: 0.36, ignoreDodge: true, shieldBreakMultiplier: 1.2 };
         for (let tick = 1; tick <= 3; tick++) {
@@ -4437,10 +4452,87 @@ const Input = {
                 }
             }, tick * 1000);
         }
-
-        showNotify('Thi triển Càng Lam Băng Diễm: lao tới mục tiêu gần nhất, thiêu băng trong 3 giây.', '#69d9ff');
-        this.refreshResourceUI();
         return true;
+    },
+
+    createCanLamImpactBurst(x, y) {
+        trimVisualParticles(260);
+        visualParticles.push({
+            type: 'ring',
+            x,
+            y,
+            radius: 8,
+            radialVelocity: 12,
+            lineWidth: 2.2,
+            color: '#b9f2ff',
+            glow: 14,
+            life: 0.9,
+            decay: 0.08
+        });
+        for (let i = 0; i < 6; i++) {
+            const angle = (Math.PI * 2 / 6) * i;
+            visualParticles.push({
+                type: 'ray',
+                x,
+                y,
+                angle,
+                radius: 2,
+                length: 14,
+                lengthVelocity: 1.1,
+                lineWidth: 1.5,
+                color: i % 2 === 0 ? '#7fe8ff' : '#ffb16e',
+                glow: 12,
+                life: 0.84,
+                decay: 0.08
+            });
+        }
+    },
+
+    drawCanLamProjectiles(ctx, scaleFactor) {
+        if (!Array.isArray(this.canLamProjectiles) || !this.canLamProjectiles.length) return;
+        const now = performance.now();
+        const alive = [];
+
+        this.canLamProjectiles.forEach(projectile => {
+            const target = projectile.targetRef;
+            const duration = Math.max(80, projectile.travelMs || 260);
+            const progress = Math.min(1, (now - projectile.startAt) / duration);
+            const targetX = Number.isFinite(target?.x) ? target.x : projectile.x;
+            const targetY = Number.isFinite(target?.y) ? target.y : projectile.y;
+            projectile.x = projectile.fromX + ((targetX - projectile.fromX) * progress);
+            projectile.y = projectile.fromY + ((targetY - projectile.fromY) * progress);
+
+            ctx.save();
+            ctx.globalCompositeOperation = 'lighter';
+            ctx.translate(projectile.x, projectile.y);
+            const radius = (3.2 + (Math.sin(now * 0.018) * 0.6)) * scaleFactor;
+            const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, radius * 3.4);
+            grad.addColorStop(0, 'rgba(237,252,255,0.96)');
+            grad.addColorStop(0.42, 'rgba(122,221,255,0.86)');
+            grad.addColorStop(0.82, 'rgba(255,159,102,0.5)');
+            grad.addColorStop(1, 'rgba(255,159,102,0)');
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(0, 0, radius * 3.4, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#f2feff';
+            ctx.shadowBlur = 14 * scaleFactor;
+            ctx.shadowColor = '#8ee7ff';
+            ctx.beginPath();
+            ctx.arc(0, 0, radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+
+            if (progress >= 1) {
+                this.createCanLamImpactBurst(targetX, targetY);
+                this.applyCanLamImpact(target);
+                return;
+            }
+            alive.push(projectile);
+        });
+
+        this.canLamProjectiles = alive;
     },
 
     createCanLamDissolveBurst(x, y) {
@@ -9578,6 +9670,7 @@ function animate() {
 
     Input.drawPhongLoiBlinkEffects(ctx, scaleFactor);
     Input.drawHuyetSacPhiPhongTrail(ctx, scaleFactor);
+    Input.drawCanLamProjectiles(ctx, scaleFactor);
     renderCursor();
 
     // Vẽ và cập nhật hạt hiệu ứng

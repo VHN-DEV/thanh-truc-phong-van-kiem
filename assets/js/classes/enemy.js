@@ -548,6 +548,7 @@ class Enemy {
         this.drawParticles(ctx, scaleFactor);
         if (this.hasShield) this.drawShield(ctx, scaleFactor);
         this.drawBody(ctx, scaleFactor);
+        this.drawCanLamStatus(ctx, scaleFactor);
         
         ctx.restore(); // Kết thúc scale cho phần thân
 
@@ -587,6 +588,42 @@ class Enemy {
         ctx.strokeRect(-barWidth / 2, barY, barWidth, barHeight);
 
         ctx.restore(); // Kết thúc toàn bộ hàm vẽ Enemy
+    }
+
+    drawCanLamStatus(ctx, scaleFactor) {
+        const now = performance.now();
+        const freezeUntil = Number(this.canLamFreezeUntil) || 0;
+        const burnUntil = Number(this.canLamBurnUntil) || 0;
+        if (now >= freezeUntil && now >= burnUntil) return;
+
+        if (now < freezeUntil) {
+            const freezeProgress = Math.max(0, Math.min(1, (freezeUntil - now) / 1300));
+            const frostAlpha = 0.18 + (freezeProgress * 0.42);
+            const iceSize = this.r * 2.05 * scaleFactor;
+            ctx.save();
+            ctx.fillStyle = `rgba(178, 237, 255, ${frostAlpha.toFixed(3)})`;
+            ctx.strokeStyle = `rgba(222, 250, 255, ${(0.46 + (freezeProgress * 0.3)).toFixed(3)})`;
+            ctx.lineWidth = Math.max(1, 1.4 * scaleFactor);
+            ctx.fillRect(-iceSize / 2, -iceSize / 2, iceSize, iceSize);
+            ctx.strokeRect(-iceSize / 2, -iceSize / 2, iceSize, iceSize);
+            ctx.restore();
+        }
+
+        if (now < burnUntil) {
+            const pulse = 0.58 + (Math.sin((now * 0.018) + this.floatOffset) * 0.14);
+            ctx.save();
+            ctx.globalCompositeOperation = 'lighter';
+            const flareRadius = this.r * 1.8 * scaleFactor * pulse;
+            const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, flareRadius);
+            grad.addColorStop(0, 'rgba(255, 214, 162, 0.84)');
+            grad.addColorStop(0.48, 'rgba(134, 232, 255, 0.52)');
+            grad.addColorStop(1, 'rgba(134, 232, 255, 0)');
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(0, 0, flareRadius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
     }
 
     drawParticles(ctx, scaleFactor) {
