@@ -598,30 +598,115 @@ class Enemy {
 
         if (now < freezeUntil) {
             const freezeProgress = Math.max(0, Math.min(1, (freezeUntil - now) / 1300));
-            const frostAlpha = 0.18 + (freezeProgress * 0.42);
-            const iceSize = this.r * 2.05 * scaleFactor;
+            const iceW = this.r * 2.28 * scaleFactor;
+            const iceH = this.r * 2.52 * scaleFactor;
+            const depth = iceW * 0.24;
+            const left = -iceW / 2;
+            const top = -iceH / 2;
+            const right = left + iceW;
+            const bottom = top + iceH;
+            const shimmer = 0.75 + (Math.sin((now * 0.012) + this.floatOffset) * 0.08);
+
             ctx.save();
-            ctx.fillStyle = `rgba(178, 237, 255, ${frostAlpha.toFixed(3)})`;
-            ctx.strokeStyle = `rgba(222, 250, 255, ${(0.46 + (freezeProgress * 0.3)).toFixed(3)})`;
-            ctx.lineWidth = Math.max(1, 1.4 * scaleFactor);
-            ctx.fillRect(-iceSize / 2, -iceSize / 2, iceSize, iceSize);
-            ctx.strokeRect(-iceSize / 2, -iceSize / 2, iceSize, iceSize);
+            ctx.globalCompositeOperation = 'lighter';
+
+            // Mặt trước khối băng
+            const faceGrad = ctx.createLinearGradient(left, top, right, bottom);
+            faceGrad.addColorStop(0, `rgba(213, 247, 255, ${(0.18 + (freezeProgress * 0.2)).toFixed(3)})`);
+            faceGrad.addColorStop(0.55, `rgba(128, 216, 255, ${(0.24 + (freezeProgress * 0.3)).toFixed(3)})`);
+            faceGrad.addColorStop(1, `rgba(87, 171, 226, ${(0.32 + (freezeProgress * 0.28)).toFixed(3)})`);
+            ctx.fillStyle = faceGrad;
+            ctx.fillRect(left, top, iceW, iceH);
+
+            // Mặt trên để tạo cảm giác "khối"
+            ctx.beginPath();
+            ctx.moveTo(left, top);
+            ctx.lineTo(right, top);
+            ctx.lineTo(right + (depth * 0.45), top - depth);
+            ctx.lineTo(left + (depth * 0.45), top - depth);
+            ctx.closePath();
+            const topGrad = ctx.createLinearGradient(left, top - depth, right, top + 2);
+            topGrad.addColorStop(0, `rgba(236, 253, 255, ${(0.24 + (freezeProgress * 0.24)).toFixed(3)})`);
+            topGrad.addColorStop(1, `rgba(143, 221, 255, ${(0.2 + (freezeProgress * 0.2)).toFixed(3)})`);
+            ctx.fillStyle = topGrad;
+            ctx.fill();
+
+            // Mặt cạnh phải
+            ctx.beginPath();
+            ctx.moveTo(right, top);
+            ctx.lineTo(right + (depth * 0.45), top - depth);
+            ctx.lineTo(right + (depth * 0.45), bottom - depth);
+            ctx.lineTo(right, bottom);
+            ctx.closePath();
+            const sideGrad = ctx.createLinearGradient(right, top, right + depth, bottom);
+            sideGrad.addColorStop(0, `rgba(126, 207, 255, ${(0.22 + (freezeProgress * 0.22)).toFixed(3)})`);
+            sideGrad.addColorStop(1, `rgba(58, 131, 194, ${(0.34 + (freezeProgress * 0.24)).toFixed(3)})`);
+            ctx.fillStyle = sideGrad;
+            ctx.fill();
+
+            // Viền và vân nứt băng
+            ctx.strokeStyle = `rgba(233, 252, 255, ${(0.35 + (freezeProgress * 0.36)).toFixed(3)})`;
+            ctx.lineWidth = Math.max(1, 1.5 * scaleFactor);
+            ctx.strokeRect(left, top, iceW, iceH);
+            ctx.strokeRect(left + (depth * 0.45), top - depth, iceW, iceH);
+
+            ctx.lineWidth = Math.max(0.8, 1.05 * scaleFactor);
+            ctx.beginPath();
+            ctx.moveTo(left + (iceW * 0.2), top + (iceH * 0.18));
+            ctx.lineTo(left + (iceW * 0.46), top + (iceH * 0.42));
+            ctx.lineTo(left + (iceW * 0.38), top + (iceH * 0.72));
+            ctx.moveTo(left + (iceW * 0.62), top + (iceH * 0.2));
+            ctx.lineTo(left + (iceW * 0.56), top + (iceH * 0.5));
+            ctx.lineTo(left + (iceW * 0.74), top + (iceH * 0.76));
+            ctx.stroke();
+
+            // Điểm lóe sáng trên bề mặt
+            ctx.fillStyle = `rgba(255,255,255, ${(0.28 + (freezeProgress * 0.2)).toFixed(3)})`;
+            ctx.beginPath();
+            ctx.arc(left + (iceW * 0.28), top + (iceH * 0.26), Math.max(1.2, 2.2 * scaleFactor) * shimmer, 0, Math.PI * 2);
+            ctx.fill();
             ctx.restore();
         }
 
         if (now < burnUntil) {
-            const pulse = 0.58 + (Math.sin((now * 0.018) + this.floatOffset) * 0.14);
+            const burnProgress = Math.max(0, Math.min(1, (burnUntil - now) / 3000));
+            const pulse = 0.74 + (Math.sin((now * 0.02) + this.floatOffset) * 0.16);
             ctx.save();
             ctx.globalCompositeOperation = 'lighter';
-            const flareRadius = this.r * 1.8 * scaleFactor * pulse;
-            const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, flareRadius);
-            grad.addColorStop(0, 'rgba(255, 214, 162, 0.84)');
-            grad.addColorStop(0.48, 'rgba(134, 232, 255, 0.52)');
-            grad.addColorStop(1, 'rgba(134, 232, 255, 0)');
+
+            const coreRadius = this.r * 1.12 * scaleFactor * pulse;
+            const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, coreRadius * 1.9);
+            grad.addColorStop(0, `rgba(255, 247, 225, ${(0.6 + (burnProgress * 0.2)).toFixed(3)})`);
+            grad.addColorStop(0.28, `rgba(255, 189, 120, ${(0.45 + (burnProgress * 0.2)).toFixed(3)})`);
+            grad.addColorStop(0.6, `rgba(98, 211, 255, ${(0.35 + (burnProgress * 0.2)).toFixed(3)})`);
+            grad.addColorStop(1, 'rgba(98, 211, 255, 0)');
             ctx.fillStyle = grad;
             ctx.beginPath();
-            ctx.arc(0, 0, flareRadius, 0, Math.PI * 2);
+            ctx.arc(0, 0, coreRadius * 1.9, 0, Math.PI * 2);
             ctx.fill();
+
+            // Lưỡi lửa xanh-cam
+            const flameCount = 5;
+            for (let i = 0; i < flameCount; i++) {
+                const angle = (-Math.PI * 0.55) + ((Math.PI * 1.1) * (i / Math.max(1, flameCount - 1)));
+                const flicker = 0.88 + (Math.sin((now * 0.024) + (i * 1.8) + this.floatOffset) * 0.22);
+                const flameLen = this.r * (0.92 + (i % 2 ? 0.24 : 0.12)) * scaleFactor * flicker;
+                const flameWidth = this.r * 0.42 * scaleFactor;
+                const baseX = Math.cos(angle) * this.r * 0.52 * scaleFactor;
+                const baseY = Math.sin(angle) * this.r * 0.52 * scaleFactor;
+                const tipX = Math.cos(angle) * (this.r * 0.52 * scaleFactor + flameLen);
+                const tipY = Math.sin(angle) * (this.r * 0.52 * scaleFactor + flameLen) - (this.r * 0.22 * scaleFactor);
+
+                ctx.beginPath();
+                ctx.moveTo(baseX - (flameWidth * 0.32), baseY + (flameWidth * 0.22));
+                ctx.quadraticCurveTo(baseX, baseY - flameWidth, tipX, tipY);
+                ctx.quadraticCurveTo(baseX + (flameWidth * 0.38), baseY - (flameWidth * 0.12), baseX + (flameWidth * 0.26), baseY + (flameWidth * 0.2));
+                ctx.closePath();
+                ctx.fillStyle = i % 2 === 0
+                    ? `rgba(101, 225, 255, ${(0.3 + (burnProgress * 0.26)).toFixed(3)})`
+                    : `rgba(255, 173, 96, ${(0.28 + (burnProgress * 0.22)).toFixed(3)})`;
+                ctx.fill();
+            }
             ctx.restore();
         }
     }
