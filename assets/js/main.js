@@ -861,6 +861,7 @@ const Input = {
     },
 
     triggerSingleSwordTapAttack(windowMs = 320) {
+        this.performSingleSwordTapStrike();
         this.isAttacking = true;
         if (this.singleSwordAttackTapTimeoutId) {
             clearTimeout(this.singleSwordAttackTapTimeoutId);
@@ -870,6 +871,35 @@ const Input = {
             this.singleSwordAttackTapTimeoutId = null;
             this.isAttacking = false;
         }, Math.max(120, Number(windowMs) || 320));
+    },
+
+    performSingleSwordTapStrike() {
+        if (!Array.isArray(enemies) || !enemies.length) return false;
+        const attackRange = 140 * scaleFactor;
+        const sourceX = Number.isFinite(this.x) ? this.x : guardCenter.x;
+        const sourceY = Number.isFinite(this.y) ? this.y : guardCenter.y;
+        let nearestEnemy = null;
+        let nearestDistance = Infinity;
+
+        for (const enemy of enemies) {
+            if (!enemy || enemy.hp <= 0) continue;
+            const distance = Math.hypot((enemy.x || 0) - sourceX, (enemy.y || 0) - sourceY);
+            if (distance < nearestDistance) {
+                nearestDistance = distance;
+                nearestEnemy = enemy;
+            }
+        }
+
+        if (!nearestEnemy || nearestDistance > attackRange + (nearestEnemy.r || 0)) return false;
+
+        const slashSource = {
+            powerPenalty: 1,
+            ignoreDodge: false,
+            shieldBreakMultiplier: 1
+        };
+        const result = nearestEnemy.hit(slashSource);
+        this.createAttackBurst(nearestEnemy.x, nearestEnemy.y, result === 'shielded' ? '#ffb26b' : '#9beeff');
+        return result !== 'missed';
     },
 
     getMaxRankIndex() {
