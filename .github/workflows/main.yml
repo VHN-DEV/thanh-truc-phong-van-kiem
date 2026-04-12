@@ -1,0 +1,33 @@
+name: Build Project
+
+# Khi nào workflow sẽ chạy
+on:
+  push:
+    branches:
+      - main  # Hoặc nhánh bạn muốn
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout code từ repo
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 2. Cài Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'  # Hoặc version bạn cần
+
+      # 3. Cài dependencies
+      - name: Install dependencies
+        run: npm install
+
+      # 4. Chạy build
+      - name: Build project
+        run: npm run build
