@@ -139,6 +139,53 @@ textarea {
     pointer-events: none;
 }
 
+.start-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 3000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(circle at 25% 20%, rgba(65, 136, 168, 0.35), rgba(3, 10, 16, 0.95));
+
+    &.is-visible {
+        display: flex;
+    }
+
+    .start-card {
+        width: min(92vw, 420px);
+        padding: 24px 22px;
+        border-radius: 18px;
+        border: 1px solid rgba(159, 232, 255, 0.28);
+        background: linear-gradient(180deg, rgba(10, 28, 42, 0.95), rgba(4, 14, 22, 0.96));
+        box-shadow: 0 24px 40px rgba(0, 0, 0, 0.3);
+        text-align: center;
+
+        h1 {
+            margin: 0 0 10px;
+            font-size: 24px;
+            color: #b9f3ff;
+        }
+
+        p {
+            margin: 0 0 18px;
+            color: #d5ebf6;
+            font-size: 14px;
+        }
+    }
+
+    #btn-start-game {
+        border: 1px solid rgba(183, 255, 224, 0.45);
+        background: linear-gradient(135deg, rgba(81, 217, 177, 0.35), rgba(45, 115, 214, 0.52));
+        color: #f0ffff;
+        border-radius: 999px;
+        padding: 10px 22px;
+        font-weight: 700;
+        font-size: 15px;
+        cursor: pointer;
+    }
+}
+
 // ====================================================================
 // 4. MANA SYSTEM UI
 // ====================================================================

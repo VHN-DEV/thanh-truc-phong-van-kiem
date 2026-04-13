@@ -15,6 +15,7 @@ const Input = {
     maxMana: CONFIG.MANA.MAX || 100,
     hp: 100,
     maxHp: 100,
+    isGameOver: false,
     lastEnemyDamageAt: 0,
     lastAilmentTickAt: performance.now(),
     negativeStatuses: {
@@ -996,13 +997,19 @@ const Input = {
     },
 
     updateHealth(amount, source = '') {
-        if (this.isVoidCollapsed) return;
+        if (this.isVoidCollapsed || this.isGameOver) return;
         this.hp = Math.max(0, Math.min(this.maxHp, this.hp + amount));
         this.renderHealthUI();
         if (this.hp <= 0) {
-            this.hp = this.maxHp;
+            this.hp = 0;
+            this.isGameOver = true;
+            this.resetAttackState();
+            this.clearSingleSwordUltimateState?.();
             this.clearNegativeStatuses();
-            showNotify(`Thân thể trọng thương bởi ${source || 'tà lực'}, đã tự hồi phục`, '#ff7a7a');
+            this.renderHealthUI();
+            if (typeof window !== 'undefined' && typeof window.__onPlayerGameOver === 'function') {
+                window.__onPlayerGameOver(source || 'tà lực');
+            }
             this.renderNegativeStatusUI();
         }
     },
@@ -6815,6 +6822,13 @@ const Input = {
         this.updateUltimateState();
         this.updateActiveEffects();
         this.updateSingleSwordUltimateChargeState();
+
+        if (this.isGameOver) {
+            this.resetAttackState();
+            this.stopMoveJoystick();
+            this.stopTouchCursor();
+            return;
+        }
 
         if (this.isVoidCollapsed) {
             this.resetAttackState();

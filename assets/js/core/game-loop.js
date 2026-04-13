@@ -231,6 +231,23 @@ let pills = [];
 const swords = [];
 let starField;
 const guardCenter = { x: width / 2, y: height / 2, vx: 0, vy: 0 };
+let gameInitialized = false;
+let gameStarted = false;
+
+const startOverlay = document.getElementById('start-overlay');
+const startTitle = document.getElementById('start-title');
+const startSubtitle = document.getElementById('start-subtitle');
+const startButton = document.getElementById('btn-start-game');
+
+function showStartOverlay(title, subtitle) {
+    if (startTitle && title) startTitle.textContent = title;
+    if (startSubtitle && subtitle) startSubtitle.textContent = subtitle;
+    startOverlay?.classList.add('is-visible');
+}
+
+function hideStartOverlay() {
+    startOverlay?.classList.remove('is-visible');
+}
 
 function getConfiguredSwordCount() {
     return Math.max(1, parseInt(CONFIG.SWORD.COUNT, 10) || 1);
@@ -313,7 +330,41 @@ function init() {
     syncSwordFormation({ rebuildAll: true });
     updateSwordCounter(swords);
     GameProgress.requestSave();
+    gameInitialized = true;
 }
+
+function resetRunState() {
+    Input.isGameOver = false;
+    Input.syncDerivedStats();
+    Input.hp = Input.maxHp;
+    Input.renderHealthUI();
+    Input.clearNegativeStatuses();
+    Input.renderNegativeStatusUI();
+    const hostileProjectiles = typeof Input.ensureEnemyHostileProjectiles === 'function'
+        ? Input.ensureEnemyHostileProjectiles()
+        : null;
+    if (hostileProjectiles) hostileProjectiles.length = 0;
+    Input.resetAttackState();
+    pills = [];
+    visualParticles.length = 0;
+    enemies.forEach(enemy => enemy.respawn());
+    syncSwordFormation({ rebuildAll: true });
+}
+
+function startGame() {
+    if (!gameInitialized) {
+        init();
+    } else {
+        resetRunState();
+    }
+    gameStarted = true;
+    hideStartOverlay();
+}
+
+window.__onPlayerGameOver = () => {
+    gameStarted = false;
+    showStartOverlay('Game Over', 'Đạo thân tan tác, hãy nhấn Bắt đầu để tái nhập chiến trường.');
+};
 
 document.addEventListener('fullscreenchange', () => Input.syncLandscapeMode());
 window.addEventListener('orientationchange', () => Input.syncLandscapeMode());
@@ -380,6 +431,11 @@ function renderCursor() {
 }
 
 function animate() {
+    if (!gameStarted) {
+        requestAnimationFrame(animate);
+        return;
+    }
+
     // 1. Tính Delta Time (dt) tính bằng giây
     const now = performance.now();
     const dt = (now - lastTime) / 1000;
@@ -417,7 +473,7 @@ function animate() {
     ctx.restore();
 
     enemies.forEach(e => e.draw(ctx, scaleFactor));
-    Input.updateIncomingEnemyAttacks(enemies, guardCenter.x, guardCenter.y, dt);
+    Input.updateIncomingEnemyAttacks(enemies, Input.x, Input.y, dt);
     let nextPillIndex = 0;
     for (let i = 0; i < pills.length; i++) {
         const pill = pills[i];
@@ -569,12 +625,21 @@ function animate() {
     ctx.globalAlpha = 1;
 
     ctx.restore();
+
+    if (Input.isGameOver) {
+        gameStarted = false;
+        showStartOverlay('Game Over', 'Đạo thân tan tác, hãy nhấn Bắt đầu để tái nhập chiến trường.');
+    }
+
     requestAnimationFrame(animate);
 }
 
 (async function boot() {
     await preloadEnemyIcons();
-    init();
+    showStartOverlay('Đại Canh Kiếm Trận', 'Lần đầu nhập giới vực, nhấn Bắt đầu để khai trận.');
+    if (startButton) {
+        startButton.addEventListener('click', () => startGame());
+    }
     animate();
 })();
 // <!-- Create By: Vũ Hoài Nam -->
