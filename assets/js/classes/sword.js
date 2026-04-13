@@ -953,6 +953,14 @@ class Sword {
         ctx.translate(this.x, this.y);
         ctx.rotate(this.drawAngle);
         ctx.scale(this.currentVisualScale, this.currentVisualScale);
+        const singleSwordGlowRatio = typeof Input?.getSingleSwordUltimateGlowRatio === 'function'
+            ? Input.getSingleSwordUltimateGlowRatio()
+            : 0;
+        if (singleSwordGlowRatio > 0) {
+            ctx.globalCompositeOperation = 'lighter';
+            ctx.shadowColor = '#7ee7ff';
+            ctx.shadowBlur = (18 + (singleSwordGlowRatio * 26)) * scaleFactor;
+        }
         this.drawAura(ctx, scaleFactor);
         this.drawBlade(ctx, scaleFactor);
         ctx.restore();
