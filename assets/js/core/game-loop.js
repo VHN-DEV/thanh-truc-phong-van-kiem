@@ -297,6 +297,8 @@ function init() {
     SettingsUI.init();
     GameProgress.init();
     Input.renderManaUI();
+    Input.renderHealthUI();
+    Input.renderNegativeStatusUI();
     Input.renderExpUI();
     Input.renderRageUI();
     if (ShopUI) ShopUI.init();
@@ -415,6 +417,7 @@ function animate() {
     ctx.restore();
 
     enemies.forEach(e => e.draw(ctx, scaleFactor));
+    Input.updateIncomingEnemyAttacks(enemies, guardCenter.x, guardCenter.y);
     let nextPillIndex = 0;
     for (let i = 0; i < pills.length; i++) {
         const pill = pills[i];
