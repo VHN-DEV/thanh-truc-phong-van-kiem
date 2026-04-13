@@ -656,6 +656,7 @@ const Input = {
     singleSwordUltimateState: {
         active: false,
         charging: false,
+        awaitingAttackInput: false,
         activatedAt: 0,
         chargeStartedAt: 0,
         chargeRatio: 0,
@@ -869,6 +870,7 @@ const Input = {
     beginSingleSwordUltimateCharge() {
         if (!this.isSingleSwordUltimateReady()) return false;
         const state = this.singleSwordUltimateState;
+        state.awaitingAttackInput = false;
         state.charging = true;
         state.chargeStartedAt = performance.now();
         state.chargeRatio = 0;
@@ -905,9 +907,17 @@ const Input = {
         attackBtn.classList.toggle('is-single-ult-ready', Boolean(isReady));
     },
 
+    getSingleSwordUltimateGlowRatio() {
+        const state = this.singleSwordUltimateState;
+        if (!state?.active) return 0;
+        if (state.charging) return Math.max(0.16, Math.min(1, Number(state.chargeRatio) || 0));
+        return state.awaitingAttackInput ? 0.38 : 0.18;
+    },
+
     releaseSingleSwordUltimateShot() {
         const state = this.singleSwordUltimateState;
         if (!state?.active) return false;
+        if (state.awaitingAttackInput) return false;
 
         const startX = Number.isFinite(this.x) ? this.x : guardCenter.x;
         const startY = Number.isFinite(this.y) ? this.y : guardCenter.y;
@@ -951,6 +961,7 @@ const Input = {
         const state = this.singleSwordUltimateState;
         state.active = false;
         state.charging = false;
+        state.awaitingAttackInput = false;
         state.activatedAt = 0;
         state.chargeStartedAt = 0;
         state.chargeRatio = 0;
@@ -1257,6 +1268,7 @@ const Input = {
         const state = this.singleSwordUltimateState;
         state.active = true;
         state.charging = false;
+        state.awaitingAttackInput = true;
         state.activatedAt = performance.now();
         state.chargeStartedAt = 0;
         state.chargeRatio = 0;
@@ -1270,25 +1282,6 @@ const Input = {
 
     drawSingleSwordUltimateProjectiles(ctx, scaleFactor) {
         const state = this.singleSwordUltimateState;
-        if (state?.active) {
-            const glowRatio = state.charging ? (state.chargeRatio || 0) : 0.18;
-            const glowX = Number.isFinite(guardCenter?.x) ? guardCenter.x : this.x;
-            const glowY = Number.isFinite(guardCenter?.y) ? guardCenter.y - (18 * scaleFactor) : this.y;
-            const pulse = 1 + Math.sin(performance.now() * 0.015) * 0.08;
-            const auraRadius = (42 + (glowRatio * 36)) * scaleFactor * pulse;
-
-            ctx.save();
-            ctx.globalCompositeOperation = 'lighter';
-            ctx.translate(glowX, glowY);
-            ctx.fillStyle = `rgba(126, 231, 255, ${0.2 + (glowRatio * 0.42)})`;
-            ctx.shadowBlur = (16 + (glowRatio * 20)) * scaleFactor;
-            ctx.shadowColor = '#7ee7ff';
-            ctx.beginPath();
-            ctx.arc(0, 0, auraRadius, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.restore();
-        }
-
         if (!Array.isArray(this.singleSwordUltimateProjectiles) || !this.singleSwordUltimateProjectiles.length) return;
         const now = performance.now();
         const alive = [];
