@@ -242,11 +242,13 @@ const startButton = document.getElementById('btn-start-game');
 function showStartOverlay(title, subtitle) {
     if (startTitle && title) startTitle.textContent = title;
     if (startSubtitle && subtitle) startSubtitle.textContent = subtitle;
+    document.body.classList.remove('game-native-cursor-hidden');
     startOverlay?.classList.add('is-visible');
 }
 
 function hideStartOverlay() {
     startOverlay?.classList.remove('is-visible');
+    document.body.classList.add('game-native-cursor-hidden');
 }
 
 function getConfiguredSwordCount() {
@@ -362,8 +364,9 @@ function startGame() {
 }
 
 window.__onPlayerGameOver = () => {
-    gameStarted = false;
-    showStartOverlay('Game Over', 'Đạo thân tan tác, hãy nhấn Bắt đầu để tái nhập chiến trường.');
+    showNotify('Đạo thể trọng thương, thiên địa hồi chuyển ngươi về trạng thái toàn thịnh.', '#ff9f9f');
+    resetRunState();
+    gameStarted = true;
 };
 
 document.addEventListener('fullscreenchange', () => Input.syncLandscapeMode());
@@ -626,19 +629,20 @@ function animate() {
 
     ctx.restore();
 
-    if (Input.isGameOver) {
-        gameStarted = false;
-        showStartOverlay('Game Over', 'Đạo thân tan tác, hãy nhấn Bắt đầu để tái nhập chiến trường.');
-    }
-
     requestAnimationFrame(animate);
 }
 
 (async function boot() {
     await preloadEnemyIcons();
-    showStartOverlay('Đại Canh Kiếm Trận', 'Lần đầu nhập giới vực, nhấn Bắt đầu để khai trận.');
     if (startButton) {
         startButton.addEventListener('click', () => startGame());
+    }
+
+    const hasSavedProgress = Boolean(localStorage.getItem(GameProgress.storageKey));
+    if (hasSavedProgress) {
+        startGame();
+    } else {
+        showStartOverlay('Đại Canh Kiếm Trận', 'Đạo tâm sơ ngộ, hãy điểm Bắt đầu để nhập giới tu hành.');
     }
     animate();
 })();
