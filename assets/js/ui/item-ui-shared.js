@@ -185,6 +185,7 @@ function buildPillVisualMarkup(item, qualityConfig, options = {}) {
     const isPhongLoiArtifact = item.category === 'ARTIFACT' && item.uniqueKey === 'PHONG_LOI_SI';
     const isChuongThienBinhArtifact = item.category === 'ARTIFACT' && item.uniqueKey === 'CHUONG_THIEN_BINH';
     const isHuyetSacArtifact = item.category === 'ARTIFACT' && item.uniqueKey === 'HUYET_SAC_PHI_PHONG';
+    const isCanLamArtifact = item.category === 'ARTIFACT' && item.uniqueKey === 'CAN_LAM_BANG_DIEM';
     const isThanhTrucSwordArtifact = item.category === 'SWORD_ARTIFACT';
     const isFormationSecretArt = item.category === 'SWORD_ART'
         && (item.uniqueKey === 'DAI_CANH_KIEM_TRAN' || uniqueConfig?.visualStyle === 'formation');
@@ -220,6 +221,8 @@ function buildPillVisualMarkup(item, qualityConfig, options = {}) {
         ? buildChuongThienBinhVisualMarkup()
         : isCanLamFlameArt && uniqueConfig?.imagePath
         ? buildStaticArtifactImageVisualMarkup(uniqueConfig.imagePath, 'is-can-lam')
+        : isCanLamArtifact && artifactConfig?.imagePath
+        ? buildStaticArtifactImageVisualMarkup(artifactConfig.imagePath, 'is-can-lam')
         : isHuyetSacArtifact && artifactConfig?.imagePath
         ? buildStaticArtifactImageVisualMarkup(artifactConfig.imagePath, 'is-huyet-sac')
         : isThanhTrucSwordArtifact
