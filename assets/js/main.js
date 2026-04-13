@@ -964,6 +964,14 @@ const Input = {
         return swordStats.alive <= 1;
     },
 
+    isSingleSwordPreThanhLinhState() {
+        if (this.isInsectSwarmActive()) return false;
+        if (this.hasThanhLinhKiemQuyetUnlocked()) return false;
+
+        const swordStats = this.getAliveSwordStats();
+        return swordStats.alive <= 1;
+    },
+
     triggerSingleSwordTapAttack(windowMs = 320) {
         this.performSingleSwordTapStrike();
         this.isAttacking = true;
@@ -1209,7 +1217,7 @@ const Input = {
             return this.startInsectUltimate();
         }
 
-        if (this.isSingleSwordTapAttackMode()) {
+        if (this.isSingleSwordPreThanhLinhState()) {
             return this.castSingleSwordUltimate();
         }
 
