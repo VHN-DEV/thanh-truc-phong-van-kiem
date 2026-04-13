@@ -18,6 +18,8 @@ gulp.task('build-css', function () {
 gulp.task('build-js', function () {
   return gulp.src([
     'assets/js/config.js',
+    'assets/js/core/shared-constants.js',
+    'assets/js/core/shared-utils.js',
     'assets/js/classes/enemy.js',
     'assets/js/classes/sword.js',
     'assets/js/classes/starField.js',
