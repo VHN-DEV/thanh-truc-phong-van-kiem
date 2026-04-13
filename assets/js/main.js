@@ -6134,6 +6134,9 @@ const Input = {
         });
 
         Object.entries(CONFIG.SECRET_ARTS || {}).forEach(([uniqueKey, artConfig]) => {
+            if (uniqueKey === 'CAN_LAM_BANG_DIEM' && CONFIG.ARTIFACTS?.CAN_LAM_BANG_DIEM) {
+                return;
+            }
             items.push({
                 id: `SECRET_ART:${uniqueKey}`,
                 kind: 'UNIQUE',

@@ -553,6 +553,9 @@ function animate() {
     let nextParticleIndex = 0;
     for (let i = 0; i < visualParticles.length; i++) {
         const p = visualParticles[i];
+        if (!p) {
+            continue;
+        }
         const friction = p.friction ?? 1;
         const nextVx = (p.vx || 0) * friction;
         const nextVy = ((p.vy || 0) + (p.gravity || 0)) * friction;
