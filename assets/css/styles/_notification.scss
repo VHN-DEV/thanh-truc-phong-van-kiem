@@ -1,6 +1,9 @@
 // ====================================================================
 // 8. NOTIFICATION SYSTEM UI 
 // ====================================================================
+@use "mixins" as *;
+@use "variables" as *;
+
 /* Hệ thống thông báo giữa màn hình */
 #game-notification {
     position: fixed;

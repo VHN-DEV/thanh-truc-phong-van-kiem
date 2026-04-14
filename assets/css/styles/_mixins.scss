@@ -1,38 +1,6 @@
 // ====================================================================
 // 2. MIXINS
 // ====================================================================
-@font-face {
-    font-family: 'Noto Sans Game';
-    src: url('../fonts/NotoSans-Regular.ttf') format('truetype');
-    font-style: normal;
-    font-weight: 400;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: 'Noto Sans Game';
-    src: url('../fonts/NotoSans-Italic.ttf') format('truetype');
-    font-style: italic;
-    font-weight: 400;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: 'Noto Sans Game';
-    src: url('../fonts/NotoSans-Bold.ttf') format('truetype');
-    font-style: normal;
-    font-weight: 700;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: 'Noto Sans Game';
-    src: url('../fonts/NotoSans-BoldItalic.ttf') format('truetype');
-    font-style: italic;
-    font-weight: 700;
-    font-display: swap;
-}
-
 @mixin flex-center {
     display: flex;
     align-items: center;

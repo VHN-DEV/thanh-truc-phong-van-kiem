@@ -1,6 +1,9 @@
 // ====================================================================
 // 6. SWORD COUNTER UI
 // ====================================================================
+@use "mixins" as *;
+@use "variables" as *;
+
 #sword-counter {
     @include abs-pos($top: 60px, $right: 20px);
     position: fixed;
