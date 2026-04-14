@@ -1895,31 +1895,38 @@ Object.assign(Input, {
             }
 
             if (strike.type === 'BITE') {
-                const jawSpread = strike.latchUntil > now
-                    ? (0.18 + (Math.sin(now * 0.018) * 0.04)) * Math.PI
-                    : (0.46 - (progress * 0.26)) * Math.PI;
-                const jawRadius = Math.max(8, 16 * scaleFactor);
-                const jawAlpha = 0.18 + (0.55 * alpha);
+                const pulse = strike.latchUntil > now
+                    ? 0.78 + (Math.sin(now * 0.016) * 0.18)
+                    : 1;
+                const radius = Math.max(7, (12 + (progress * 4)) * scaleFactor);
+                const ringAlpha = 0.16 + (0.32 * alpha);
+                const glowAlpha = 0.1 + (0.24 * alpha);
 
                 ctx.save();
-                ctx.translate(strike.x, strike.y);
-                ctx.rotate(angle);
                 ctx.globalCompositeOperation = 'lighter';
-                ctx.fillStyle = `rgba(255, 244, 244, ${jawAlpha})`;
-                ctx.shadowBlur = 10 * scaleFactor;
-                ctx.shadowColor = 'rgba(255, 227, 227, 0.72)';
-
+                const ring = ctx.createRadialGradient(
+                    strike.x,
+                    strike.y,
+                    radius * 0.25,
+                    strike.x,
+                    strike.y,
+                    radius * 2.1
+                );
+                ring.addColorStop(0, `rgba(255, 244, 244, ${glowAlpha * pulse})`);
+                ring.addColorStop(0.5, `rgba(255, 180, 180, ${ringAlpha * pulse})`);
+                ring.addColorStop(1, 'rgba(255, 180, 180, 0)');
+                ctx.fillStyle = ring;
                 ctx.beginPath();
-                ctx.arc(0, 0, jawRadius, -jawSpread, -0.08, false);
-                ctx.lineTo(0, 0);
-                ctx.closePath();
+                ctx.arc(strike.x, strike.y, radius * 2.1, 0, Math.PI * 2);
                 ctx.fill();
 
+                ctx.strokeStyle = `rgba(255, 244, 244, ${Math.min(0.7, 0.3 + (alpha * 0.28))})`;
+                ctx.lineWidth = Math.max(1, 1.6 * scaleFactor);
                 ctx.beginPath();
-                ctx.arc(0, 0, jawRadius, 0.08, jawSpread, false);
-                ctx.lineTo(0, 0);
-                ctx.closePath();
-                ctx.fill();
+                ctx.arc(strike.x, strike.y, radius * (0.78 + (pulse * 0.08)), 0, Math.PI * 2);
+                ctx.stroke();
+
+                ctx.globalCompositeOperation = 'lighter';
                 ctx.restore();
             }
         });
