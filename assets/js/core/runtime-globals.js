@@ -86,3 +86,27 @@ function resize() {
 window.addEventListener("resize", resize);
 window.addEventListener("orientationchange", resize);
 resize();
+
+if (typeof GameContext !== 'undefined' && GameContext && typeof GameContext.register === 'function') {
+    GameContext.register('runtime', {
+        random,
+        canvas,
+        ctx,
+        enemyIcons,
+        get scaleFactor() { return scaleFactor; },
+        get width() { return width; },
+        get height() { return height; },
+        get frameCount() { return frameCount; },
+        set frameCount(value) { frameCount = value; },
+        get frameNow() { return frameNow; },
+        set frameNow(value) { frameNow = value; },
+        get lastTime() { return lastTime; },
+        set lastTime(value) { lastTime = value; },
+        get visualParticles() { return visualParticles; },
+        get swordRenderBuffer() { return swordRenderBuffer; },
+        trimVisualParticles,
+        preloadEnemyIcons,
+        showNotify,
+        resize
+    });
+}
