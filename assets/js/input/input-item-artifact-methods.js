@@ -4338,9 +4338,10 @@ Object.assign(Input, {
         const primaryColor = artifactConfig.color || '#93c8d8';
         const secondaryColor = artifactConfig.secondaryColor || '#d9ecf3';
         const auraColor = artifactConfig.auraColor || '#5f8595';
-        const crackLevel = clampNumber(1 - ratio + (shieldState.crackIntensity * 0.25), 0, 1);
-        const pulse = 0.82 + (Math.sin(performance.now() * 0.0042) * 0.18);
-        const radius = (30 + (ratio * 6)) * scaleFactor;
+        const crackLevel = clampNumber(1 - ratio + (shieldState.crackIntensity * 0.32), 0, 1);
+        const pulse = 0.84 + (Math.sin(performance.now() * 0.0042) * 0.16);
+        const radius = (34 + (ratio * 5.5)) * scaleFactor;
+        const time = performance.now() * 0.001;
 
         ctx.save();
         ctx.translate(this.x, this.y);
@@ -4357,57 +4358,152 @@ Object.assign(Input, {
         ctx.fill();
 
         ctx.save();
-        ctx.scale(scaleFactor, scaleFactor);
+        ctx.scale(scaleFactor * pulse, scaleFactor * pulse);
         ctx.lineJoin = 'round';
         ctx.lineCap = 'round';
-        ctx.strokeStyle = withAlpha(secondaryColor, 0.36);
-        ctx.fillStyle = withAlpha(primaryColor, 0.03 + (ratio * 0.02));
-        ctx.shadowBlur = 6 * scaleFactor;
-        ctx.shadowColor = withAlpha(auraColor, 0.22);
-        ctx.lineWidth = 1.3;
+        ctx.shadowBlur = 7 * scaleFactor;
+        ctx.shadowColor = withAlpha(auraColor, 0.2 + (ratio * 0.08));
+        ctx.lineWidth = 1.25;
+
+        const bodyGradient = ctx.createLinearGradient(0, -26, 0, 30);
+        bodyGradient.addColorStop(0, withAlpha(secondaryColor, 0.22 + (ratio * 0.12)));
+        bodyGradient.addColorStop(0.42, withAlpha(primaryColor, 0.14 + (ratio * 0.08)));
+        bodyGradient.addColorStop(1, withAlpha(auraColor, 0.13 + (crackLevel * 0.08)));
+
+        ctx.fillStyle = bodyGradient;
+        ctx.strokeStyle = withAlpha(secondaryColor, 0.52);
 
         ctx.beginPath();
-        ctx.moveTo(-14, -20);
-        ctx.quadraticCurveTo(-24, -10, -22, 8);
-        ctx.quadraticCurveTo(-18, 24, 0, 26);
-        ctx.quadraticCurveTo(18, 24, 22, 8);
-        ctx.quadraticCurveTo(24, -10, 14, -20);
-        ctx.lineTo(9, -20);
-        ctx.lineTo(9, -9);
-        ctx.lineTo(-9, -9);
-        ctx.lineTo(-9, -20);
+        ctx.moveTo(-17, -12);
+        ctx.quadraticCurveTo(-25, -2, -23, 10);
+        ctx.quadraticCurveTo(-19, 23, -9, 25.5);
+        ctx.quadraticCurveTo(0, 28, 9, 25.5);
+        ctx.quadraticCurveTo(19, 23, 23, 10);
+        ctx.quadraticCurveTo(25, -2, 17, -12);
+        ctx.lineTo(13, -13.2);
+        ctx.quadraticCurveTo(11, -7, 0, -6.7);
+        ctx.quadraticCurveTo(-11, -7, -13, -13.2);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        const rimGradient = ctx.createLinearGradient(0, -19.5, 0, -10);
+        rimGradient.addColorStop(0, withAlpha('#ffffff', 0.24));
+        rimGradient.addColorStop(1, withAlpha(secondaryColor, 0.14));
+        ctx.fillStyle = rimGradient;
+        ctx.beginPath();
+        ctx.moveTo(-19, -13);
+        ctx.quadraticCurveTo(0, -17.6, 19, -13);
+        ctx.quadraticCurveTo(16.6, -9.6, 0, -8.9);
+        ctx.quadraticCurveTo(-16.6, -9.6, -19, -13);
+        ctx.closePath();
+        ctx.fill();
+
+        const lidGradient = ctx.createLinearGradient(0, -36, 0, -18);
+        lidGradient.addColorStop(0, withAlpha(secondaryColor, 0.18));
+        lidGradient.addColorStop(1, withAlpha(primaryColor, 0.12));
+        ctx.fillStyle = lidGradient;
+        ctx.strokeStyle = withAlpha(secondaryColor, 0.44);
+        ctx.beginPath();
+        ctx.moveTo(-14.5, -22.8);
+        ctx.quadraticCurveTo(-7.2, -31.2, 0, -31.8);
+        ctx.quadraticCurveTo(7.2, -31.2, 14.5, -22.8);
+        ctx.quadraticCurveTo(8.6, -19.2, 0, -19.3);
+        ctx.quadraticCurveTo(-8.6, -19.2, -14.5, -22.8);
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
 
         ctx.beginPath();
-        ctx.moveTo(-6.5, -20);
-        ctx.lineTo(-6.5, -8.5);
-        ctx.moveTo(6.5, -20);
-        ctx.lineTo(6.5, -8.5);
-        ctx.moveTo(-10.5, -8.5);
-        ctx.lineTo(10.5, -8.5);
+        ctx.arc(0, -33.3, 2.55, 0, Math.PI * 2);
+        ctx.fillStyle = withAlpha(secondaryColor, 0.38 + (ratio * 0.2));
+        ctx.fill();
         ctx.strokeStyle = withAlpha('#ffffff', 0.26);
-        ctx.lineWidth = 0.9;
+        ctx.lineWidth = 0.72;
         ctx.stroke();
 
-        const crackCount = Math.min(7, 2 + Math.floor(crackLevel * 8));
+        const handleYOffset = -5.3;
+        const handleWidth = 11.8;
+        const handleHeight = 7.2;
+        ctx.strokeStyle = withAlpha(secondaryColor, 0.34);
+        ctx.lineWidth = 1.1;
+        for (const dir of [-1, 1]) {
+            const anchorX = dir * 24.6;
+            ctx.beginPath();
+            ctx.roundRect(anchorX - (dir > 0 ? 0 : handleWidth), handleYOffset - (handleHeight / 2), handleWidth, handleHeight, 2.1);
+            ctx.stroke();
+        }
+
+        const legGlowAlpha = 0.2 + (ratio * 0.08);
+        const legData = [
+            { x: -10, y: 24.6, h: 11.8 },
+            { x: 0, y: 26, h: 12.6 },
+            { x: 10, y: 24.6, h: 11.8 }
+        ];
+        ctx.fillStyle = withAlpha(primaryColor, 0.16 + (ratio * 0.1));
+        ctx.strokeStyle = withAlpha(secondaryColor, 0.34);
+        ctx.lineWidth = 0.92;
+        legData.forEach((leg) => {
+            ctx.beginPath();
+            ctx.roundRect(leg.x - 2.2, leg.y, 4.4, leg.h, 1.6);
+            ctx.fill();
+            ctx.stroke();
+        });
+
+        const emblemAlpha = 0.24 + (ratio * 0.2);
+        ctx.strokeStyle = withAlpha(secondaryColor, emblemAlpha);
+        ctx.lineWidth = 0.82;
+        ctx.beginPath();
+        ctx.moveTo(-8.6, 6.5);
+        ctx.quadraticCurveTo(-3.5, 2.2, 0, 6.5);
+        ctx.quadraticCurveTo(3.5, 2.2, 8.6, 6.5);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(0, 8, 4.2, 0.15, Math.PI - 0.15);
+        ctx.strokeStyle = withAlpha(secondaryColor, 0.2 + (ratio * 0.14));
+        ctx.lineWidth = 0.64;
+        ctx.stroke();
+
+        const crackCount = Math.min(12, 3 + Math.floor(crackLevel * 12));
         for (let i = 0; i < crackCount; i++) {
-            const t = (i + 1) / (crackCount + 1);
-            const angle = (-Math.PI * 0.75) + (t * Math.PI * 1.5);
-            const innerR = 7 + (Math.sin((i * 2.1) + pulse) * 1.8);
-            const outerR = 22 + (Math.cos((i * 1.6) + pulse) * 2.8);
+            const t = (i + 0.5) / crackCount;
+            const sideSign = i % 2 === 0 ? -1 : 1;
+            const angle = (-Math.PI * 0.7) + (t * Math.PI * 1.4) + (sideSign * 0.08);
+            const jagged = Math.sin((time * 2.2) + (i * 0.9)) * 0.15;
+            const innerR = 5.6 + (Math.sin((i * 1.8) + time) * 1.2);
+            const midR = 14.5 + (Math.cos((i * 1.3) + time * 0.8) * 1.4);
+            const outerR = 24.5 + (Math.sin((i * 0.9) + time * 1.1) * 2.2);
             const sx = Math.cos(angle) * innerR;
-            const sy = Math.sin(angle) * innerR * 0.9;
-            const ex = Math.cos(angle + 0.22) * outerR;
-            const ey = Math.sin(angle + 0.22) * outerR * 0.9;
+            const sy = Math.sin(angle) * innerR * 0.86;
+            const mx = Math.cos(angle + jagged) * midR;
+            const my = Math.sin(angle + jagged) * midR * 0.9;
+            const ex = Math.cos(angle + (jagged * 1.6)) * outerR;
+            const ey = Math.sin(angle + (jagged * 1.6)) * outerR * 0.95;
             ctx.beginPath();
             ctx.moveTo(sx, sy);
-            ctx.lineTo((sx + ex) * 0.56, (sy + ey) * 0.56);
+            ctx.lineTo(mx, my);
             ctx.lineTo(ex, ey);
-            ctx.strokeStyle = withAlpha('#f6fdff', 0.05 + (crackLevel * 0.24));
-            ctx.lineWidth = 0.36 + (crackLevel * 0.28);
+            ctx.strokeStyle = withAlpha('#f2fcff', 0.05 + (crackLevel * 0.27));
+            ctx.lineWidth = 0.32 + (crackLevel * 0.4);
+            ctx.shadowBlur = 4.8 * scaleFactor * crackLevel;
+            ctx.shadowColor = withAlpha('#dff9ff', 0.22 * crackLevel);
             ctx.stroke();
+        }
+
+        if (crackLevel > 0.35) {
+            const embers = 2 + Math.floor(crackLevel * 5);
+            for (let i = 0; i < embers; i++) {
+                const driftAngle = (Math.PI * 2 * i) / embers + (time * 0.8);
+                const driftR = 13 + (Math.sin((i * 1.4) + (time * 1.8)) * 4.4);
+                const ex = Math.cos(driftAngle) * driftR;
+                const ey = Math.sin(driftAngle) * driftR * 0.8;
+                ctx.beginPath();
+                ctx.arc(ex, ey, 0.7 + (crackLevel * 0.8), 0, Math.PI * 2);
+                ctx.fillStyle = withAlpha('#e8fbff', 0.14 + (crackLevel * 0.26));
+                ctx.shadowBlur = 9 * scaleFactor;
+                ctx.shadowColor = withAlpha(secondaryColor, legGlowAlpha);
+                ctx.fill();
+            }
         }
 
         ctx.restore();
