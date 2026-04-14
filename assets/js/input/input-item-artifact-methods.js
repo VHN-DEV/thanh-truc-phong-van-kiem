@@ -4323,6 +4323,7 @@ Object.assign(Input, {
         }
 
         this.drawPhongLoiArtifact(ctx, scaleFactor);
+        this.drawHuThienDinhShield(ctx, scaleFactor);
         this.drawCursorDamageFeedback(ctx, scaleFactor);
     },
 
