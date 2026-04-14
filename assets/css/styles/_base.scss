@@ -1,0 +1,126 @@
+// ====================================================================
+// 3. BASE STYLES
+// ====================================================================
+html,
+body {
+    margin: 0;
+    padding: 0;
+    font-family: $ui-font;
+    background: $bg-gradient;
+    overflow: hidden;
+    cursor: none;
+    touch-action: none;
+    width: 100%;
+    height: 100%;
+    min-height: 100%;
+    overscroll-behavior: none;
+}
+
+body.game-native-cursor-hidden,
+body.game-native-cursor-hidden * {
+    cursor: none !important;
+}
+
+body.game-native-cursor-hidden.popup-cursor-active .popup-overlay,
+body.game-native-cursor-hidden.popup-cursor-active .popup-overlay * {
+    cursor: default !important;
+}
+
+body.game-native-cursor-hidden.popup-cursor-active .popup-overlay input,
+body.game-native-cursor-hidden.popup-cursor-active .popup-overlay textarea {
+    cursor: text !important;
+}
+
+body.game-native-cursor-hidden.popup-cursor-active .popup-overlay button,
+body.game-native-cursor-hidden.popup-cursor-active .popup-overlay .close-btn,
+body.game-native-cursor-hidden.popup-cursor-active .popup-overlay a,
+body.game-native-cursor-hidden.popup-cursor-active .popup-overlay label[for],
+body.game-native-cursor-hidden.popup-cursor-active .popup-overlay summary,
+body.game-native-cursor-hidden.popup-cursor-active .popup-overlay select {
+    cursor: pointer !important;
+}
+
+canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+}
+
+button,
+input,
+select,
+textarea {
+    font: inherit;
+}
+
+.popup-header h3,
+.panel-section h4,
+.shop-card h4,
+.inventory-slot h4,
+.slot-badge,
+.panel-tab,
+.btn-slot-action,
+.btn-reset,
+.btn-save,
+.btn-shop-reset,
+.btn-shop-page,
+#cultivation-rank {
+    font-family: $ui-font-display;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+}
+
+.game-ui {
+    position: absolute;
+    font-family: $ui-font;
+    user-select: none;
+    pointer-events: none;
+}
+
+.start-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 3000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(circle at 25% 20%, rgba(65, 136, 168, 0.35), rgba(3, 10, 16, 0.95));
+
+    &.is-visible {
+        display: flex;
+    }
+
+    .start-card {
+        width: min(92vw, 420px);
+        padding: 24px 22px;
+        border-radius: 18px;
+        border: 1px solid rgba(159, 232, 255, 0.28);
+        background: linear-gradient(180deg, rgba(10, 28, 42, 0.95), rgba(4, 14, 22, 0.96));
+        box-shadow: 0 24px 40px rgba(0, 0, 0, 0.3);
+        text-align: center;
+
+        h1 {
+            margin: 0 0 10px;
+            font-size: 24px;
+            color: #b9f3ff;
+        }
+
+        p {
+            margin: 0 0 18px;
+            color: #d5ebf6;
+            font-size: 14px;
+        }
+    }
+
+    #btn-start-game {
+        border: 1px solid rgba(183, 255, 224, 0.45);
+        background: linear-gradient(135deg, rgba(81, 217, 177, 0.35), rgba(45, 115, 214, 0.52));
+        color: #f0ffff;
+        border-radius: 999px;
+        padding: 10px 22px;
+        font-weight: 700;
+        font-size: 15px;
+        cursor: pointer;
+    }
+}

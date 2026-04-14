@@ -1,0 +1,35 @@
+// ====================================================================
+// 7. EXP BAR UI
+// ====================================================================
+#exp-container {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 10px;
+    background: rgba(0, 0, 0, 0.5);
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    z-index: 100;
+
+    #exp-bar {
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, #ffeb3b, #f44336);
+        /* Màu vàng cam thiên hướng tu luyện */
+        transition: width 0.3s ease;
+        box-shadow: 0 0 10px #ffeb3b;
+    }
+
+    #exp-text {
+        position: absolute;
+        bottom: 15px;
+        left: 50%;
+        transform: translateX(-50%);
+        color: white;
+        font-size: 12px;
+        text-shadow: 1px 1px 2px black;
+        pointer-events: none;
+        width: 100%;
+        text-align: center;
+    }
+}

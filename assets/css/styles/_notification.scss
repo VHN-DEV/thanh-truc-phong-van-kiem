@@ -1,0 +1,54 @@
+// ====================================================================
+// 8. NOTIFICATION SYSTEM UI 
+// ====================================================================
+/* Hệ thống thông báo giữa màn hình */
+#game-notification {
+    position: fixed;
+    top: 35%;
+    /* Dịch xuống một chút cho đỡ vướng mắt */
+    left: 50%;
+    transform: translateX(-50%);
+    pointer-events: none;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.notify-item {
+    font-family: $ui-font;
+    font-size: 14px;
+    /* Chữ nhỏ gọn như log hệ thống */
+    font-weight: 600;
+    letter-spacing: 1px;
+    padding: 4px 12px;
+    background: rgba(0, 0, 0, 0.4);
+    /* Thêm nền tối mờ để dễ đọc chữ */
+    border-radius: 4px;
+    white-space: nowrap;
+
+    /* Hiệu ứng mờ dần và bay nhẹ lên */
+    animation: notify-fade-up 2.5s ease-out forwards;
+}
+
+@keyframes notify-fade-up {
+    0% {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    15% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    70% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+}
