@@ -18,6 +18,7 @@ gulp.task('build-css', function () {
 gulp.task('build-js', function () {
   return gulp.src([
     'assets/js/config.js',
+    'assets/js/app/game-context.js',
     'assets/js/core/shared-constants.js',
     'assets/js/core/shared-utils.js',
     'assets/js/core/runtime-globals.js',
@@ -42,6 +43,7 @@ gulp.task('build-js', function () {
     'assets/js/input/input-player-combat-methods.js',
     'assets/js/input/input-progression-insect-methods.js',
     'assets/js/input/input-item-artifact-methods.js',
+    'assets/js/input/input-controller.js',
     'assets/js/core/input-and-sword-overrides.js',
     'assets/js/core/game-loop.js',
     'assets/js/thunder-bamboo-system.js'
