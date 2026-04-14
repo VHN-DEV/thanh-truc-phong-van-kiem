@@ -29,93 +29,6 @@ Input.useInventoryItem = function (itemKey) {
     const qualityConfig = this.getItemQualityConfig(item);
 
     if (item.category === 'SWORD_ARTIFACT') {
-        if (false && this.getBondedSwordCount() >= getConfiguredSwordCount()) {
-            showNotify(
-                `Đã triển khai đủ ${formatNumber(getConfiguredSwordCount())} thanh Thanh Trúc Phong Vân Kiếm.`,
-                qualityConfig.color || '#66f0c2'
-            );
-            return false;
-        }
-
-        item.count--;
-        if (item.count <= 0) delete this.inventory[itemKey];
-
-        const wasDeployable = this.canDeployDaiCanhKiemTran();
-        this.bondedSwordCount = this.getBondedSwordCount() + 1;
-        const deployable = this.syncDaiCanhKiemTranProgress();
-        const progress = this.getSwordFormationProgress();
-        syncSwordFormation();
-        showNotify(
-            deployable && !wasDeployable
-                ? SWORD_UI_TEXT.deployReady(
-                    this.getItemDisplayName(item),
-                    formatNumber(progress.bonded),
-                    formatNumber(progress.required)
-                )
-                : progress.ready && !this.hasDaiCanhKiemTranUnlocked()
-                    ? SWORD_UI_TEXT.deployNeedArt(
-                        this.getItemDisplayName(item),
-                        formatNumber(progress.bonded),
-                        formatNumber(progress.required)
-                    )
-                    : SWORD_UI_TEXT.deployCount(
-                        this.getItemDisplayName(item),
-                        formatNumber(progress.bonded)
-                    ),
-            qualityConfig.color || '#66f0c2'
-        );
-        this.refreshResourceUI();
-        return true;
-    }
-
-    if (this.hasDaiCanhKiemTranUnlocked()) {
-        showNotify(`${this.getItemDisplayName(item)} đã nhập tâm, không thể lĩnh ngộ thêm.`, qualityConfig.color || '#8fffe0');
-        return false;
-    }
-
-    item.count--;
-    if (item.count <= 0) delete this.inventory[itemKey];
-
-    this.unlockCultivationArt('DAI_CANH_KIEM_TRAN');
-    const progress = this.getSwordFormationProgress();
-    if (this.canDeployDaiCanhKiemTran()) {
-        this.attackMode = 'SWORD';
-    }
-    syncSwordFormation();
-    showNotify(
-        this.canDeployDaiCanhKiemTran()
-            ? SWORD_UI_TEXT.learnReady(
-                this.getItemDisplayName(item),
-                formatNumber(this.getUnlockedSwordTargetCount())
-            )
-            : SWORD_UI_TEXT.learnPending(
-                this.getItemDisplayName(item),
-                formatNumber(progress.bonded),
-                formatNumber(progress.required)
-            ),
-        qualityConfig.color || '#8fffe0'
-    );
-    this.refreshResourceUI();
-    return true;
-};
-
-const baseUseInventoryItemWithSwordInstances = Input.useInventoryItem;
-Input.useInventoryItem = function (itemKey) {
-    const item = this.inventory?.[itemKey];
-    if (!item || item.count <= 0) return false;
-
-    if (item.category !== 'SWORD_ARTIFACT' && item.category !== 'SWORD_ART') {
-        return baseUseInventoryItemWithSwordInstances.call(this, itemKey);
-    }
-
-    if (this.isVoidCollapsed) {
-        showNotify('Thân thể đã tan vào hư vô, cần tải lại giới vực để hồi phục', '#a778ff');
-        return false;
-    }
-
-    const qualityConfig = this.getItemQualityConfig(item);
-
-    if (item.category === 'SWORD_ARTIFACT') {
         return this.equipSwordArtifactFromInventoryItem(itemKey);
     }
 
@@ -142,7 +55,7 @@ Input.useInventoryItem = function (itemKey) {
     }
 
     if (item.uniqueKey !== 'DAI_CANH_KIEM_TRAN') {
-        return baseUseInventoryItemWithSwordInstances.call(this, itemKey);
+        return baseUseInventoryItem.call(this, itemKey);
     }
 
     if (this.hasDaiCanhKiemTranUnlocked()) {
