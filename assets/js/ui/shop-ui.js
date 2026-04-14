@@ -214,8 +214,9 @@ ShopUI = {
                                     : item.category === 'SWORD_ARTIFACT'
                                         ? Input.hasInventorySpaceForSpec(item)
                                     : (!isOwnedUnique && Input.hasInventorySpaceForSpec(item));
-            const canAfford = !Input.isVoidCollapsed && canStoreOrUpgrade && Input.canAffordLowStoneCost(item.priceLowStone);
-            const priceMarkup = Input.renderSpiritStoneCostMarkup(item.priceLowStone);
+            const effectivePriceLowStone = Input.getShopAdjustedPrice(item);
+            const canAfford = !Input.isVoidCollapsed && canStoreOrUpgrade && Input.canAffordLowStoneCost(effectivePriceLowStone);
+            const priceMarkup = Input.renderSpiritStoneCostMarkup(effectivePriceLowStone);
             let actionLabel = item.category === 'BAG'
                 ? (canStoreOrUpgrade ? 'Mở rộng' : 'Không hợp lệ')
                 : (canStoreOrUpgrade ? 'Mua' : 'Túi đầy');
@@ -255,7 +256,7 @@ ShopUI = {
                     ${buildPillVisualMarkup(item, qualityConfig, { context: 'shop' })}
                     <h4>${escapeHtml(Input.getItemDisplayName(item))}</h4>
                     <div class="item-description" data-description-card data-description-id="${escapeHtml(item.id)}">${Input.getItemDescriptionMarkup(item)}</div>
-                    <div class="slot-meta">Giá: ${formatNumber(item.priceLowStone)} hạ phẩm linh thạch</div>
+                    <div class="slot-meta">Giá: ${formatNumber(effectivePriceLowStone)} hạ phẩm linh thạch</div>
                     <div class="slot-meta slot-meta-price">
                         <span class="slot-meta-title">Giá</span>
                         ${priceMarkup}

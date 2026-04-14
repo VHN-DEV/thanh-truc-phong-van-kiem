@@ -43,6 +43,7 @@ const INPUT_INITIAL_STATE = {
     attackMode: 'BASE',
     selectedInventoryTab: 'items',
     selectedBeastBagTab: 'all',
+    shopPurchaseHistory: {},
     uniquePurchases: {
         THANH_LINH_KIEM_QUYET: false,
         DAI_CANH_KIEM_TRAN: false,

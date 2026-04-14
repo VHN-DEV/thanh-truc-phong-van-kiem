@@ -764,6 +764,7 @@ Object.assign(Input, {
         const item = this.getShopItems().find(entry => entry.id === itemId);
         if (!item) return false;
         const qualityConfig = this.getItemQualityConfig(item);
+        const effectivePriceLowStone = this.getShopAdjustedPrice(item);
 
         if (item.isOneTime && item.uniqueKey && this.hasUniquePurchase(item.uniqueKey)) {
             showNotify('Vật phẩm này chỉ có thể mua một lần.', qualityConfig.color || '#ffd36b');
@@ -817,7 +818,7 @@ Object.assign(Input, {
             return false;
         }
 
-        if (!this.spendSpiritStones(item.priceLowStone)) {
+        if (!this.spendSpiritStones(effectivePriceLowStone)) {
             showNotify('Linh thạch không đủ để giao dịch', '#ff8a80');
             return false;
         }
@@ -831,6 +832,7 @@ Object.assign(Input, {
                 `Túi trữ vật mở rộng lên ${formatNumber(this.getInventoryCapacity())} ô (+${formatNumber(extraSlots)} ô)`,
                 qualityConfig.color
             );
+            this.markShopPurchase(item);
             this.refreshResourceUI();
             return true;
         }
@@ -844,6 +846,7 @@ Object.assign(Input, {
                 `Linh Thú Đại mở rộng lên ${formatNumber(this.getBeastBagCapacity())} ô (+${formatNumber(extraSlots)} ô)`,
                 qualityConfig.color
             );
+            this.markShopPurchase(item);
             this.refreshResourceUI();
             return true;
         }
@@ -854,6 +857,7 @@ Object.assign(Input, {
                 'Thất Sắc Trữ Vật Nang đã khai mở, túi trữ vật đạt dung lượng vô hạn.',
                 qualityConfig.color || '#fff1a8'
             );
+            this.markShopPurchase(item);
             this.refreshResourceUI();
             return true;
         }
@@ -864,6 +868,7 @@ Object.assign(Input, {
                 'Thất Sắc Linh Thú Đại đã khai mở, mọi kỳ trùng đều có thể an trí trong không gian vô hạn.',
                 qualityConfig.color || '#ffe38b'
             );
+            this.markShopPurchase(item);
             this.refreshResourceUI();
             return true;
         }
@@ -879,6 +884,7 @@ Object.assign(Input, {
                 `${this.getItemDisplayName(item)} ${actionText} ${formatNumber(nextCapacity)} ô${deltaText}`,
                 qualityConfig.color || '#8ebfff'
             );
+            this.markShopPurchase(item);
             this.refreshResourceUI();
             return true;
         }
@@ -886,11 +892,13 @@ Object.assign(Input, {
         if (item.category === 'INSECT_EGG') {
             this.addInsectEgg(item.speciesKey, 1);
             showNotify(`Đã mua ${this.getItemDisplayName(item)}`, qualityConfig.color || '#79ffd4');
+            this.markShopPurchase(item);
             this.refreshResourceUI();
             return true;
         }
 
         const addedItem = this.addInventoryItem(item, 1);
+        this.markShopPurchase(item);
         if (item.isOneTime && item.uniqueKey) {
             this.markUniquePurchase(item.uniqueKey);
         }

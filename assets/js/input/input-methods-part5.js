@@ -871,6 +871,55 @@ Object.assign(Input, {
         }[quality] || 'HP';
     },
 
+    getShopPricingConfig() {
+        const pricingConfig = CONFIG.SPIRIT_STONE?.SHOP_PRICING || {};
+        return {
+            enabled: pricingConfig.ENABLED !== false,
+            repeatableStep: Math.max(0, Number(pricingConfig.REPEATABLE_STEP) || 0),
+            repeatableMaxMultiplier: Math.max(1, Number(pricingConfig.REPEATABLE_MAX_MULTIPLIER) || 1)
+        };
+    },
+
+    getShopPriceInflationKey(item) {
+        if (!item || item.isOneTime) return null;
+        const repeatableCategories = new Set(['PILL', 'MATERIAL', 'INSECT_EGG', 'HABITAT', 'UPGRADE']);
+        if (!repeatableCategories.has(item.kind)) return null;
+        return item.id || null;
+    },
+
+    getShopPurchaseCount(item) {
+        if (!item || !this.shopPurchaseHistory) return 0;
+        const key = this.getShopPriceInflationKey(item);
+        if (!key) return 0;
+        return Math.max(0, Math.floor(Number(this.shopPurchaseHistory[key]) || 0));
+    },
+
+    getShopAdjustedPrice(item) {
+        const basePrice = Math.max(0, Math.floor(Number(item?.priceLowStone) || 0));
+        const pricing = this.getShopPricingConfig();
+        if (!pricing.enabled) return basePrice;
+
+        const purchaseCount = this.getShopPurchaseCount(item);
+        if (purchaseCount <= 0) return basePrice;
+
+        const multiplier = Math.min(
+            pricing.repeatableMaxMultiplier,
+            1 + (purchaseCount * pricing.repeatableStep)
+        );
+
+        return Math.max(1, Math.floor(basePrice * multiplier));
+    },
+
+    markShopPurchase(item) {
+        const key = this.getShopPriceInflationKey(item);
+        if (!key) return;
+        if (!this.shopPurchaseHistory || typeof this.shopPurchaseHistory !== 'object') {
+            this.shopPurchaseHistory = {};
+        }
+        const currentCount = Math.max(0, Math.floor(Number(this.shopPurchaseHistory[key]) || 0));
+        this.shopPurchaseHistory[key] = currentCount + 1;
+    },
+
     getSpiritStoneTotalValue() {
         return Object.entries(this.spiritStones).reduce((total, [quality, count]) => {
             return total + (count * this.getSpiritStoneType(quality).value);

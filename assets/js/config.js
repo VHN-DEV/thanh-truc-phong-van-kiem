@@ -1314,10 +1314,10 @@ const CONFIG = {
         MAGNET_SPEED: 16, // Tốc độ di chuyển của linh thạch khi bị hút
         TRAIL_LENGTH: 12, // Số lượng điểm trong vệt sáng của linh thạch khi di chuyển
         STARTING_COUNTS: {
-            LOW: 400,     // Số lượng hạ phẩm linh thạch ban đầu để dev test nhanh
-            MEDIUM: 200,   // Số lượng trung phẩm linh thạch ban đầu
-            HIGH: 100,     // Số lượng thượng phẩm linh thạch ban đầu
-            SUPREME: 50   // Số lượng cực phẩm linh thạch ban đầu
+            LOW: 0,     // Số lượng hạ phẩm linh thạch ban đầu
+            MEDIUM: 0,  // Số lượng trung phẩm linh thạch ban đầu
+            HIGH: 0,    // Số lượng thượng phẩm linh thạch ban đầu
+            SUPREME: 0  // Số lượng cực phẩm linh thạch ban đầu
         },
         DROP_COUNT: {
             NORMAL: 1, // Số lượng linh thạch rơi ra khi đánh quái thường
@@ -1332,6 +1332,12 @@ const CONFIG = {
             MEDIUM: { label: "Trung phẩm linh thạch", shortLabel: "Trung phẩm", value: 100, color: "#59b6ff", radius: 5.5 }, // Thông tin hiển thị và giá trị của linh thạch trung phẩm
             HIGH: { label: "Thượng phẩm linh thạch", shortLabel: "Thượng phẩm", value: 10000, color: "#b78cff", radius: 6.5 }, // Thông tin hiển thị và giá trị của linh thạch thượng phẩm
             SUPREME: { label: "Cực phẩm linh thạch", shortLabel: "Cực phẩm", value: 1000000, color: "#ffd76f", radius: 7.5 } // Thông tin hiển thị và giá trị của linh thạch cực phẩm
+        },
+        SHOP_PRICING: {
+            ENABLED: true,
+            REPEATABLE_STEP: 0.06, // Giá tăng 6% mỗi lần mua lặp cùng vật phẩm tiêu hao
+            REPEATABLE_MAX_MULTIPLIER: 2.2, // Trần tăng giá để tránh leo thang vô hạn
+            RESET_ON_REALM_BREAK: false // Dự phòng mở rộng cho mùa sau
         }
     }
 };

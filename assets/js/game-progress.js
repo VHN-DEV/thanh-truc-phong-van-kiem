@@ -268,6 +268,7 @@ const GameProgress = {
             attackMode: Input.attackMode,
             selectedInventoryTab: Input.selectedInventoryTab,
             selectedBeastBagTab: Input.selectedBeastBagTab,
+            shopPurchaseHistory: Input.shopPurchaseHistory,
             uniquePurchases: Input.uniquePurchases,
             cultivationArts: Input.cultivationArts,
             activeArtifacts: Input.activeArtifacts,
@@ -379,6 +380,7 @@ const GameProgress = {
             Input.attackMode = 'BASE';
             Input.selectedInventoryTab = 'items';
             Input.selectedBeastBagTab = 'all';
+            Input.shopPurchaseHistory = {};
             Input.uniquePurchases = this.getDefaultUniquePurchases();
             Input.cultivationArts = this.getDefaultCultivationArts();
             Input.activeArtifacts = this.getDefaultActiveArtifacts();
@@ -471,6 +473,7 @@ const GameProgress = {
             Input.selectedBeastBagTab = typeof parsed.selectedBeastBagTab === 'string' && parsed.selectedBeastBagTab.trim()
                 ? parsed.selectedBeastBagTab
                 : 'all';
+            Input.shopPurchaseHistory = this.sanitizeNumberMap(parsed.shopPurchaseHistory);
             Input.uniquePurchases = this.sanitizeBooleanMap(parsed.uniquePurchases, this.getDefaultUniquePurchases());
             Input.cultivationArts = this.sanitizeBooleanMap(parsed.cultivationArts, this.getDefaultCultivationArts());
             Input.restorePendingSecretArts();
