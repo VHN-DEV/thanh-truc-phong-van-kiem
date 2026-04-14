@@ -5651,6 +5651,19 @@ select.shop-control-input {
             height: 48px;
             flex-basis: 48px;
         }
+
+        #negative-status-list {
+            flex-wrap: nowrap;
+            overflow: hidden;
+
+            .status-chip {
+                max-width: 100%;
+                overflow: hidden;
+                white-space: nowrap;
+                text-overflow: ellipsis;
+                flex-shrink: 1;
+            }
+        }
     }
 
     #sword-counter {
