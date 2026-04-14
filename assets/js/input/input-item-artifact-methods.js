@@ -4338,9 +4338,10 @@ Object.assign(Input, {
         const primaryColor = artifactConfig.color || '#93c8d8';
         const secondaryColor = artifactConfig.secondaryColor || '#d9ecf3';
         const auraColor = artifactConfig.auraColor || '#5f8595';
-        const crackLevel = clampNumber(1 - ratio + (shieldState.crackIntensity * 0.25), 0, 1);
-        const pulse = 0.82 + (Math.sin(performance.now() * 0.0042) * 0.18);
-        const radius = (30 + (ratio * 6)) * scaleFactor;
+        const crackLevel = clampNumber(1 - ratio + (shieldState.crackIntensity * 0.32), 0, 1);
+        const elapsed = performance.now();
+        const pulse = 0.84 + (Math.sin(elapsed * 0.0038) * 0.16);
+        const radius = (31 + (ratio * 5)) * scaleFactor;
 
         ctx.save();
         ctx.translate(this.x, this.y);
@@ -4360,54 +4361,135 @@ Object.assign(Input, {
         ctx.scale(scaleFactor, scaleFactor);
         ctx.lineJoin = 'round';
         ctx.lineCap = 'round';
-        ctx.strokeStyle = withAlpha(secondaryColor, 0.36);
-        ctx.fillStyle = withAlpha(primaryColor, 0.03 + (ratio * 0.02));
-        ctx.shadowBlur = 6 * scaleFactor;
-        ctx.shadowColor = withAlpha(auraColor, 0.22);
-        ctx.lineWidth = 1.3;
+        ctx.shadowBlur = 7 * scaleFactor;
+        ctx.shadowColor = withAlpha(auraColor, 0.24 + (ratio * 0.08));
 
+        const bodyGradient = ctx.createLinearGradient(0, -30, 0, 36);
+        bodyGradient.addColorStop(0, withAlpha(secondaryColor, 0.17 + (ratio * 0.05)));
+        bodyGradient.addColorStop(0.45, withAlpha(primaryColor, 0.11 + (ratio * 0.04)));
+        bodyGradient.addColorStop(1, withAlpha(auraColor, 0.18 + (ratio * 0.04)));
+        ctx.fillStyle = bodyGradient;
+        ctx.strokeStyle = withAlpha(secondaryColor, 0.52);
+        ctx.lineWidth = 1.2;
+
+        // Nắp đỉnh
         ctx.beginPath();
-        ctx.moveTo(-14, -20);
-        ctx.quadraticCurveTo(-24, -10, -22, 8);
-        ctx.quadraticCurveTo(-18, 24, 0, 26);
-        ctx.quadraticCurveTo(18, 24, 22, 8);
-        ctx.quadraticCurveTo(24, -10, 14, -20);
-        ctx.lineTo(9, -20);
-        ctx.lineTo(9, -9);
-        ctx.lineTo(-9, -9);
-        ctx.lineTo(-9, -20);
+        ctx.moveTo(-14, -22);
+        ctx.quadraticCurveTo(0, -32 - (pulse * 1.5), 14, -22);
+        ctx.lineTo(8.5, -17);
+        ctx.quadraticCurveTo(0, -13.5, -8.5, -17);
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
 
         ctx.beginPath();
-        ctx.moveTo(-6.5, -20);
-        ctx.lineTo(-6.5, -8.5);
-        ctx.moveTo(6.5, -20);
-        ctx.lineTo(6.5, -8.5);
-        ctx.moveTo(-10.5, -8.5);
-        ctx.lineTo(10.5, -8.5);
-        ctx.strokeStyle = withAlpha('#ffffff', 0.26);
-        ctx.lineWidth = 0.9;
+        ctx.fillStyle = withAlpha(secondaryColor, 0.33 + (ratio * 0.08));
+        ctx.arc(0, -27.6 - (pulse * 0.35), 2.4, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Vai đỉnh + tai đỉnh
+        ctx.fillStyle = bodyGradient;
+        ctx.beginPath();
+        ctx.ellipse(0, -13.6, 18.4, 4.2, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = withAlpha(secondaryColor, 0.46);
         ctx.stroke();
 
-        const crackCount = Math.min(7, 2 + Math.floor(crackLevel * 8));
+        ctx.beginPath();
+        ctx.moveTo(-19, -13);
+        ctx.quadraticCurveTo(-26, -9, -24, -1.4);
+        ctx.quadraticCurveTo(-22, 3.5, -17, 2.5);
+        ctx.lineTo(-14.5, -1.2);
+        ctx.quadraticCurveTo(-18, -1.4, -18.1, -7.4);
+        ctx.quadraticCurveTo(-18.2, -10.8, -16, -12.8);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(19, -13);
+        ctx.quadraticCurveTo(26, -9, 24, -1.4);
+        ctx.quadraticCurveTo(22, 3.5, 17, 2.5);
+        ctx.lineTo(14.5, -1.2);
+        ctx.quadraticCurveTo(18, -1.4, 18.1, -7.4);
+        ctx.quadraticCurveTo(18.2, -10.8, 16, -12.8);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // Thân lư đỉnh
+        ctx.beginPath();
+        ctx.moveTo(-15.4, -12.4);
+        ctx.quadraticCurveTo(-21.5, 1.5, -17.4, 13.4);
+        ctx.quadraticCurveTo(-11.5, 24.2, 0, 24.8);
+        ctx.quadraticCurveTo(11.5, 24.2, 17.4, 13.4);
+        ctx.quadraticCurveTo(21.5, 1.5, 15.4, -12.4);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // Hoa văn thân đỉnh
+        ctx.strokeStyle = withAlpha('#e6fcff', 0.22 + (ratio * 0.08));
+        ctx.lineWidth = 0.85;
+        ctx.beginPath();
+        ctx.arc(0, -1.6, 9.4, Math.PI * 0.15, Math.PI * 0.85);
+        ctx.moveTo(-9.2, 2.2);
+        ctx.quadraticCurveTo(0, 8.8, 9.2, 2.2);
+        ctx.moveTo(-7.8, 11.4);
+        ctx.quadraticCurveTo(0, 15.8, 7.8, 11.4);
+        ctx.stroke();
+
+        // 3 chân đỉnh
+        const legTopY = 20.8;
+        const legBottomY = 32.4;
+        [-8.8, 0, 8.8].forEach((x, idx) => {
+            const legWidth = idx === 1 ? 3.8 : 4.2;
+            ctx.beginPath();
+            ctx.moveTo(x - (legWidth * 0.7), legTopY);
+            ctx.lineTo(x - (legWidth * 0.9), legBottomY);
+            ctx.lineTo(x + (legWidth * 0.9), legBottomY);
+            ctx.lineTo(x + (legWidth * 0.7), legTopY);
+            ctx.closePath();
+            ctx.fillStyle = withAlpha(primaryColor, 0.15 + (ratio * 0.05));
+            ctx.fill();
+            ctx.strokeStyle = withAlpha(secondaryColor, 0.42);
+            ctx.stroke();
+        });
+
+        // Hiệu ứng nứt vỡ (nhiều nhánh + rung nhẹ)
+        const crackSeed = Math.sin(elapsed * 0.012) * 0.35;
+        const crackCount = Math.min(9, 3 + Math.floor(crackLevel * 9));
+        const edgePoints = [
+            [-11.2, -9.4], [-14.4, -2.2], [-12, 8.5], [-7.4, 18.2],
+            [0, 23], [7.4, 18.2], [12, 8.5], [14.4, -2.2], [11.2, -9.4]
+        ];
         for (let i = 0; i < crackCount; i++) {
-            const t = (i + 1) / (crackCount + 1);
-            const angle = (-Math.PI * 0.75) + (t * Math.PI * 1.5);
-            const innerR = 7 + (Math.sin((i * 2.1) + pulse) * 1.8);
-            const outerR = 22 + (Math.cos((i * 1.6) + pulse) * 2.8);
-            const sx = Math.cos(angle) * innerR;
-            const sy = Math.sin(angle) * innerR * 0.9;
-            const ex = Math.cos(angle + 0.22) * outerR;
-            const ey = Math.sin(angle + 0.22) * outerR * 0.9;
+            const t = (i + 0.6) / (crackCount + 0.8);
+            const edgeIndex = Math.min(edgePoints.length - 1, Math.floor(t * edgePoints.length));
+            const [ex, ey] = edgePoints[edgeIndex];
+            const sx = (Math.sin((i * 1.9) + crackSeed) * 2.6);
+            const sy = -4.2 + (Math.cos((i * 1.3) + crackSeed) * 1.4);
+            const midX = (sx + ex) * 0.46 + (Math.sin((elapsed * 0.007) + i) * crackLevel * 1.2);
+            const midY = (sy + ey) * 0.5;
+
             ctx.beginPath();
             ctx.moveTo(sx, sy);
-            ctx.lineTo((sx + ex) * 0.56, (sy + ey) * 0.56);
+            ctx.lineTo(midX, midY);
             ctx.lineTo(ex, ey);
-            ctx.strokeStyle = withAlpha('#f6fdff', 0.05 + (crackLevel * 0.24));
-            ctx.lineWidth = 0.36 + (crackLevel * 0.28);
+            ctx.strokeStyle = withAlpha('#f5feff', 0.08 + (crackLevel * 0.3));
+            ctx.lineWidth = 0.36 + (crackLevel * 0.42);
             ctx.stroke();
+
+            if (crackLevel > 0.26 && i % 2 === 0) {
+                const bx = (midX + ex) * 0.52 + (Math.sin(i * 1.7) * 0.8);
+                const by = (midY + ey) * 0.52;
+                ctx.beginPath();
+                ctx.moveTo(midX, midY);
+                ctx.lineTo(bx, by + (2.2 + (crackLevel * 2.5)));
+                ctx.strokeStyle = withAlpha('#e5fbff', 0.05 + (crackLevel * 0.2));
+                ctx.lineWidth = 0.24 + (crackLevel * 0.24);
+                ctx.stroke();
+            }
         }
 
         ctx.restore();
