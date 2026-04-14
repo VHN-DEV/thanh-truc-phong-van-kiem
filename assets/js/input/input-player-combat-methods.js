@@ -1032,8 +1032,22 @@ Object.assign(Input, {
     inflictEnemyAttackDamage(amount, ailmentChance = 0.2, source = 'đòn đánh của yêu thú') {
         const safeDamage = Math.max(0, Number(amount) || 0);
         if (safeDamage <= 0) return;
+
+        const shieldResult = this.absorbDamageWithHuThienDinh(safeDamage);
+        const finalDamage = shieldResult ? Math.max(0, shieldResult.remainingDamage) : safeDamage;
+        if (shieldResult) {
+            const artifactColor = this.getArtifactConfig('HU_THIEN_DINH')?.color || '#93c8d8';
+            if (shieldResult.absorbed > 0) {
+                showNotify(`Hư Thiên Đỉnh hấp thụ ${formatNumber(Math.round(shieldResult.absorbed))} sát thương.`, artifactColor, 1100);
+            }
+            if (shieldResult.depleted) {
+                showNotify('Đỉnh ảnh đã vỡ, tạm thời không thể hấp thụ thêm sát thương.', '#ffd2a1', 1300);
+            }
+        }
+        if (finalDamage <= 0) return;
+
         this.lastEnemyDamageAt = performance.now();
-        this.updateHealth(-safeDamage, source);
+        this.updateHealth(-finalDamage, source);
         this.tryApplyRandomNegativeStatus(ailmentChance);
 
         const burstCount = 6;

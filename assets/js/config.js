@@ -46,7 +46,8 @@ const IMAGE_PATHS = {
         CAN_LAM_BANG_DIEM: "./assets/images/artifacts/can-lam-bang-diem.svg",
         CHUONG_THIEN_BINH: "./assets/images/artifacts/chuong-thien-binh.svg",
         PHONG_LOI_SI: "./assets/images/artifacts/phong-loi-si.svg",
-        HUYET_SAC_PHI_PHONG: "./assets/images/artifacts/huyet-sac-phi-phong.svg"
+        HUYET_SAC_PHI_PHONG: "./assets/images/artifacts/huyet-sac-phi-phong.svg",
+        HU_THIEN_DINH: "./assets/images/artifacts/hu-thien-dinh.svg"
     },
     ABERRATIONS: {
         KIEN_THIEN_TINH: "./assets/images/aberrations/kien-thien-tinh.svg",
@@ -1001,6 +1002,25 @@ const CONFIG = {
                 MANA_COST: 22 // Linh lực tiêu hao mỗi lần thi triển
             },
             description: "Pháp bảo lam sắc, sau khi luyện hóa có thể triển khai lên tâm niệm. Khi triển khai, con trỏ hóa lam diễm và có thể chủ động thi triển truy kích."
+        },
+        HU_THIEN_DINH: {
+            fullName: "Hư Thiên Đỉnh",
+            quality: "SUPREME",
+            color: "#93c8d8",
+            secondaryColor: "#d9ecf3",
+            auraColor: "#5f8595",
+            buyPriceLowStone: 3600000,
+            buttonLabel: "Mua",
+            inventoryActionLabel: "Luyện hóa",
+            deployLabel: "Triển khai",
+            stowLabel: "Thu hồi",
+            imagePath: IMAGE_PATHS.ARTIFACTS.HU_THIEN_DINH,
+            shield: {
+                MAX_CAPACITY: 280,
+                DAMAGE_REDUCTION_PCT: 0.92,
+                CRACK_RECOVER_PER_SEC: 0.16
+            },
+            description: "Tiểu đỉnh cổ xanh xám, mang không gian nội tại như một tiểu thế giới. Có thể thu nạp, phong ấn và trấn áp mục tiêu. Khi triển khai sẽ dựng Đỉnh ảnh hộ thể, hấp thụ sát thương cho đến khi dần nứt vỡ."
         }
     },
     INSECT: {
@@ -1314,18 +1334,18 @@ const CONFIG = {
         MAGNET_SPEED: 16, // Tốc độ di chuyển của linh thạch khi bị hút
         TRAIL_LENGTH: 12, // Số lượng điểm trong vệt sáng của linh thạch khi di chuyển
         STARTING_COUNTS: {
-            LOW: 400,     // Số lượng hạ phẩm linh thạch ban đầu để dev test nhanh
-            MEDIUM: 200,   // Số lượng trung phẩm linh thạch ban đầu
-            HIGH: 100,     // Số lượng thượng phẩm linh thạch ban đầu
-            SUPREME: 50   // Số lượng cực phẩm linh thạch ban đầu
+            LOW: 1800,     // Tồn kho ban đầu ưu tiên hạ phẩm để dễ cân đối mua lẻ trong giai đoạn đầu
+            MEDIUM: 16,    // Dự trữ trung phẩm vừa đủ để mua pháp bảo nhập môn
+            HIGH: 1,       // Có sẵn một ít thượng phẩm để trải nghiệm quy đổi
+            SUPREME: 0     // Không khởi tạo cực phẩm để tránh lạm phát đầu trận
         },
         DROP_COUNT: {
             NORMAL: 1, // Số lượng linh thạch rơi ra khi đánh quái thường
-            ELITE: 3 // Số lượng linh thạch rơi ra khi đánh quái tinh anh
+            ELITE: 2 // Số lượng linh thạch rơi ra khi đánh quái tinh anh
         },
         QUALITY_RATES: {
-            NORMAL: { LOW: 0.88, MEDIUM: 0.10, HIGH: 0.019, SUPREME: 0.001 }, // Tỉ lệ rơi theo chất lượng khi đánh quái thường
-            ELITE: { LOW: 0.50, MEDIUM: 0.34, HIGH: 0.13, SUPREME: 0.03 } // Tỉ lệ rơi theo chất lượng khi đánh quái tinh anh
+            NORMAL: { LOW: 0.84, MEDIUM: 0.13, HIGH: 0.028, SUPREME: 0.002 }, // Tỉ lệ rơi theo chất lượng khi đánh quái thường
+            ELITE: { LOW: 0.44, MEDIUM: 0.36, HIGH: 0.16, SUPREME: 0.04 } // Tỉ lệ rơi theo chất lượng khi đánh quái tinh anh
         },
         TYPES: {
             LOW: { label: "Hạ phẩm linh thạch", shortLabel: "Hạ phẩm", value: 1, color: "#62f0d9", radius: 4.5 }, // Thông tin hiển thị và giá trị của linh thạch hạ phẩm

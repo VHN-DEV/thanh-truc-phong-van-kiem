@@ -23,6 +23,10 @@ Object.assign(Input, {
             const speedBonus = Math.round((Number(artifactConfig.speedBonusPct) || 0) * 100);
             return `huyết ảnh đã quấn quanh thân pháp, tốc độ di chuyển tăng ${formatNumber(speedBonus)}% và sẽ lưu huyết quang phía sau.`;
         }
+        if (uniqueKey === 'HU_THIEN_DINH') {
+            const maxShield = Math.max(1, Math.floor(Number(artifactConfig.shield?.MAX_CAPACITY) || 280));
+            return `đỉnh ảnh đã kết thành hộ thuẫn, có thể hấp thụ tối đa ${formatNumber(maxShield)} sát thương trước khi nứt vỡ.`;
+        }
         return 'pháp bảo đã hiện bên tâm ấn.';
     },
 
@@ -42,6 +46,14 @@ Object.assign(Input, {
             }
             if (unlocked) {
                 return `Đã luyện hóa, có thể triển khai để tăng ${formatNumber(speedBonus)}% tốc độ di chuyển.`;
+            }
+        } else if (uniqueKey === 'HU_THIEN_DINH') {
+            const shieldState = this.ensureHuThienDinhShieldState();
+            if (active) {
+                return `Đỉnh ảnh đang hộ thể (${formatNumber(Math.max(0, shieldState.currentCapacity))}/${formatNumber(Math.max(1, shieldState.maxCapacity))}), hấp thụ sát thương và nứt dần theo từng đợt công kích.`;
+            }
+            if (unlocked) {
+                return 'Đã luyện hóa, có thể triển khai Đỉnh ảnh để tạo lá chắn hộ thể cực mạnh.';
             }
         }
 
@@ -68,6 +80,11 @@ Object.assign(Input, {
         if (uniqueKey === 'HUYET_SAC_PHI_PHONG') {
             return nextActive
                 ? `${artifactConfig.fullName} đã triển khai sau lưng thân pháp.`
+                : `${artifactConfig.fullName} đã thu vào thần hải.`;
+        }
+        if (uniqueKey === 'HU_THIEN_DINH') {
+            return nextActive
+                ? `${artifactConfig.fullName} đã dựng Đỉnh ảnh hộ thể.`
                 : `${artifactConfig.fullName} đã thu vào thần hải.`;
         }
 
@@ -216,6 +233,77 @@ Object.assign(Input, {
             transitionMs: Math.max(20, parseInt(blinkConfig.TRANSITION_MS, 10) || 48),
             impactRadius: Math.max(10, Number(blinkConfig.IMPACT_RADIUS) || 26)
         };
+    },
+
+    ensureHuThienDinhShieldState() {
+        if (!this.huThienDinhShield) {
+            const maxCapacity = this.getHuThienDinhShieldConfig().maxCapacity;
+            this.huThienDinhShield = {
+                maxCapacity,
+                currentCapacity: maxCapacity,
+                crackIntensity: 0,
+                lastHitAt: 0,
+                lastRecoverAt: performance.now()
+            };
+        }
+
+        return this.huThienDinhShield;
+    },
+
+    getHuThienDinhShieldConfig() {
+        const shieldConfig = this.getArtifactConfig('HU_THIEN_DINH')?.shield || {};
+        return {
+            maxCapacity: Math.max(1, Math.floor(Number(shieldConfig.MAX_CAPACITY) || 280)),
+            damageReductionPct: clampNumber(Number(shieldConfig.DAMAGE_REDUCTION_PCT) || 0.92, 0, 1),
+            crackRecoverPerSec: clampNumber(Number(shieldConfig.CRACK_RECOVER_PER_SEC) || 0.16, 0, 1)
+        };
+    },
+
+    resetHuThienDinhShieldCapacity() {
+        const state = this.ensureHuThienDinhShieldState();
+        const cfg = this.getHuThienDinhShieldConfig();
+        state.maxCapacity = cfg.maxCapacity;
+        state.currentCapacity = cfg.maxCapacity;
+        state.crackIntensity = 0;
+        state.lastRecoverAt = performance.now();
+        return state;
+    },
+
+    absorbDamageWithHuThienDinh(rawDamage) {
+        const incomingDamage = Math.max(0, Number(rawDamage) || 0);
+        if (incomingDamage <= 0 || !this.isArtifactDeployed('HU_THIEN_DINH')) return null;
+
+        const state = this.ensureHuThienDinhShieldState();
+        const cfg = this.getHuThienDinhShieldConfig();
+        if (state.currentCapacity <= 0) return null;
+
+        const mitigated = incomingDamage * cfg.damageReductionPct;
+        const absorbed = Math.min(state.currentCapacity, mitigated);
+        if (absorbed <= 0) return null;
+
+        state.currentCapacity = Math.max(0, state.currentCapacity - absorbed);
+        const damageRatio = absorbed / Math.max(1, state.maxCapacity);
+        state.crackIntensity = clampNumber(state.crackIntensity + (damageRatio * 1.65), 0, 1);
+        state.lastHitAt = performance.now();
+        state.lastRecoverAt = state.lastHitAt;
+
+        const remainingDamage = Math.max(0, incomingDamage - absorbed);
+        const depleted = state.currentCapacity <= 0;
+        return { absorbed, remainingDamage, depleted };
+    },
+
+    tickHuThienDinhShieldRecovery(now = performance.now()) {
+        if (!this.isArtifactDeployed('HU_THIEN_DINH')) return;
+        const state = this.ensureHuThienDinhShieldState();
+        const cfg = this.getHuThienDinhShieldConfig();
+        const elapsedSec = Math.max(0, (now - (state.lastRecoverAt || now)) / 1000);
+        if (elapsedSec <= 0) return;
+
+        if (state.crackIntensity > 0) {
+            state.crackIntensity = clampNumber(state.crackIntensity - (cfg.crackRecoverPerSec * elapsedSec), 0, 1);
+        }
+
+        state.lastRecoverAt = now;
     },
 
     hasPhongLoiBlinkSkill() {
@@ -390,6 +478,11 @@ Object.assign(Input, {
         }
         if (uniqueKey === 'CAN_LAM_BANG_DIEM') {
             this.renderCanLamCastButton();
+        }
+        if (uniqueKey === 'HU_THIEN_DINH') {
+            if (normalized) {
+                this.resetHuThienDinhShieldCapacity();
+            }
         }
 
         if (!silent) {
@@ -4222,6 +4315,7 @@ Object.assign(Input, {
 
     drawCursor(ctx, scaleFactor) {
         this.drawHuyetSacPhiPhongCloak(ctx, scaleFactor);
+        this.drawHuThienDinhShield(ctx, scaleFactor);
         if (this.isArtifactDeployed('CAN_LAM_BANG_DIEM')) {
             this.drawFlame(ctx, scaleFactor);
         } else {
@@ -4230,6 +4324,93 @@ Object.assign(Input, {
 
         this.drawPhongLoiArtifact(ctx, scaleFactor);
         this.drawCursorDamageFeedback(ctx, scaleFactor);
+    },
+
+    drawHuThienDinhShield(ctx, scaleFactor) {
+        if (!this.isArtifactDeployed('HU_THIEN_DINH')) return;
+        this.tickHuThienDinhShieldRecovery();
+        const artifactConfig = this.getArtifactConfig('HU_THIEN_DINH') || {};
+        const shieldState = this.ensureHuThienDinhShieldState();
+        const ratio = clampNumber(shieldState.currentCapacity / Math.max(1, shieldState.maxCapacity), 0, 1);
+        if (ratio <= 0) return;
+
+        const primaryColor = artifactConfig.color || '#93c8d8';
+        const secondaryColor = artifactConfig.secondaryColor || '#d9ecf3';
+        const auraColor = artifactConfig.auraColor || '#5f8595';
+        const crackLevel = clampNumber(1 - ratio + (shieldState.crackIntensity * 0.25), 0, 1);
+        const pulse = 0.82 + (Math.sin(performance.now() * 0.0042) * 0.18);
+        const radius = (30 + (ratio * 6)) * scaleFactor;
+
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.globalCompositeOperation = 'source-over';
+
+        const halo = ctx.createRadialGradient(0, 0, 0, 0, 0, radius * 1.95);
+        halo.addColorStop(0, withAlpha('#ffffff', 0.02 + (ratio * 0.03)));
+        halo.addColorStop(0.34, withAlpha(secondaryColor, 0.04 + (ratio * 0.05)));
+        halo.addColorStop(0.76, withAlpha(primaryColor, 0.07));
+        halo.addColorStop(1, withAlpha(auraColor, 0));
+        ctx.fillStyle = halo;
+        ctx.beginPath();
+        ctx.arc(0, 0, radius * 1.95, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.save();
+        ctx.scale(scaleFactor, scaleFactor);
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+        ctx.strokeStyle = withAlpha(secondaryColor, 0.36);
+        ctx.fillStyle = withAlpha(primaryColor, 0.03 + (ratio * 0.02));
+        ctx.shadowBlur = 6 * scaleFactor;
+        ctx.shadowColor = withAlpha(auraColor, 0.22);
+        ctx.lineWidth = 1.3;
+
+        ctx.beginPath();
+        ctx.moveTo(-14, -20);
+        ctx.quadraticCurveTo(-24, -10, -22, 8);
+        ctx.quadraticCurveTo(-18, 24, 0, 26);
+        ctx.quadraticCurveTo(18, 24, 22, 8);
+        ctx.quadraticCurveTo(24, -10, 14, -20);
+        ctx.lineTo(9, -20);
+        ctx.lineTo(9, -9);
+        ctx.lineTo(-9, -9);
+        ctx.lineTo(-9, -20);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(-6.5, -20);
+        ctx.lineTo(-6.5, -8.5);
+        ctx.moveTo(6.5, -20);
+        ctx.lineTo(6.5, -8.5);
+        ctx.moveTo(-10.5, -8.5);
+        ctx.lineTo(10.5, -8.5);
+        ctx.strokeStyle = withAlpha('#ffffff', 0.26);
+        ctx.lineWidth = 0.9;
+        ctx.stroke();
+
+        const crackCount = Math.min(7, 2 + Math.floor(crackLevel * 8));
+        for (let i = 0; i < crackCount; i++) {
+            const t = (i + 1) / (crackCount + 1);
+            const angle = (-Math.PI * 0.75) + (t * Math.PI * 1.5);
+            const innerR = 7 + (Math.sin((i * 2.1) + pulse) * 1.8);
+            const outerR = 22 + (Math.cos((i * 1.6) + pulse) * 2.8);
+            const sx = Math.cos(angle) * innerR;
+            const sy = Math.sin(angle) * innerR * 0.9;
+            const ex = Math.cos(angle + 0.22) * outerR;
+            const ey = Math.sin(angle + 0.22) * outerR * 0.9;
+            ctx.beginPath();
+            ctx.moveTo(sx, sy);
+            ctx.lineTo((sx + ex) * 0.56, (sy + ey) * 0.56);
+            ctx.lineTo(ex, ey);
+            ctx.strokeStyle = withAlpha('#f6fdff', 0.05 + (crackLevel * 0.24));
+            ctx.lineWidth = 0.36 + (crackLevel * 0.28);
+            ctx.stroke();
+        }
+
+        ctx.restore();
+        ctx.restore();
     },
 
     drawCursorDamageFeedback(ctx, scaleFactor) {

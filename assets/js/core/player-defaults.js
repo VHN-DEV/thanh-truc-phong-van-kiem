@@ -7,6 +7,7 @@ function getDefaultUniquePurchases() {
         KHU_TRUNG_THUAT: false,
         PHONG_LOI_SI: false,
         HUYET_SAC_PHI_PHONG: false,
+        HU_THIEN_DINH: false,
         KY_TRUNG_BANG: false,
         LINH_THU_DAI: false,
         THAT_SAC_TRU_VAT_NANG: false,
@@ -21,14 +22,16 @@ function getDefaultCultivationArts() {
         CAN_LAM_BANG_DIEM: false,
         KHU_TRUNG_THUAT: false,
         PHONG_LOI_SI: false,
-        HUYET_SAC_PHI_PHONG: false
+        HUYET_SAC_PHI_PHONG: false,
+        HU_THIEN_DINH: false
     };
 }
 
 function getDefaultActiveArtifacts() {
     return {
         PHONG_LOI_SI: false,
-        HUYET_SAC_PHI_PHONG: false
+        HUYET_SAC_PHI_PHONG: false,
+        HU_THIEN_DINH: false
     };
 }
 
@@ -76,4 +79,3 @@ function getDefaultInventoryCapacity() {
 function getDefaultBeastBagCapacity() {
     return Math.max(1, parseInt(CONFIG.INSECT?.STARTING_BEAST_BAG_CAPACITY, 10) || 6);
 }
-
