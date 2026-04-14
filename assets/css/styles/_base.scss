@@ -83,6 +83,13 @@ textarea {
 
 .start-overlay {
     position: fixed;
+    cursor: default;
+
+    *,
+    *::before,
+    *::after {
+        cursor: inherit;
+    }
     inset: 0;
     z-index: 3000;
     display: none;
