@@ -2534,6 +2534,7 @@ Object.assign(Input, {
 
         const cloudEl = document.getElementById('tribulation-cloud');
         const boltEl = document.getElementById('tribulation-bolt');
+        const contentEl = document.querySelector('#tribulation-popup .tribulation-content');
         const cloudWrapEl = cloudEl?.parentElement || null;
 
         const spawnBoltFragment = (strikeIndex) => {
@@ -2557,10 +2558,13 @@ Object.assign(Input, {
             this.tribulation.currentStrike += 1;
             cloudEl?.classList.remove('is-striking');
             boltEl?.classList.remove('is-striking');
+            contentEl?.classList.remove('is-striking');
             void cloudEl?.offsetWidth;
             void boltEl?.offsetWidth;
+            void contentEl?.offsetWidth;
             cloudEl?.classList.add('is-striking');
             boltEl?.classList.add('is-striking');
+            contentEl?.classList.add('is-striking');
             spawnBoltFragment(this.tribulation.currentStrike);
 
             const damageRatio = damageMin + (Math.random() * (damageMax - damageMin));
