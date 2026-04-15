@@ -1,8 +1,11 @@
 const ITEM_COLLECTION_TABS = Object.freeze([
     { key: 'DAN_DUOC', label: 'Đan dược' },
+    { key: 'DAN_PHUONG', label: 'Đan phương' },
+    { key: 'DAN_LU', label: 'Đan lư' },
     { key: 'TRUNG_NOAN', label: 'Trùng noãn' },
     { key: 'THIEN_TAI_DIA_BAO', label: 'Thiên tài địa bảo' },
-    { key: 'TUI', label: 'Túi' },
+    { key: 'TUI_TRU_VAT', label: 'Túi trữ vật' },
+    { key: 'LINH_THU_DAI', label: 'Linh thú đại' },
     { key: 'BI_PHAP', label: 'Bí pháp' },
     { key: 'PHAP_BAO', label: 'Pháp bảo' },
     { key: 'KHAC', label: 'Khác' }
@@ -20,9 +23,12 @@ function getItemCollectionTabKey(item) {
     }
 
     if (category === 'SPECIAL') return 'DAN_DUOC';
+    if (category === 'ALCHEMY_RECIPE') return 'DAN_PHUONG';
+    if (category === 'ALCHEMY_FURNACE') return 'DAN_LU';
     if (category === 'INSECT_EGG') return 'TRUNG_NOAN';
     if (category === 'MATERIAL') return 'THIEN_TAI_DIA_BAO';
-    if (['BAG', 'RAINBOW_BAG', 'SPIRIT_BAG', 'RAINBOW_SPIRIT_BAG', 'SPIRIT_HABITAT'].includes(category)) return 'TUI';
+    if (['BAG', 'RAINBOW_BAG'].includes(category)) return 'TUI_TRU_VAT';
+    if (['SPIRIT_BAG', 'RAINBOW_SPIRIT_BAG', 'SPIRIT_HABITAT'].includes(category)) return 'LINH_THU_DAI';
     if (category === 'FLAME_ART' && item?.uniqueKey === 'CAN_LAM_BANG_DIEM') return 'PHAP_BAO';
     if (['SWORD_ART', 'FLAME_ART', 'INSECT_SKILL'].includes(category)) return 'BI_PHAP';
     if (['SWORD_ARTIFACT', 'ARTIFACT', 'INSECT_ARTIFACT'].includes(category)) return 'PHAP_BAO';
@@ -118,6 +124,32 @@ function buildStaticArtifactImageVisualMarkup(imagePath, variantClass = '') {
     `;
 }
 
+function buildAlchemyRecipeVisualMarkup(item) {
+    const qualityClass = String(item?.quality || 'LOW').toLowerCase();
+    return `
+        <div class="alchemy-recipe-art alchemy-recipe-art--${qualityClass}" aria-hidden="true">
+            <span class="alchemy-recipe-art__book"></span>
+            <span class="alchemy-recipe-art__seal"></span>
+            <span class="alchemy-recipe-art__rune alchemy-recipe-art__rune--1"></span>
+            <span class="alchemy-recipe-art__rune alchemy-recipe-art__rune--2"></span>
+            <span class="alchemy-recipe-art__rune alchemy-recipe-art__rune--3"></span>
+        </div>
+    `;
+}
+
+function buildAlchemyFurnaceVisualMarkup(item) {
+    const qualityClass = String(item?.quality || 'LOW').toLowerCase();
+    return `
+        <div class="alchemy-furnace-art alchemy-furnace-art--${qualityClass}" aria-hidden="true">
+            <span class="alchemy-furnace-art__body"></span>
+            <span class="alchemy-furnace-art__lid"></span>
+            <span class="alchemy-furnace-art__leg alchemy-furnace-art__leg--left"></span>
+            <span class="alchemy-furnace-art__leg alchemy-furnace-art__leg--right"></span>
+            <span class="alchemy-furnace-art__flame"></span>
+        </div>
+    `;
+}
+
 function buildThanhTrucSwordArtifactVisualMarkup() {
     return `
         <div class="thanh-truc-art" aria-hidden="true">
@@ -168,6 +200,8 @@ function buildPillVisualMarkup(item, qualityConfig, options = {}) {
         SPIRIT_HABITAT: { className: 'is-habitat', aura: 'rgba(142, 191, 255, 0.34)', isBagLike: true },
         INSECT_EGG: { className: 'is-insect-egg', aura: 'rgba(255, 240, 195, 0.32)' },
         MATERIAL: { className: 'is-material', aura: 'rgba(255, 176, 130, 0.30)' },
+        ALCHEMY_RECIPE: { className: 'is-alchemy-recipe', aura: 'rgba(157, 241, 255, 0.34)' },
+        ALCHEMY_FURNACE: { className: 'is-alchemy-furnace', aura: 'rgba(255, 183, 120, 0.36)' },
         CHUNG_CUC_DAO_NGUYEN_DAN: { className: 'is-special-rainbow', aura: 'rgba(255, 255, 255, 0.40)' },
         TAN_DAO_DIET_NGUYEN_DAN: { className: 'is-special-void', aura: 'rgba(84, 42, 115, 0.44)' }
     };
@@ -243,6 +277,10 @@ function buildPillVisualMarkup(item, qualityConfig, options = {}) {
         `
         : visual.className === 'is-material'
             ? buildMaterialArtMarkup(item.materialKey, item)
+        : visual.className === 'is-alchemy-recipe'
+            ? buildAlchemyRecipeVisualMarkup(item)
+        : visual.className === 'is-alchemy-furnace'
+            ? buildAlchemyFurnaceVisualMarkup(item)
         : visual.isBagLike
         ? buildItemImageVisualMarkup(bagImagePath, {
             coreClass: 'pill-visual__core--bag',

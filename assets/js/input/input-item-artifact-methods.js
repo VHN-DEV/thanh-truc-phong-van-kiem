@@ -410,16 +410,17 @@ Object.assign(Input, {
         if (!button) return;
 
         const hasHuThien = this.hasArtifactPurchased('HU_THIEN_DINH') || this.hasArtifactUnlocked('HU_THIEN_DINH');
+        const hasPurchasedFurnace = Object.values(this.alchemyFurnaces || {}).some(Boolean);
         const ready = this.hasArtifactUnlocked('HU_THIEN_DINH') && this.isArtifactDeployed('HU_THIEN_DINH');
-        const title = !hasHuThien
-            ? 'Cần mua Hư Thiên Đỉnh để mở Đan Lô'
+        const title = !hasHuThien && !hasPurchasedFurnace
+            ? 'Cần mua Hư Thiên Đỉnh hoặc Đan lư ở Thiên Bảo Các để mở luyện đan'
             : ready
                 ? 'Đan Lô đã sẵn sàng, có thể mở popup luyện đan'
-                : 'Đã có Hư Thiên Đỉnh, hãy triển khai pháp bảo để luyện đan';
+                : 'Đã có đan lư nhưng chưa triển khai Hư Thiên Đỉnh, vẫn có thể luyện với hiệu quả thấp hơn';
 
-        button.classList.toggle('is-hidden', !hasHuThien);
+        button.classList.toggle('is-hidden', !hasHuThien && !hasPurchasedFurnace);
         button.classList.toggle('is-active', ready);
-        button.style.display = hasHuThien ? 'flex' : 'none';
+        button.style.display = (hasHuThien || hasPurchasedFurnace) ? 'flex' : 'none';
         button.setAttribute('aria-label', title);
         button.setAttribute('title', title);
     },
@@ -1087,6 +1088,7 @@ Object.assign(Input, {
         if (spec.uniqueKey) parts.push(spec.uniqueKey);
         if (spec.speciesKey) parts.push(spec.speciesKey);
         if (spec.materialKey) parts.push(spec.materialKey);
+        if (spec.source) parts.push(spec.source);
         return parts.join('|');
     },
 
@@ -1096,6 +1098,99 @@ Object.assign(Input, {
             || CONFIG.ARTIFACTS?.[uniqueKey]
             || CONFIG.INSECT?.UNIQUE_ITEMS?.[uniqueKey]
             || null;
+    },
+
+    getAlchemyRecipeDefinitions() {
+        const recipes = {};
+        const formulaLabels = CONFIG.ALCHEMY?.FORMULA_QUALITY_LABELS || {};
+        const materialsByQuality = {
+            LOW: ['LINH_TY', 'YEU_HUYET', 'TINH_THIT'],
+            MEDIUM: ['NGAN_NAM_HOANG_TINH', 'TUYET_NGOC_THAO', 'YEU_DAN'],
+            HIGH: ['NGUYET_HOA_LO', 'DIA_TAM_HOA_TINH', 'THIEN_LINH_QUA'],
+            SUPREME: ['HUYEN_HOA_LIEN', 'VAN_MOC_CHI', 'LONG_LAN']
+        };
+        const formulaQualityByPillQuality = {
+            LOW: 'LOW',
+            MEDIUM: 'MEDIUM',
+            HIGH: 'HIGH',
+            SUPREME: 'SUPREME'
+        };
+        const potionCategories = ['EXP', 'INSIGHT', 'ATTACK', 'SHIELD_BREAK', 'BERSERK', 'RAGE', 'MANA', 'MAX_MANA', 'REGEN', 'SPEED', 'FORTUNE'];
+
+        potionCategories.forEach(category => {
+            QUALITY_ORDER.forEach(quality => {
+                const formulaQuality = formulaQualityByPillQuality[quality] || 'LOW';
+                const formulaLabel = formulaLabels[formulaQuality] || 'Đan phương';
+                const qualityConfig = this.getItemQualityConfig({ category, quality });
+                const recipeKey = `AUTO:${category}:${quality}`;
+                const primaryMaterials = materialsByQuality[quality] || materialsByQuality.LOW;
+                recipes[recipeKey] = {
+                    key: recipeKey,
+                    name: `${formulaLabel} ${qualityConfig.fullName}`,
+                    formulaQuality,
+                    realmTier: 'Đan phương thường',
+                    buyPriceLowStone: Math.max(40, Math.floor((qualityConfig.buyPriceLowStone || 0) * 0.35)),
+                    brewTimeMs: 12000 + (QUALITY_ORDER.indexOf(quality) * 9000),
+                    output: { category, quality, count: 1 },
+                    ingredients: [
+                        { materialKey: primaryMaterials[0], count: 1 },
+                        { materialKey: primaryMaterials[1], count: 1 },
+                        { materialKey: primaryMaterials[2], count: quality === 'SUPREME' ? 2 : 1 }
+                    ]
+                };
+            });
+        });
+
+        const nextRealm = this.getNextMajorRealmInfo();
+        if (nextRealm) {
+            QUALITY_ORDER.forEach(quality => {
+                const formulaQuality = formulaQualityByPillQuality[quality] || 'LOW';
+                const formulaLabel = formulaLabels[formulaQuality] || 'Đan phương';
+                const qualityConfig = this.getItemQualityConfig({ category: 'BREAKTHROUGH', quality });
+                const recipeKey = `AUTO:BREAKTHROUGH:${quality}:${nextRealm.key}`;
+                recipes[recipeKey] = {
+                    key: recipeKey,
+                    name: `${formulaLabel} ${qualityConfig.label} ${nextRealm.name} đan`,
+                    formulaQuality,
+                    realmTier: 'Đột phá đan',
+                    buyPriceLowStone: Math.max(120, Math.floor((qualityConfig.buyPriceLowStone || 0) * 0.38)),
+                    brewTimeMs: 22000 + (QUALITY_ORDER.indexOf(quality) * 10000),
+                    output: { category: 'BREAKTHROUGH', quality, realmKey: nextRealm.key, realmName: nextRealm.name, count: 1 },
+                    ingredients: [
+                        { materialKey: 'NGAN_NAM_HOANG_TINH', count: 1 + QUALITY_ORDER.indexOf(quality) },
+                        { materialKey: 'TUYET_NGOC_THAO', count: 1 + (quality === 'SUPREME' ? 1 : 0) },
+                        { materialKey: 'THIEN_LINH_QUA', count: 1 }
+                    ]
+                };
+            });
+        }
+
+        Object.entries(CONFIG.PILL.SPECIAL_ITEMS || {}).forEach(([specialKey, specialConfig]) => {
+            const quality = specialConfig.quality || 'SUPREME';
+            const formulaQuality = formulaQualityByPillQuality[quality] || 'SUPREME';
+            const formulaLabel = formulaLabels[formulaQuality] || 'Đan phương';
+            const recipeKey = `AUTO:SPECIAL:${specialKey}`;
+            recipes[recipeKey] = {
+                key: recipeKey,
+                name: `${formulaLabel} ${specialConfig.fullName || specialKey}`,
+                formulaQuality,
+                realmTier: 'Cấm kỵ đan',
+                buyPriceLowStone: Math.max(1800, Math.floor((specialConfig.buyPriceLowStone || 0) * 0.5)),
+                brewTimeMs: 68000,
+                output: { category: 'SPECIAL', quality, specialKey, count: 1 },
+                ingredients: [
+                    { materialKey: 'HUYEN_HOA_LIEN', count: 2 },
+                    { materialKey: 'THIEN_LINH_QUA', count: 2 },
+                    { materialKey: 'KIM_LOI_TRUC_ROOT', count: 1 }
+                ]
+            };
+        });
+
+        return recipes;
+    },
+
+    getAlchemyRecipeByKey(recipeKey) {
+        return this.getAlchemyRecipeDefinitions()?.[recipeKey] || null;
     },
 
     getItemQualityConfig(item) {
@@ -1120,7 +1215,8 @@ Object.assign(Input, {
             INSECT_SKILL: CONFIG.INSECT.UNIQUE_ITEMS,
             INSECT_ARTIFACT: CONFIG.INSECT.UNIQUE_ITEMS,
             SPIRIT_BAG: { HIGH: CONFIG.INSECT.BEAST_BAG },
-            RAINBOW_SPIRIT_BAG: { SUPREME: CONFIG.INSECT.SEVEN_COLOR_BEAST_BAG }
+            RAINBOW_SPIRIT_BAG: { SUPREME: CONFIG.INSECT.SEVEN_COLOR_BEAST_BAG },
+            ALCHEMY_FURNACE: CONFIG.ALCHEMY?.FURNACES || {}
         };
 
         if (item.specialKey) {
@@ -1134,6 +1230,14 @@ Object.assign(Input, {
         if (item.uniqueKey) {
             const uniqueConfig = this.getUniqueItemConfig(item.uniqueKey);
             if (uniqueConfig) return uniqueConfig;
+        }
+
+        if (item.category === 'ALCHEMY_RECIPE') {
+            return this.getAlchemyRecipeByKey(item.recipeKey) || CONFIG.PILL.EXP_QUALITIES.LOW;
+        }
+
+        if (item.category === 'ALCHEMY_FURNACE') {
+            return CONFIG.ALCHEMY?.FURNACES?.[item.furnaceKey] || CONFIG.PILL.EXP_QUALITIES.LOW;
         }
 
         if (item.category === 'INSECT_EGG') {
@@ -1172,6 +1276,14 @@ Object.assign(Input, {
 
         if (item.category === 'MATERIAL' || item.kind === 'MATERIAL') {
             return qualityConfig.fullName || 'Nguyên liệu';
+        }
+
+        if (item.category === 'ALCHEMY_RECIPE') {
+            return qualityConfig.name || 'Đan phương';
+        }
+
+        if (item.category === 'ALCHEMY_FURNACE') {
+            return qualityConfig.name || 'Đan lư';
         }
 
         if (item.kind === 'INSECT_EGG' || item.category === 'INSECT_EGG') {
@@ -1253,6 +1365,21 @@ Object.assign(Input, {
         if (item.category === 'MATERIAL') {
             const usageSummary = this.getMaterialUsageSummary(item.materialKey);
             return [qualityConfig.description, usageSummary].filter(Boolean).join(' ');
+        }
+
+        if (item.category === 'ALCHEMY_RECIPE') {
+            const formulaLabel = CONFIG.ALCHEMY?.FORMULA_QUALITY_LABELS?.[qualityConfig.formulaQuality || item.quality] || 'Đan phương';
+            const ingredientsText = Array.isArray(qualityConfig.ingredients)
+                ? qualityConfig.ingredients.map(ingredient => {
+                    const cfg = this.getMaterialConfig(ingredient.materialKey);
+                    return `${cfg?.fullName || ingredient.materialKey} x${formatNumber(Math.max(1, Math.floor(Number(ingredient.count) || 0)))}`;
+                }).join(', ')
+                : 'Chưa rõ';
+            return `${formulaLabel} ${qualityConfig.realmTier || 'đan'} dùng để luyện ${this.getItemDisplayName({ category: qualityConfig.output?.category || 'EXP', quality: qualityConfig.output?.quality || 'LOW' })}. Nguyên liệu: ${ingredientsText}.`;
+        }
+
+        if (item.category === 'ALCHEMY_FURNACE') {
+            return `${qualityConfig.name || 'Đan lư'} tăng tỉ lệ thành đan ${Math.round((qualityConfig.successRate || 0) * 100)}%, hệ số thời gian ${Math.round((qualityConfig.brewTimeMultiplier || 1) * 100)}%, hệ số sản lượng ${qualityConfig.outputMultiplier || 1}.`;
         }
 
         if (item.category === 'SWORD_ARTIFACT') {
@@ -1390,7 +1517,9 @@ Object.assign(Input, {
             FLAME_ART: 'Pháp bảo',
             INSECT_SKILL: 'Trùng đạo bí pháp',
             INSECT_ARTIFACT: 'Kỳ trùng bảo vật',
-            INSECT_EGG: 'Trứng noãn'
+            INSECT_EGG: 'Trứng noãn',
+            ALCHEMY_RECIPE: 'Đan phương',
+            ALCHEMY_FURNACE: 'Đan lư'
         };
 
         if (staticLabels[item.category]) return staticLabels[item.category];
@@ -1727,6 +1856,32 @@ Object.assign(Input, {
             });
         });
 
+        Object.entries(this.getAlchemyRecipeDefinitions() || {}).forEach(([recipeKey, recipeConfig]) => {
+            items.push({
+                id: `ALCHEMY_RECIPE:${recipeKey}`,
+                kind: 'ALCHEMY_RECIPE',
+                category: 'ALCHEMY_RECIPE',
+                quality: recipeConfig.formulaQuality || recipeConfig.output?.quality || 'LOW',
+                recipeKey,
+                priceLowStone: recipeConfig.buyPriceLowStone || 0,
+                isOneTime: true,
+                uniqueKey: `ALCHEMY_RECIPE:${recipeKey}`
+            });
+        });
+
+        Object.entries(CONFIG.ALCHEMY?.FURNACES || {}).forEach(([furnaceKey, furnaceConfig]) => {
+            items.push({
+                id: `ALCHEMY_FURNACE:${furnaceKey}`,
+                kind: 'ALCHEMY_FURNACE',
+                category: 'ALCHEMY_FURNACE',
+                quality: furnaceConfig.quality || 'LOW',
+                furnaceKey,
+                priceLowStone: furnaceConfig.buyPriceLowStone || 0,
+                isOneTime: true,
+                uniqueKey: `ALCHEMY_FURNACE:${furnaceKey}`
+            });
+        });
+
         if (CONFIG.INSECT?.SEVEN_COLOR_BEAST_BAG) {
             items.push({
                 id: 'RAINBOW_SPIRIT_BAG:SUPREME',
@@ -1751,6 +1906,8 @@ Object.assign(Input, {
             INSECT_EGG: -1.1,
             RAINBOW_BAG: -1.05,
             BAG: -1,
+            ALCHEMY_RECIPE: -0.9,
+            ALCHEMY_FURNACE: -0.8,
             MATERIAL: -0.5,
             EXP: 0,
             INSIGHT: 1,
@@ -1896,7 +2053,7 @@ Object.assign(Input, {
             return false;
         }
 
-        const requiresInventorySpace = !['BAG', 'RAINBOW_BAG', 'SPIRIT_BAG', 'RAINBOW_SPIRIT_BAG', 'SPIRIT_HABITAT', 'INSECT_EGG'].includes(item.category);
+        const requiresInventorySpace = !['BAG', 'RAINBOW_BAG', 'SPIRIT_BAG', 'RAINBOW_SPIRIT_BAG', 'SPIRIT_HABITAT', 'INSECT_EGG', 'ALCHEMY_RECIPE', 'ALCHEMY_FURNACE'].includes(item.category);
         if (requiresInventorySpace && !this.hasInventorySpaceForSpec(item)) {
             showNotify('Túi trữ vật đã đầy, không thể mua thêm vật phẩm mới.', '#ff8a80');
             return false;
@@ -1975,6 +2132,28 @@ Object.assign(Input, {
             return true;
         }
 
+        if (item.category === 'ALCHEMY_RECIPE') {
+            this.alchemyUnlockedRecipes = this.alchemyUnlockedRecipes || {};
+            this.alchemyUnlockedRecipes[item.recipeKey] = true;
+            this.markUniquePurchase(item.uniqueKey);
+            showNotify(`Đã lĩnh ${this.getItemDisplayName(item)}. Có thể mở Đan Lô để luyện.`, qualityConfig.color || '#93c8d8');
+            this.refreshResourceUI();
+            return true;
+        }
+
+        if (item.category === 'ALCHEMY_FURNACE') {
+            this.alchemyFurnaces = this.alchemyFurnaces || {};
+            this.alchemyFurnaces[item.furnaceKey] = true;
+            this.alchemySelectedFurnace = item.furnaceKey;
+            this.markUniquePurchase(item.uniqueKey);
+            showNotify(`Đã mua ${this.getItemDisplayName(item)}. Đan lư này đã sẵn sàng để luyện đan.`, qualityConfig.color || '#93c8d8');
+            if (AlchemyUI && typeof AlchemyUI.open === 'function') {
+                AlchemyUI.open();
+            }
+            this.refreshResourceUI();
+            return true;
+        }
+
         const addedItem = this.addInventoryItem(item, 1);
         if (item.isOneTime && item.uniqueKey) {
             this.markUniquePurchase(item.uniqueKey);
@@ -1986,13 +2165,18 @@ Object.assign(Input, {
 
     getInventorySellPrice(item) {
         if (!item) return 0;
+        if (item.category === 'SWORD_ARTIFACT' && item.source === 'REFINED') {
+            return Math.max(1, Math.floor(Number(item.sellPriceLowStone) || 0));
+        }
         if (['ARTIFACT', 'SWORD_ARTIFACT', 'INSECT_ARTIFACT', 'INSECT_SKILL', 'SWORD_ART', 'FLAME_ART'].includes(item.category)) return 0;
 
         const qualityConfig = this.getItemQualityConfig(item);
         const buyPrice = Math.max(0, qualityConfig.buyPriceLowStone || 0);
         const ratio = Math.max(0, parseFloat(CONFIG.ITEMS.SELLBACK_RATIO) || 0);
+        const craftedBonusMultiplier = item.source === 'ALCHEMY' ? 1.6 : 1;
+        const computedPrice = Math.floor(buyPrice * ratio * craftedBonusMultiplier);
 
-        return Math.max(1, Math.floor(buyPrice * ratio));
+        return Math.max(1, computedPrice);
     },
 
     sellInventoryItem(itemKey) {
@@ -2313,6 +2497,9 @@ Object.assign(Input, {
         this.updateUltimateState();
         this.updateActiveEffects();
         this.updateSingleSwordUltimateChargeState();
+        if (typeof this.tickAlchemyBatch === 'function') {
+            this.tickAlchemyBatch();
+        }
 
         if (this.isGameOver) {
             this.resetAttackState();
@@ -2373,7 +2560,10 @@ Object.assign(Input, {
         }
 
         if (this.isTouchDevice) return;
-        if (e.target.closest('.btn')) return;
+        const hitTarget = typeof this.getTouchHitTarget === 'function'
+            ? this.getTouchHitTarget(e.target, e.clientX, e.clientY)
+            : e.target;
+        if (typeof this.isUiInteractionTarget === 'function' && this.isUiInteractionTarget(hitTarget)) return;
 
         // Pointermove hoạt động cho cả chuột và touch di chuyển
         const p = e.touches ? e.touches[0] : e;
@@ -2390,7 +2580,10 @@ Object.assign(Input, {
             return;
         }
 
-        if (e.target.closest('.btn')) return;
+        const hitTarget = typeof this.getTouchHitTarget === 'function'
+            ? this.getTouchHitTarget(e.target, e.clientX, e.clientY)
+            : e.target;
+        if (typeof this.isUiInteractionTarget === 'function' && this.isUiInteractionTarget(hitTarget)) return;
 
         // LOGIC MỚI: Nếu là mobile, chạm màn hình KHÔNG kích hoạt tấn công
         if (this.isTouchDevice) return;
