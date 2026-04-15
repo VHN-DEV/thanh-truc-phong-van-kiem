@@ -322,6 +322,7 @@ function init() {
     Input.renderRageUI();
     if (ShopUI) ShopUI.init();
     if (InventoryUI) InventoryUI.init();
+    if (AlchemyUI) AlchemyUI.init();
     if (BeastBagUI) BeastBagUI.init();
     if (SkillsUI) SkillsUI.init();
     if (InsectBookUI) InsectBookUI.init();

@@ -362,15 +362,15 @@ const CONFIG = {
             "cat": { LINH_MAO: 4.2, YEU_NANH: 2.4, YEU_HUYET: 1.0 },
             "crab": { GIAP_XAC: 5.0, TINH_THIT: 1.8, YEU_GIAC: 1.1 },
             "crocodile": { YEU_BI: 4.0, LINH_LAN: 2.8, TINH_THIT: 1.3 },
-            "deer": { YEU_GIAC: 5.2, LINH_MAO: 1.5, YEU_HUYET: 1.4 },
+            "deer": { YEU_GIAC: 5.2, LINH_MAO: 1.5, YEU_HUYET: 1.4, NGAN_NAM_HOANG_TINH: 0.8 },
             "double-dragon": { LONG_LAN: 5.6, YEU_DAN: 2.0, YEU_HUYET: 1.2 },
-            "dragon": { LONG_LAN: 5.4, YEU_DAN: 1.8, YEU_HUYET: 1.3 },
+            "dragon": { LONG_LAN: 5.4, YEU_DAN: 1.8, YEU_HUYET: 1.3, THIEN_LINH_QUA: 0.35 },
             "elephant": { TU_NGA: 5.2, YEU_BI: 2.2, YEU_COT: 1.3 },
             "fish-seafood": { LINH_LAN: 4.4, TINH_THIT: 2.4 },
-            "flying-dragon": { LONG_LAN: 5.2, LINH_VU: 1.6, YEU_DAN: 1.7 },
+            "flying-dragon": { LONG_LAN: 5.2, LINH_VU: 1.6, YEU_DAN: 1.7, TUYET_NGOC_THAO: 0.55 },
             "fox": { LINH_MAO: 4.2, YEU_NANH: 2.5, YEU_HUYET: 1.0 },
             "gorilla": { YEU_BI: 4.2, YEU_COT: 1.8, TINH_THIT: 2.0 },
-            "hydra": { LONG_LAN: 4.2, DOC_NANG: 3.6, YEU_DAN: 1.6 },
+            "hydra": { LONG_LAN: 4.2, DOC_NANG: 3.6, YEU_DAN: 1.6, HUYEN_HOA_LIEN: 0.48 },
             "jelly-fish": { XUC_TU: 4.4, DOC_NANG: 2.8, YEU_HUYET: 1.0 },
             "lion": { YEU_NANH: 5.4, YEU_HUYET: 1.8, TINH_THIT: 1.4 },
             "maggot": { TINH_THIT: 4.0, YEU_HUYET: 2.2, DOC_NANG: 0.9 },
@@ -384,7 +384,7 @@ const CONFIG = {
             "squid": { XUC_TU: 4.8, LINH_LAN: 1.8, TINH_THIT: 1.2 },
             "squirrel": { LINH_MAO: 4.6, YEU_HUYET: 1.1, TINH_THIT: 1.0 },
             "tapir": { YEU_BI: 4.3, TINH_THIT: 2.2, YEU_HUYET: 1.4 },
-            "three-headed-dragon": { LONG_LAN: 5.8, YEU_DAN: 2.2, YEU_HUYET: 1.4 },
+            "three-headed-dragon": { LONG_LAN: 5.8, YEU_DAN: 2.2, YEU_HUYET: 1.4, THIEN_LINH_QUA: 0.5, HUYEN_HOA_LIEN: 0.4 },
             "tiger": { YEU_NANH: 5.6, YEU_HUYET: 1.9, TINH_THIT: 1.5 },
             "turtle": { GIAP_XAC: 5.2, YEU_COT: 1.6, TINH_THIT: 1.2 },
             "whale-tail": { YEU_COT: 4.8, LINH_LAN: 2.0, TINH_THIT: 1.5 },
@@ -601,6 +601,46 @@ const CONFIG = {
                 nutrition: 0,
                 description: "Ngà cổ của tượng yêu, cứng bền mà chứa linh văn tự nhiên, là vật hiếm cho luyện khí và khắc trận văn."
             },
+            NGAN_NAM_HOANG_TINH: {
+                fullName: "Ngàn năm hoàng tinh",
+                quality: "HIGH",
+                color: "#ffd870",
+                radius: 5.1,
+                buyPriceLowStone: 220,
+                dropWeight: 0.82,
+                nutrition: 1,
+                description: "Linh dược tụ thổ mộc chi khí, thường dùng làm chủ dược khi luyện các loại tăng tu vi đan."
+            },
+            TUYET_NGOC_THAO: {
+                fullName: "Tuyết ngọc thảo",
+                quality: "HIGH",
+                color: "#c9f4ff",
+                radius: 5.1,
+                buyPriceLowStone: 240,
+                dropWeight: 0.74,
+                nutrition: 1,
+                description: "Linh thảo hàn tính kết tinh trong ngọc mạch, dùng để ổn định đan độc và nâng phẩm chất đan dược."
+            },
+            HUYEN_HOA_LIEN: {
+                fullName: "Huyền hỏa liên",
+                quality: "SUPREME",
+                color: "#ff9c74",
+                radius: 5.6,
+                buyPriceLowStone: 420,
+                dropWeight: 0.52,
+                nutrition: 0,
+                description: "Liên hoa sinh trong địa hỏa, là phụ liệu bồi hỏa lực khi khai đỉnh luyện đan."
+            },
+            THIEN_LINH_QUA: {
+                fullName: "Thiên linh quả",
+                quality: "SUPREME",
+                color: "#8bffcf",
+                radius: 5.4,
+                buyPriceLowStone: 520,
+                dropWeight: 0.45,
+                nutrition: 2,
+                description: "Linh quả hấp thu thiên địa tinh hoa, thường làm quân dược cho cao giai đan phương."
+            },
             KIM_LOI_TRUC_ROOT: {
                 fullName: "Kim Lôi Trúc Mẫu",
                 quality: "SUPREME",
@@ -617,6 +657,59 @@ const CONFIG = {
             ELITE_CHANCE: 0.88, // Tỉ lệ rơi vật phẩm tinh anh
             NORMAL_COUNT: { MIN: 1, MAX: 2 }, // Số lượng vật phẩm thường
             ELITE_COUNT: { MIN: 2, MAX: 4 } // Số lượng vật phẩm tinh anh
+        }
+    },
+    ALCHEMY: {
+        ENABLED: true,
+        REQUIRES_HU_THIEN_DINH: true,
+        NOTIFY_COLOR: "#93c8d8",
+        RECIPES: {
+            TU_KHI_DAN_PHUONG: {
+                name: "Tụ Khí Đan Phương",
+                realmTier: "Phàm đan",
+                output: { category: "EXP", quality: "MEDIUM", count: 1 },
+                ingredients: [
+                    { materialKey: "NGAN_NAM_HOANG_TINH", count: 2 },
+                    { materialKey: "LINH_TY", count: 1 },
+                    { materialKey: "YEU_HUYET", count: 1 }
+                ]
+            },
+            HOI_LINH_DAN_PHUONG: {
+                name: "Hồi Linh Đan Phương",
+                realmTier: "Linh đan",
+                output: { category: "MANA", quality: "HIGH", count: 1 },
+                ingredients: [
+                    { materialKey: "TUYET_NGOC_THAO", count: 2 },
+                    { materialKey: "TINH_THIT", count: 1 },
+                    { materialKey: "YEU_DAN", count: 1 }
+                ]
+            },
+            KHAI_HAI_DAN_PHUONG: {
+                name: "Khai Hải Đan Phương",
+                realmTier: "Huyền đan",
+                output: { category: "MAX_MANA", quality: "HIGH", count: 1 },
+                ingredients: [
+                    { materialKey: "THIEN_LINH_QUA", count: 1 },
+                    { materialKey: "TUYET_NGOC_THAO", count: 1 },
+                    { materialKey: "YEU_DAN", count: 2 }
+                ]
+            },
+            THAI_HUYEN_TRU_MA_PHUONG: {
+                name: "Thái Huyền Tru Ma Phương",
+                realmTier: "Địa đan",
+                output: { category: "ATTACK", quality: "SUPREME", count: 1 },
+                ingredients: [
+                    { materialKey: "HUYEN_HOA_LIEN", count: 1 },
+                    { materialKey: "THIEN_LINH_QUA", count: 1 },
+                    { materialKey: "LONG_LAN", count: 2 }
+                ]
+            }
+        },
+        MATERIAL_RECIPE_MAP: {
+            NGAN_NAM_HOANG_TINH: ["TU_KHI_DAN_PHUONG"],
+            TUYET_NGOC_THAO: ["HOI_LINH_DAN_PHUONG", "KHAI_HAI_DAN_PHUONG"],
+            HUYEN_HOA_LIEN: ["THAI_HUYEN_TRU_MA_PHUONG"],
+            THIEN_LINH_QUA: ["KHAI_HAI_DAN_PHUONG", "THAI_HUYEN_TRU_MA_PHUONG"]
         }
     },
     MANA: {

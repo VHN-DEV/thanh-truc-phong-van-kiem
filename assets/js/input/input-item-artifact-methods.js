@@ -405,6 +405,25 @@ Object.assign(Input, {
         button.setAttribute('aria-label', title);
     },
 
+    renderAlchemyLabButton() {
+        const button = document.getElementById('btn-alchemy-lab');
+        if (!button) return;
+
+        const hasHuThien = this.hasArtifactPurchased('HU_THIEN_DINH') || this.hasArtifactUnlocked('HU_THIEN_DINH');
+        const ready = this.hasArtifactUnlocked('HU_THIEN_DINH') && this.isArtifactDeployed('HU_THIEN_DINH');
+        const title = !hasHuThien
+            ? 'Cần mua Hư Thiên Đỉnh để mở Đan Lô'
+            : ready
+                ? 'Đan Lô đã sẵn sàng, có thể mở popup luyện đan'
+                : 'Đã có Hư Thiên Đỉnh, hãy triển khai pháp bảo để luyện đan';
+
+        button.classList.toggle('is-hidden', !hasHuThien);
+        button.classList.toggle('is-active', ready);
+        button.style.display = hasHuThien ? 'flex' : 'none';
+        button.setAttribute('aria-label', title);
+        button.setAttribute('title', title);
+    },
+
     setPhongLoiBlinkEnabled(nextEnabled, { silent = false, force = false } = {}) {
         const state = this.ensurePhongLoiBlinkState();
         const available = this.hasPhongLoiBlinkSkill();
@@ -662,6 +681,7 @@ Object.assign(Input, {
         }
 
         this.renderPhongLoiBlinkButton();
+        this.renderAlchemyLabButton();
 
         GameProgress.requestSave();
     },
@@ -1803,6 +1823,10 @@ Object.assign(Input, {
 
         if (ProfileUI && typeof ProfileUI.render === 'function') {
             ProfileUI.render();
+        }
+
+        if (AlchemyUI && typeof AlchemyUI.isOpen === 'function' && AlchemyUI.isOpen() && typeof AlchemyUI.render === 'function') {
+            AlchemyUI.render();
         }
 
         // Không render SkillsUI liên tục trong refresh tổng để tránh giật danh sách kiếm khi người dùng đang cuộn.

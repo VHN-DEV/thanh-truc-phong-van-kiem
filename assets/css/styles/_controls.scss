@@ -56,6 +56,22 @@
                 filter: hue-rotate(-22deg) saturate(1.25);
             }
         }
+
+        .btn-alchemy-lab {
+            border-color: rgba(#93c8d8, 0.58);
+            box-shadow: 0 4px 0 $shadow-color, 0 0 14px rgba(#93c8d8, 0.34);
+
+            .sword-icon {
+                width: 72%;
+                height: 72%;
+                filter: drop-shadow(0 0 4px rgba(#b4e6f2, 0.6));
+            }
+
+            &.is-active {
+                border-color: rgba(#8fffcf, 0.82);
+                box-shadow: 0 4px 0 $shadow-color, 0 0 16px rgba(#8fffcf, 0.42);
+            }
+        }
     }
 }
 
