@@ -5,12 +5,18 @@ function buildInsectEggCardMarkup(speciesKey, count) {
     const styleLabel = getInsectStyleLabel(species);
     const styleHint = getInsectStyleHint(species);
     const hatchPreview = Input.getHatchPreview(speciesKey, 1);
-    const requirementText = hatchPreview.requirements.length
-        ? hatchPreview.requirements.map(requirement => {
-            const materialConfig = Input.getMaterialConfig(requirement.materialKey);
-            return `${materialConfig?.fullName || requirement.materialKey} ${formatNumber(requirement.owned)}/${formatNumber(requirement.count)}`;
-        }).join(' • ')
-        : 'Không cần nguyên liệu';
+    const hasInsectBook = Input.hasKyTrungBang();
+    const requirementText = hasInsectBook
+        ? (hatchPreview.requirements.length
+            ? hatchPreview.requirements.map(requirement => {
+                const materialConfig = Input.getMaterialConfig(requirement.materialKey);
+                return `${materialConfig?.fullName || requirement.materialKey} ${formatNumber(requirement.owned)}/${formatNumber(requirement.count)}`;
+            }).join(' • ')
+            : 'Không cần nguyên liệu')
+        : 'Cần Kỳ Trùng Bảng để xem';
+    const habitatText = hasInsectBook
+        ? (hatchPreview.hasHabitat ? `Đã có ${hatchPreview.habitatName}` : `Cần ${hatchPreview.habitatName} để ấp nở`)
+        : 'Cần Kỳ Trùng Bảng để xem';
     const hatchStatus = hatchPreview.reason === 'book'
         ? 'Cần Kỳ Trùng Bảng để ấp nở'
         : hatchPreview.reason === 'materials'
@@ -43,7 +49,7 @@ function buildInsectEggCardMarkup(speciesKey, count) {
             <div class="beast-slot__details">
                 <div class="beast-slot__detail">
                     <span>Không gian</span>
-                    <strong>${escapeHtml(hatchPreview.hasHabitat ? `Đã có ${hatchPreview.habitatName}` : `Cần ${hatchPreview.habitatName} để ấp nở`)}</strong>
+                    <strong>${escapeHtml(habitatText)}</strong>
                 </div>
                 <div class="beast-slot__detail beast-slot__detail--wide">
                     <span>Nguyên liệu</span>

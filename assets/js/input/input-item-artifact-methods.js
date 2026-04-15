@@ -1242,6 +1242,11 @@ Object.assign(Input, {
         if (item.category === 'INSECT_EGG') {
             const species = this.getInsectSpecies(item.speciesKey);
             const tier = this.getInsectTierInfo(species?.tier);
+            if (!this.hasKyTrungBang()) {
+                return species
+                    ? `${tier.label}: ${species.description} Cần Kỳ Trùng Bảng để xem chi tiết nguyên liệu ấp nở và Linh Thú Đại phù hợp.`
+                    : 'Trứng kỳ trùng chứa huyết mạch dị chủng. Cần Kỳ Trùng Bảng để xem chi tiết ấp nở.';
+            }
             const requirements = this.getSpeciesHatchRequirements(item.speciesKey)
                 .map(requirement => {
                     const materialConfig = this.getMaterialConfig(requirement.materialKey);
