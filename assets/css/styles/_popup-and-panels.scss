@@ -38,14 +38,14 @@
     border-radius: 15px;
     width: 90%;
     max-width: 400px;
-    max-height: 80vh;
+    max-height: 86vh;
     display: flex;
     flex-direction: column;
     box-shadow: 0 0 30px rgba($primary-color, 0.3);
 }
 
 .popup-header {
-    padding: 15px;
+    padding: 12px 14px;
     border-bottom: 1px solid rgba($primary-color, 0.3);
     display: flex;
     justify-content: space-between;
@@ -65,7 +65,7 @@
 }
 
 .popup-body {
-    padding: 20px;
+    padding: 14px;
     overflow-y: auto;
     color: white;
 
@@ -195,31 +195,31 @@
 
 // <!-- Create By: Vũ Hoài Nam -->
 .popup-content-wide {
-    max-width: 900px;
+    max-width: 1040px;
 }
 
 .popup-content-slim {
-    max-width: 560px;
+    max-width: 620px;
 }
 
 .popup-content-book {
-    max-width: 980px;
+    max-width: 1120px;
 }
 
 .popup-content-beast {
-    max-width: 1020px;
+    max-width: 1160px;
 }
 
 .popup-panel-body {
     display: flex;
     flex-direction: column;
-    gap: 18px;
+    gap: 14px;
 }
 
 .panel-section {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
 
     h4 {
         margin: 0;
@@ -4284,18 +4284,18 @@ select.shop-control-input {
     }
 
     .popup-content-wide {
-        width: 96%;
-        max-height: 88vh;
+        width: calc(100% - 8px);
+        max-height: 92vh;
     }
 
     .popup-content-profile {
-        width: 96%;
-        max-height: 88vh;
+        width: calc(100% - 8px);
+        max-height: 92vh;
     }
 
     .popup-content-beast {
-        width: calc(100% - 16px);
-        max-height: 88vh;
+        width: calc(100% - 8px);
+        max-height: 92vh;
     }
 
     .popup-header {
@@ -4308,11 +4308,11 @@ select.shop-control-input {
     }
 
     .popup-body {
-        padding: 14px;
+        padding: 12px;
     }
 
     .popup-panel-body {
-        gap: 14px;
+        gap: 12px;
     }
 
     .wallet-grid {
