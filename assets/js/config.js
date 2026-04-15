@@ -167,7 +167,7 @@ const CONFIG = {
             BREAKS_PER_DURABILITY_LOSS: 4, // Số lần gãy khi mất độ bền
             MIN_DURABILITY: 1, // Độ bền tối thiểu trước khi kiếm vỡ hoàn toàn
             REFINED_DURABILITY_BASE: 8, // Độ bền cơ bản của instance trúc luyện hóa
-            REFINED_DURABILITY_PER_120_YEARS: 2 // Độ bền tăng thêm mỗi 120 năm nuôi dưỡng (tương đương mỗi giai đoạn) cho instance trúc luyện hóa
+            REFINED_DURABILITY_PER_120_YEARS: 2 // Độ bền tăng thêm theo mỗi 120 năm ôn dưỡng cho instance trúc luyện hóa
         },
         CONTROL: {
             WITHOUT_SECRET_ART: 1, // Không có nghệ thuật bí mật
@@ -177,12 +177,12 @@ const CONFIG = {
             ROOT_MATERIAL_KEY: "KIM_LOI_TRUC_ROOT", // Mã định danh nguyên liệu gốc trong kho
             ROOT_INSTANCE_PREFIX: "KIM_LOI_TRUC_ROOT", // Tiền tố để tạo instance gốc khi bắt đầu nuôi dưỡng
             REFINED_INSTANCE_PREFIX: "THANH_TRUC_REFINED", // Tiền tố để tạo instance trúc luyện hóa khi hoàn thành mỗi giai đoạn
-            MIN_REFINE_YEARS: 120, // Số năm tối thiểu để hoàn thành giai đoạn luyện hóa đầu tiên
+            MIN_REFINE_YEARS: 10000, // Chỉ từ 1 vạn năm tuổi mới đủ điều kiện luyện thành Thanh Trúc Phong Vân Kiếm
             AUTO_YEARS_PER_SECOND: 2, // Số năm tự động gia tăng mỗi giây
             AUTO_UI_REFRESH_MS: 1000, // Thời gian làm mới giao diện người dùng tự động
             AUTO_SAVE_INTERVAL_MS: 5000, // Thời gian tự động lưu tiến trình nuôi dưỡng
             CHUONG_ACCELERATION_YEARS: 180, // Số năm tăng tốc khi dùng Chuông Thiên Bình
-            MAX_NURTURE_YEARS: 3600, // Số năm tối đa để hoàn thành toàn bộ quá trình nuôi dưỡng (tương đương 30 giai đoạn)
+            MAX_NURTURE_YEARS: 50000, // Giới hạn ôn dưỡng để người chơi có thể tiếp tục tăng sức mạnh kiếm sau mốc 1 vạn năm
             ROOT_SELLBACK_RATIO: 0.5, // Tỉ lệ hoàn lại khi bán nguyên liệu gốc (50% giá mua)
             REFINED_POWER_BASE: 100, // Công lực cơ bản của trúc luyện hóa
             REFINED_POWER_PER_YEAR: 1.05, // Tăng công lực theo từng năm
@@ -191,39 +191,27 @@ const CONFIG = {
             STAGE_THRESHOLDS: [
                 {
                     years: 0,
-                    label: "Mẫu căn sơ tỉnh",
-                    displayName: "Kim Lôi Trúc Mẫu - Lôi Thổ Tàng Căn",
+                    label: "Kim Lôi Trúc Mẫu",
+                    displayName: "Kim Lôi Trúc Mẫu",
                     visualStage: "buried-root"
                 },
                 {
-                    years: 60,
-                    label: "Lôi văn hiện mạch",
-                    displayName: "Kim Lôi Trúc Mẫu - Lôi Văn Linh Nhưỡng",
+                    years: 1,
+                    label: "Bạch Lôi Trúc",
+                    displayName: "Bạch Lôi Trúc - Sét trắng thường",
                     visualStage: "swollen-mound"
                 },
                 {
-                    years: 120,
-                    label: "Mẫu trúc ngưng hình",
-                    displayName: "Kim Lôi Trúc Mẫu - Măng Lôi Phá Thổ",
+                    years: 5000,
+                    label: "Lam Lôi Trúc",
+                    displayName: "Lam Lôi Trúc - Sét lam",
                     visualStage: "sprout"
                 },
                 {
-                    years: 360,
-                    label: "Kim lôi sơ thành",
-                    displayName: "Kim Lôi Trúc Mẫu - Kim Lôi Trúc Non",
-                    visualStage: "young-bamboo"
-                },
-                {
-                    years: 720,
-                    label: "Kim lôi đại thành",
-                    displayName: "Kim Lôi Trúc Mẫu - Kim Lôi Song Trúc",
+                    years: 10000,
+                    label: "Kim Lôi Trúc",
+                    displayName: "Kim Lôi Trúc - Sét vàng kim",
                     visualStage: "mature-bamboo"
-                },
-                {
-                    years: 1440,
-                    label: "Lôi mộc viên mãn",
-                    displayName: "Kim Lôi Trúc Mẫu - Lôi Mộc Trúc Vương",
-                    visualStage: "thunder-grove"
                 }
             ]
         }
@@ -621,7 +609,7 @@ const CONFIG = {
                 buyPriceLowStone: 2400,
                 dropWeight: 0,
                 nutrition: 0,
-                description: "Mẫu căn của Kim Lôi Trúc, mang lôi tức và mộc nguyên tinh thuần. Sau nhiều năm ôn dưỡng có thể khai luyện thành Thanh Trúc Phong Vân Kiếm."
+                description: "Mẫu căn của Kim Lôi Trúc, mang lôi tức và mộc nguyên tinh thuần. Phải ôn dưỡng từ 1 vạn năm tuổi trở lên mới có thể khai luyện thành Thanh Trúc Phong Vân Kiếm."
             }
         },
         MATERIAL_DROP: {

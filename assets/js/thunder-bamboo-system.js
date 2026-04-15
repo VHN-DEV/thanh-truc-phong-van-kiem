@@ -94,7 +94,7 @@
     };
 
     Input.getKimLoiTrucNurtureYears = function (item) {
-        return clampFloor(item?.nurtureYears || 0, 0, clampFloor(getNurtureConfig().MAX_NURTURE_YEARS || 3600, 1));
+        return clampFloor(item?.nurtureYears || 0, 0, clampFloor(getNurtureConfig().MAX_NURTURE_YEARS || 50000, 1));
     };
 
     Input.getKimLoiTrucStageMeta = function (yearsOrItem) {
@@ -105,7 +105,7 @@
         const baseName = getKimLoiTrucBaseName();
         let currentMeta = {
             years: 0,
-            label: 'Mẫu căn sơ tỉnh',
+            label: 'Kim Lôi Trúc Mẫu',
             displayName: baseName,
             visualStage: 'buried-root'
         };
@@ -134,7 +134,7 @@
     };
 
     Input.canRefineKimLoiTrucRoot = function (item) {
-        return this.isKimLoiTrucRootItem(item) && this.getKimLoiTrucNurtureYears(item) >= clampFloor(getNurtureConfig().MIN_REFINE_YEARS || 120, 1);
+        return this.isKimLoiTrucRootItem(item) && this.getKimLoiTrucNurtureYears(item) >= clampFloor(getNurtureConfig().MIN_REFINE_YEARS || 10000, 1);
     };
 
     Input.getRefinedThanhTrucSwordPower = function (years) {
@@ -281,7 +281,7 @@
 
         const nurtureConfig = getNurtureConfig();
         const addedYears = clampFloor(yearsToAdd || 0, 1);
-        const maxYears = clampFloor(nurtureConfig.MAX_NURTURE_YEARS || 3600, 1);
+        const maxYears = clampFloor(nurtureConfig.MAX_NURTURE_YEARS || 50000, 1);
         const beforeYears = this.getKimLoiTrucNurtureYears(item);
         const nextYears = Math.min(maxYears, beforeYears + addedYears);
         const gainedYears = Math.max(0, nextYears - beforeYears);
@@ -316,7 +316,7 @@
 
         const nurtureConfig = getNurtureConfig();
         const addedYears = clampFloor(yearsToAdd || 0, 1);
-        const maxYears = clampFloor(nurtureConfig.MAX_NURTURE_YEARS || 3600, 1);
+        const maxYears = clampFloor(nurtureConfig.MAX_NURTURE_YEARS || 50000, 1);
         const beforeYears = input.getKimLoiTrucNurtureYears(item);
         const beforeStage = input.getKimLoiTrucStageLabel(beforeYears);
         const wasRefineReady = input.canRefineKimLoiTrucRoot(item);
@@ -644,7 +644,7 @@
             const nurtureConfig = getNurtureConfig();
             const chuongConfig = getChuongThienBinhConfig() || {};
             const nurtureYears = this.getKimLoiTrucNurtureYears(item);
-            const minRefineYears = clampFloor(nurtureConfig.MIN_REFINE_YEARS || 120, 1);
+            const minRefineYears = clampFloor(nurtureConfig.MIN_REFINE_YEARS || 10000, 1);
             const remainingYears = Math.max(0, minRefineYears - nurtureYears);
             const canRefine = this.canRefineKimLoiTrucRoot(item);
             const cooldownRemainingMs = this.getChuongThienBinhCooldownRemainingMs();
