@@ -2419,6 +2419,32 @@ Object.assign(Input, {
         };
     },
 
+    getBreakthroughChanceDetails(rank = this.getCurrentRank()) {
+        if (!rank) {
+            return {
+                pillBoost: 0,
+                maxAllowed: CONFIG.CULTIVATION.MAX_BREAKTHROUGH_CHANCE || 0.99,
+                totalChance: 0,
+                basePercent: 0,
+                bonusPercent: 0,
+                totalPercent: 0
+            };
+        }
+
+        const pillBoost = this.calculateTotalPillBoost();
+        const maxAllowed = CONFIG.CULTIVATION.MAX_BREAKTHROUGH_CHANCE || 0.99;
+        const totalChance = Math.max(0, Math.min(maxAllowed, rank.chance + pillBoost));
+
+        return {
+            pillBoost,
+            maxAllowed,
+            totalChance,
+            basePercent: Math.round(rank.chance * 100),
+            bonusPercent: Math.round(pillBoost * 100),
+            totalPercent: Math.round(totalChance * 100)
+        };
+    },
+
     updateTribulationPopupUI() {
         const strikeTextEl = document.getElementById('tribulation-strike-text');
         const hpBarEl = document.getElementById('tribulation-hp-bar');
@@ -2429,7 +2455,8 @@ Object.assign(Input, {
         const percent = Math.max(0, Math.min(100, (hp / maxHp) * 100));
 
         if (strikeTextEl) {
-            strikeTextEl.innerText = `Lôi kiếp: ${Math.min(state.currentStrike || 0, state.totalStrikes || 0)}/${state.totalStrikes || 0}`;
+            const chancePercent = Math.max(0, Math.round((Number(state.successChance) || 0) * 100));
+            strikeTextEl.innerText = `Lôi kiếp: ${Math.min(state.currentStrike || 0, state.totalStrikes || 0)}/${state.totalStrikes || 0} | Thiên cơ: ${chancePercent}%`;
         }
         if (hpBarEl) {
             hpBarEl.style.width = `${percent}%`;
@@ -2485,6 +2512,8 @@ Object.assign(Input, {
 
     runTribulationSequence() {
         const config = this.getTribulationConfig();
+        const rank = this.getCurrentRank();
+        const chanceDetails = this.getBreakthroughChanceDetails(rank);
         const popupOpened = this.openTribulationPopup();
         if (!popupOpened) {
             showNotify('Không thể mở pháp đàn độ kiếp', '#ff7777');
@@ -2500,6 +2529,7 @@ Object.assign(Input, {
         this.tribulation.totalStrikes = config.strikeCount;
         this.tribulation.maxHp = config.baseHp;
         this.tribulation.hp = config.baseHp;
+        this.tribulation.successChance = chanceDetails.totalChance;
         this.updateTribulationPopupUI();
 
         const cloudEl = document.getElementById('tribulation-cloud');
@@ -2539,7 +2569,16 @@ Object.assign(Input, {
             this.updateTribulationPopupUI();
 
             if (this.tribulation.currentStrike >= this.tribulation.totalStrikes) {
-                const success = this.tribulation.hp > 0;
+                let success = this.tribulation.hp > 0;
+                if (!success) {
+                    const heavenlyChance = Math.max(0, Math.min(1, Number(this.tribulation.successChance) || 0));
+                    if (Math.random() <= heavenlyChance) {
+                        success = true;
+                        this.tribulation.hp = Math.max(1, Math.round(this.tribulation.maxHp * 0.12));
+                        this.updateTribulationPopupUI();
+                        showNotify(`Thiên cơ gia hộ: cưỡng chuyển bại thành thắng (${Math.round(heavenlyChance * 100)}%)`, '#ffdf8f');
+                    }
+                }
                 setTimeout(() => this.finishTribulation({ success }), 380);
                 return;
             }
@@ -2548,7 +2587,10 @@ Object.assign(Input, {
         };
 
         setTimeout(performStrike, config.prepareDelayMs);
-        showNotify('Thiên lôi tụ vân: bắt đầu độ kiếp Cửu Cửu', '#91d6ff');
+        showNotify(
+            `Thiên lôi tụ vân: bắt đầu độ kiếp Cửu Cửu | Cơ sở ${chanceDetails.basePercent}% + Đan ${chanceDetails.bonusPercent}% = ${chanceDetails.totalPercent}%`,
+            '#91d6ff'
+        );
     },
 
     executeBreakthrough(isForced = false) {
@@ -2578,11 +2620,8 @@ Object.assign(Input, {
             return;
         }
 
-        const pillBoost = this.calculateTotalPillBoost();
-        let totalChance = currentRank.chance + pillBoost;
-
-        const maxAllowed = CONFIG.CULTIVATION.MAX_BREAKTHROUGH_CHANCE || 0.95;
-        totalChance = Math.min(maxAllowed, totalChance);
+        const chanceDetails = this.getBreakthroughChanceDetails(currentRank);
+        const totalChance = chanceDetails.totalChance;
 
         if (Math.random() <= totalChance) {
             this.exp = 0;
@@ -2632,12 +2671,10 @@ Object.assign(Input, {
         const rankText = document.getElementById('cultivation-rank');
         const breakthroughGroup = document.querySelector('.breakthrough-group');
 
-        const pillBoost = this.calculateTotalPillBoost();
-        const maxAllowed = CONFIG.CULTIVATION.MAX_BREAKTHROUGH_CHANCE || 0.99;
-        const totalChance = Math.min(maxAllowed, rank.chance + pillBoost);
-        const basePercent = Math.round(rank.chance * 100);
-        const bonusPercent = Math.round(pillBoost * 100);
-        const totalPercent = Math.round(totalChance * 100);
+        const chanceDetails = this.getBreakthroughChanceDetails(rank);
+        const basePercent = chanceDetails.basePercent;
+        const bonusPercent = chanceDetails.bonusPercent;
+        const totalPercent = chanceDetails.totalPercent;
 
         if (textExp) {
             const isTribulationStep = this.isAtTribulationThreshold();
