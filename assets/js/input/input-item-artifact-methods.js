@@ -2560,15 +2560,19 @@ Object.assign(Input, {
             if (!cloudRect.width || !wrapRect.width) return;
 
             const boltCount = Math.min(9, 3 + Math.floor(strikePower));
+            const cloudBoltVariants = ['tribulation-cloud-bolt--branch', 'tribulation-cloud-bolt--thick', ''];
             for (let i = 0; i < boltCount; i += 1) {
                 const cloudBolt = document.createElement('div');
                 cloudBolt.className = 'tribulation-cloud-bolt';
+                const variant = cloudBoltVariants[(strikeIndex + i) % cloudBoltVariants.length];
+                if (variant) cloudBolt.classList.add(variant);
                 const offsetRatio = (i + 1) / (boltCount + 1);
                 const jitter = (Math.random() - 0.5) * 0.22;
                 const left = (cloudRect.left - wrapRect.left) + (cloudRect.width * (offsetRatio + jitter));
                 const rotate = (Math.random() - 0.5) * (8 + strikePower * 1.8);
+                const scale = (0.86 + Math.random() * 0.46).toFixed(2);
                 cloudBolt.style.left = `${Math.max(12, Math.min(wrapRect.width - 12, left))}px`;
-                cloudBolt.style.transform = `translateX(-50%) rotate(${rotate}deg)`;
+                cloudBolt.style.transform = `translateX(-50%) rotate(${rotate}deg) scaleX(${scale})`;
                 cloudBolt.style.animationDelay = `${(i % 3) * 0.035}s`;
                 cloudLightningEl.appendChild(cloudBolt);
                 requestAnimationFrame(() => cloudBolt.classList.add('is-striking'));
@@ -2579,17 +2583,22 @@ Object.assign(Input, {
         const spawnPreStrikeBolts = (strikeIndex, strikePower) => {
             if (!cloudWrapEl) return;
             const preStrikeCount = Math.min(7, 2 + Math.floor(strikePower * 0.65));
+            const preStrikeVariants = ['tribulation-prestrike-bolt--forked', 'tribulation-prestrike-bolt--needle', ''];
 
             for (let i = 0; i < preStrikeCount; i += 1) {
                 const preStrikeBolt = document.createElement('div');
                 preStrikeBolt.className = 'tribulation-prestrike-bolt';
+                const variant = preStrikeVariants[(strikeIndex + i) % preStrikeVariants.length];
+                if (variant) preStrikeBolt.classList.add(variant);
                 const direction = (i + strikeIndex) % 2 === 0 ? 1 : -1;
                 const baseOffset = 82 + (i * 26);
                 const randomOffset = Math.random() * 34;
                 const horizontalOffset = direction * (baseOffset + randomOffset);
                 const rotateDeg = direction * (6 + Math.random() * (5 + strikePower));
+                const preStrikeScale = (0.78 + Math.random() * 0.58).toFixed(2);
                 preStrikeBolt.style.setProperty('--prestrike-x', `${horizontalOffset}px`);
                 preStrikeBolt.style.setProperty('--prestrike-rot', `${rotateDeg}deg`);
+                preStrikeBolt.style.setProperty('--prestrike-scale', preStrikeScale);
                 preStrikeBolt.style.animationDelay = `${i * 0.026}s`;
                 cloudWrapEl.appendChild(preStrikeBolt);
                 requestAnimationFrame(() => preStrikeBolt.classList.add('is-striking'));
