@@ -6082,6 +6082,27 @@ select.shop-control-input {
     animation: tribulation-bolt-fragment-drop 0.88s ease-out;
 }
 
+.tribulation-bolt-fragment {
+    position: absolute;
+    top: 64px;
+    left: 50%;
+    width: 14px;
+    height: 0;
+    transform: translateX(-50%);
+    opacity: 0;
+    pointer-events: none;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(188, 238, 255, 0.92) 44%, rgba(96, 156, 255, 0.82) 74%, rgba(96, 156, 255, 0));
+    box-shadow:
+        0 0 9px rgba(154, 232, 255, 0.84),
+        0 0 20px rgba(118, 172, 255, 0.46);
+    clip-path: polygon(48% 0, 84% 0, 56% 22%, 84% 22%, 48% 52%, 72% 52%, 26% 100%, 38% 66%, 14% 66%, 42% 34%, 24% 34%);
+}
+
+.tribulation-bolt-fragment.is-striking {
+    animation: tribulation-bolt-fragment-drop 0.55s ease-out;
+}
+
 .tribulation-seated {
     width: 42px;
     height: 66px;
