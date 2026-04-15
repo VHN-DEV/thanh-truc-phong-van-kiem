@@ -85,6 +85,9 @@ AlchemyUI = {
                     specialKey: recipe?.output?.specialKey || null
                 };
                 const outputName = Input.getItemDisplayName(outputSpec);
+                const outputDescription = typeof Input.getItemDescription === 'function'
+                    ? Input.getItemDescription(outputSpec)
+                    : '';
                 const requirements = Array.isArray(recipe.ingredients)
                     ? recipe.ingredients.map(ingredient => {
                         const need = Math.max(1, Math.floor(Number(ingredient.count) || 0));
@@ -108,6 +111,7 @@ AlchemyUI = {
                     formulaQuality: recipe?.formulaQuality || 'LOW',
                     tier: recipe?.realmTier || 'Đan',
                     outputName,
+                    outputDescription,
                     brewTimeMs: Math.max(1000, Math.floor(Number(recipe?.brewTimeMs) || Number(CONFIG.ALCHEMY?.DEFAULT_BREW_MS) || 30000)),
                     canCraft: requirements.every(req => req.ok),
                     requirements
@@ -161,6 +165,7 @@ AlchemyUI = {
                     <div class="slot-badge">${escapeHtml(formulaLabel)}</div>
                     <h4>${escapeHtml(recipe.name)}</h4>
                     <p>${escapeHtml(recipe.tier)} • Thành đan: ${escapeHtml(recipe.outputName)}</p>
+                    <p>Mô tả tác dụng: ${escapeHtml(recipe.outputDescription || 'Đan dược này sẽ cường hóa căn cơ theo phẩm chất tương ứng.')}</p>
                     <p>Thời gian luyện cơ bản: ${escapeHtml(formatAlchemyCountdown(recipe.brewTimeMs))}</p>
                     <ul class="alchemy-requirements">${reqMarkup}</ul>
                     <div class="slot-actions">
