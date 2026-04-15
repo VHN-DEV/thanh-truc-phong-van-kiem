@@ -229,15 +229,15 @@ const CONFIG = {
         }
     },
     ULTIMATE: {
-        MAX_RAGE: 100,      // Giới hạn nộ đầy
+        MAX_RAGE: 1,      // Giới hạn nộ đầy
         GAIN_PER_KILL: 2,   // Lượng nộ nhận được mỗi khi hạ 1 quái
         DURATION_MS: 10000, // Thời gian duy trì trạng thái ultimate
         TRANSITION_MS: 1000, // Thời gian hợp kiếm hoặc tách kiếm
-        CHARGE_STEPS: 10,   // Số nấc hiển thị tiến độ nộ trên nút ultimate
+        CHARGE_STEPS: 100,   // Số nấc hiển thị tiến độ nộ trên nút ultimate
         CORE_HIT_INTERVAL_MS: 42, // Khoảng thời gian giữa các lần kiếm chính đánh trúng mục tiêu khi ở trạng thái ultimate
         ATTACK_BURST_INTERVAL_MS: 32, // Khoảng thời gian giữa các lần phóng ra hạt tấn công khi ở trạng thái ultimate
         ATTACK_BURST_PARTICLE_COUNT: 8, // Số lượng hạt tấn công được phóng ra mỗi lần
-        MAX_ACTIVE_BURST_PARTICLES: 220 // Số lượng hạt tấn công tối đa có thể tồn tại cùng lúc để tránh quá tải hiệu ứng
+        MAX_ACTIVE_BURST_PARTICLES: 200 // Số lượng hạt tấn công tối đa có thể tồn tại cùng lúc để tránh quá tải hiệu ứng
     },
     INPUT: {
         JOYSTICK_CURSOR_SPEED: 0.01, // Hệ số độ nhạy/tốc độ con trỏ khi điều khiển bằng joystick mobile
