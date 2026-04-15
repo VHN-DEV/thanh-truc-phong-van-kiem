@@ -1,3 +1,16 @@
+function formatAlchemyCountdown(ms) {
+    const safeMs = Math.max(0, Math.floor(Number(ms) || 0));
+    const totalSeconds = Math.max(1, Math.ceil(safeMs / 1000));
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+
+    if (minutes > 0) {
+        return `${formatNumber(minutes)}m ${formatNumber(seconds)}s`;
+    }
+
+    return `${formatNumber(totalSeconds)}s`;
+}
+
 AlchemyUI = {
     overlay: document.getElementById('alchemy-popup'),
     btnOpen: document.getElementById('btn-alchemy-lab'),
@@ -123,7 +136,7 @@ AlchemyUI = {
 
         if (activeBatch && remainingMs > 0) {
             const outputName = Input.getItemDisplayName({ category: activeBatch.outputCategory, quality: activeBatch.outputQuality });
-            this.status.innerHTML = `<div class="profile-empty">Đang luyện ${escapeHtml(outputName)} • Lò: ${escapeHtml(activeFurnaceName)} • Còn ${escapeHtml(getCountdownLabel(remainingMs))}.</div>`;
+            this.status.innerHTML = `<div class="profile-empty">Đang luyện ${escapeHtml(outputName)} • Lò: ${escapeHtml(activeFurnaceName)} • Còn ${escapeHtml(formatAlchemyCountdown(remainingMs))}.</div>`;
         } else if (!canUseDing) {
             this.status.innerHTML = '<div class="profile-empty">Đã có đan lư nhưng chưa triển khai Hư Thiên Đỉnh. Vẫn có thể luyện đan bằng đan lư thường.</div>';
         } else {
@@ -148,7 +161,7 @@ AlchemyUI = {
                     <div class="slot-badge">${escapeHtml(formulaLabel)}</div>
                     <h4>${escapeHtml(recipe.name)}</h4>
                     <p>${escapeHtml(recipe.tier)} • Thành đan: ${escapeHtml(recipe.outputName)}</p>
-                    <p>Thời gian luyện cơ bản: ${escapeHtml(getCountdownLabel(recipe.brewTimeMs))}</p>
+                    <p>Thời gian luyện cơ bản: ${escapeHtml(formatAlchemyCountdown(recipe.brewTimeMs))}</p>
                     <ul class="slot-meta" style="padding-left:16px; margin:4px 0 8px;">${reqMarkup}</ul>
                     <div class="slot-actions">
                         <button
