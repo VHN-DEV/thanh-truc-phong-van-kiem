@@ -2561,7 +2561,10 @@ Object.assign(Input, {
         }
 
         if (this.isTouchDevice) return;
-        if (e.target.closest('.btn')) return;
+        const hitTarget = typeof this.getTouchHitTarget === 'function'
+            ? this.getTouchHitTarget(e.target, e.clientX, e.clientY)
+            : e.target;
+        if (typeof this.isUiInteractionTarget === 'function' && this.isUiInteractionTarget(hitTarget)) return;
 
         // Pointermove hoạt động cho cả chuột và touch di chuyển
         const p = e.touches ? e.touches[0] : e;
@@ -2578,7 +2581,10 @@ Object.assign(Input, {
             return;
         }
 
-        if (e.target.closest('.btn')) return;
+        const hitTarget = typeof this.getTouchHitTarget === 'function'
+            ? this.getTouchHitTarget(e.target, e.clientX, e.clientY)
+            : e.target;
+        if (typeof this.isUiInteractionTarget === 'function' && this.isUiInteractionTarget(hitTarget)) return;
 
         // LOGIC MỚI: Nếu là mobile, chạm màn hình KHÔNG kích hoạt tấn công
         if (this.isTouchDevice) return;

@@ -43,6 +43,15 @@ body.game-native-cursor-hidden.popup-cursor-active .popup-overlay select {
     cursor: pointer !important;
 }
 
+body.game-native-cursor-hidden .start-overlay,
+body.game-native-cursor-hidden .start-overlay * {
+    cursor: default !important;
+}
+
+body.game-native-cursor-hidden .start-overlay button {
+    cursor: pointer !important;
+}
+
 canvas {
     display: block;
     width: 100%;
