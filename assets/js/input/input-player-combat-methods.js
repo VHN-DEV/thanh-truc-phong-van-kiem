@@ -199,9 +199,11 @@ Object.assign(Input, {
         const normalizedCharge = Math.max(0, Math.min(1, chargeRatio));
         const frameDeltaMs = Math.max(0, Number(this.lastFrameDeltaMs) || 16.7);
         const perfPressure = Math.max(0, Math.min(1, (frameDeltaMs - 16.7) / 18));
+        const particleSoftCap = Math.round(220 * (1 - perfPressure * 0.35));
+        if (visualParticles.length >= particleSoftCap) return;
         const emitIntervalMs = Math.max(
             26,
-            (56 - (normalizedCharge * 26)) + (perfPressure * 26)
+            (56 - (normalizedCharge * 26)) + (perfPressure * 34)
         );
         if ((now - (state.lastParticleEmitAt || 0)) < emitIntervalMs) return;
         state.lastParticleEmitAt = now;
@@ -210,10 +212,10 @@ Object.assign(Input, {
         const centerX = anchor.x;
         const centerY = anchor.y;
         const pullRadius = 34 + (chargeRatio * 82);
-        const spawnScale = 1 - (perfPressure * 0.58);
+        const spawnScale = 1 - (perfPressure * 0.75);
         const spawnCount = Math.max(1, Math.round((3 + (chargeRatio * 6)) * spawnScale));
 
-        trimVisualParticles(Math.round(360 * (1 - perfPressure * 0.45)));
+        trimVisualParticles(Math.round(280 * (1 - perfPressure * 0.5)));
         for (let i = 0; i < spawnCount; i++) {
             const angle = Math.random() * Math.PI * 2;
             const radius = random(pullRadius * 0.65, pullRadius);
@@ -230,14 +232,15 @@ Object.assign(Input, {
                 y: spawnY,
                 vx: (toCenterX / dist) * pullSpeed,
                 vy: (toCenterY / dist) * pullSpeed,
-                size: random(1.1, 2.2) * (0.85 + (chargeRatio * 0.52)),
-                life: 0.4 + (chargeRatio * 0.18),
+                size: random(1.0, 1.9) * (0.8 + (chargeRatio * 0.45)),
+                life: 0.32 + (chargeRatio * 0.14),
                 decay: random(0.058, 0.082),
                 color: i % 2 === 0 ? '#c8f6ff' : '#ffffff',
                 glow: '#7ee7ff'
             });
 
-            if (Math.random() < ((0.22 + (chargeRatio * 0.48)) * (1 - perfPressure * 0.5))) {
+            const rayChance = ((0.18 + (chargeRatio * 0.34)) * (1 - perfPressure * 0.8));
+            if (perfPressure < 0.55 && Math.random() < rayChance) {
                 const trailLen = random(6, 16) * (1 + (chargeRatio * 0.9));
                 visualParticles.push({
                     type: 'ray',

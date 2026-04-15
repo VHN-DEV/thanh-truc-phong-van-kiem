@@ -957,9 +957,11 @@ class Sword {
             ? Input.getSingleSwordUltimateGlowRatio()
             : 0;
         if (singleSwordGlowRatio > 0) {
+            const frameDeltaMs = Math.max(0, Number(Input?.lastFrameDeltaMs) || 16.7);
+            const perfPressure = Math.max(0, Math.min(1, (frameDeltaMs - 16.7) / 18));
             ctx.globalCompositeOperation = 'lighter';
             ctx.shadowColor = '#7ee7ff';
-            ctx.shadowBlur = (18 + (singleSwordGlowRatio * 26)) * scaleFactor;
+            ctx.shadowBlur = (10 + (singleSwordGlowRatio * 14)) * (1 - perfPressure * 0.45) * scaleFactor;
         }
         this.drawAura(ctx, scaleFactor);
         this.drawBlade(ctx, scaleFactor);
@@ -1021,6 +1023,9 @@ class Sword {
         );
         const frameDeltaMs = Math.max(0, Number(Input?.lastFrameDeltaMs) || 16.7);
         const perfPressure = Math.max(0, Math.min(1, (frameDeltaMs - 16.7) / 18));
+        if (singleSwordUltActive && perfPressure > 0.35) {
+            return;
+        }
         const auraMin = singleSwordUltActive ? 1 : 2;
         const auraMax = singleSwordUltActive ? 4 : 8;
         const auraTargetMax = Math.max(auraMin + 1, auraMax - Math.round(perfPressure * 3));
