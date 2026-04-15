@@ -35,6 +35,7 @@ gulp.task('build-js', function () {
     'assets/js/ui/resource-ui-shared.js',
     'assets/js/ui/shop-ui.js',
     'assets/js/ui/inventory-ui.js',
+    'assets/js/ui/alchemy-ui.js',
     'assets/js/ui/beast-bag-ui.js',
     'assets/js/ui/settings-ui.js',
     'assets/js/ui/cultivation-panels-ui.js',

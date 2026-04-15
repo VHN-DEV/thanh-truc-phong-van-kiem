@@ -4,6 +4,7 @@ let BeastBagUI = null;
 let ProfileUI = null;
 let SkillsUI = null;
 let InsectBookUI = null;
+let AlchemyUI = null;
 
 const TEXT_REPAIR_ATTRIBUTES = Object.freeze(['title', 'aria-label', 'placeholder', 'alt']);
 // Match common mojibake prefixes without flagging valid Vietnamese words
@@ -34,7 +35,8 @@ const UI_TEXT = Object.freeze({
         INVENTORY: 'TÚI KHÔNG GIAN TRỮ VẬT',
         SKILLS: 'BẢNG BÍ PHÁP',
         INSECT_BOOK: 'KỲ TRÙNG BẢNG',
-        PROFILE: 'HỒ SƠ KIẾM TU'
+        PROFILE: 'HỒ SƠ KIẾM TU',
+        ALCHEMY: 'ĐAN LÔ - HƯ THIÊN ĐỈNH'
     }),
     INVENTORY_TABS: Object.freeze({
         ITEMS: 'Vật phẩm',
@@ -52,7 +54,8 @@ const UI_TEXT = Object.freeze({
         FORM: 'Đổi kiếm thức',
         PHONG_LOI_SI: 'Phong Lôi Sí',
         SKILL_LIST: 'Bảng bí pháp',
-        ATTACK: 'Xuất kiếm'
+        ATTACK: 'Xuất kiếm',
+        ALCHEMY: 'Đan lô Hư Thiên Đỉnh'
     })
 });
 
@@ -277,6 +280,7 @@ function repairLegacyUiText() {
         ['#skills-popup .popup-header h3', UI_TEXT.POPUP_TITLES.SKILLS],
         ['#insect-book-popup .popup-header h3', UI_TEXT.POPUP_TITLES.INSECT_BOOK],
         ['#profile-popup .popup-header h3', UI_TEXT.POPUP_TITLES.PROFILE],
+        ['#alchemy-popup .popup-header h3', UI_TEXT.POPUP_TITLES.ALCHEMY],
         ['#inventory-tabs [data-inventory-tab="items"]', UI_TEXT.INVENTORY_TABS.ITEMS],
         ['#inventory-tabs [data-inventory-tab="stones"]', UI_TEXT.INVENTORY_TABS.STONES],
         ['#inventory-panel-items h4', UI_TEXT.INVENTORY_TABS.ITEMS],
@@ -301,7 +305,10 @@ function repairLegacyUiText() {
         ['#btn-can-lam-cast', 'aria-label', 'Càn Lam Băng Diễm chưa triển khai'],
         ['#btn-can-lam-cast img', 'alt', 'Càn Lam Băng Diễm'],
         ['#btn-skill-list', 'title', UI_TEXT.ARIA.SKILL_LIST],
-        ['#btn-attack img', 'alt', UI_TEXT.ARIA.ATTACK]
+        ['#btn-attack img', 'alt', UI_TEXT.ARIA.ATTACK],
+        ['#btn-alchemy-lab', 'title', UI_TEXT.ARIA.ALCHEMY],
+        ['#btn-alchemy-lab', 'aria-label', UI_TEXT.ARIA.ALCHEMY],
+        ['#btn-alchemy-lab img', 'alt', UI_TEXT.ARIA.ALCHEMY]
     ].forEach(([selector, attribute, value]) => setAttrIfPresent(selector, attribute, value));
 
     repairLegacyTextTree(document.body || document.documentElement);
