@@ -367,7 +367,13 @@ BeastBagUI = {
     initialized: false,
 
     hasAccess() {
+        const totalCapacity = typeof Input.getBeastBagCapacity === 'function'
+            ? Number(Input.getBeastBagCapacity() || 0)
+            : 0;
+
         return Boolean(
+            totalCapacity > 0
+            || 
             (typeof Input.hasSpiritBeastBag === 'function' && Input.hasSpiritBeastBag())
             || (typeof Input.hasSevenColorSpiritBag === 'function' && Input.hasSevenColorSpiritBag())
         );
