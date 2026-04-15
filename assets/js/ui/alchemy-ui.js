@@ -130,10 +130,10 @@ AlchemyUI = {
         const remainingMs = typeof Input.getAlchemyBatchRemainingMs === 'function' ? Input.getAlchemyBatchRemainingMs() : 0;
         const selectedFurnace = typeof Input.getCurrentAlchemyFurnaceConfig === 'function' ? Input.getCurrentAlchemyFurnaceConfig() : null;
         const usingHuThien = Input.hasArtifactUnlocked('HU_THIEN_DINH') && Input.isArtifactDeployed('HU_THIEN_DINH');
-        const activeFurnaceName = usingHuThien ? 'Hư Thiên Đỉnh (pháp bảo)' : (selectedFurnace?.name || 'Chưa chọn đan lư');
+        const activeFurnaceName = usingHuThien ? 'Hư Thiên Đỉnh (pháp bảo)' : (selectedFurnace?.name || 'Chưa định đan lư');
 
         if (!hasHuThienPurchased && !ownedFurnaces.length) {
-            this.status.innerHTML = '<div class="profile-empty">Chưa có Hư Thiên Đỉnh hoặc Đan lư. Hãy đến Thiên Bảo Các để mua rồi quay lại luyện đan.</div>';
+            this.status.innerHTML = '<div class="profile-empty">Chưa có Hư Thiên Đỉnh hoặc đan lư. Hãy đến Thiên Bảo Các thỉnh bảo rồi quay lại khai lò luyện đan.</div>';
             this.recipeGrid.innerHTML = '';
             return;
         }
@@ -142,14 +142,14 @@ AlchemyUI = {
             const outputName = Input.getItemDisplayName({ category: activeBatch.outputCategory, quality: activeBatch.outputQuality });
             this.status.innerHTML = `<div class="profile-empty">Đang luyện ${escapeHtml(outputName)} • Lò: ${escapeHtml(activeFurnaceName)} • Còn ${escapeHtml(formatAlchemyCountdown(remainingMs))}.</div>`;
         } else if (!canUseDing) {
-            this.status.innerHTML = '<div class="profile-empty">Đã có đan lư nhưng chưa triển khai Hư Thiên Đỉnh. Vẫn có thể luyện đan bằng đan lư thường.</div>';
+            this.status.innerHTML = '<div class="profile-empty">Đã có đan lư nhưng chưa khai triển Hư Thiên Đỉnh. Vẫn có thể khai lò bằng đan lư thường.</div>';
         } else {
-            this.status.innerHTML = `<div class="profile-empty">${escapeHtml(activeFurnaceName)} đã sẵn sàng. Chọn đan phương bên dưới để luyện đan.</div>`;
+            this.status.innerHTML = `<div class="profile-empty">${escapeHtml(activeFurnaceName)} đã sẵn sàng. Chọn đan phương bên dưới để khai lò luyện đan.</div>`;
         }
 
         const recipes = this.getRecipeModels();
         if (!recipes.length) {
-            this.recipeGrid.innerHTML = '<article class="inventory-slot is-empty"><span>Chưa sở hữu đan phương nào. Hãy mua ở tab Đan phương trong Thiên Bảo Các.</span></article>';
+            this.recipeGrid.innerHTML = '<article class="inventory-slot is-empty"><span>Chưa sở hữu đan phương nào. Hãy thỉnh ở tab Đan phương trong Thiên Bảo Các.</span></article>';
             return;
         }
 

@@ -143,7 +143,7 @@ ShopUI = {
                 class="btn-shop-page btn-shop-page-nav"
                 data-shop-page-target="${Math.max(1, this.currentPage - 1)}"
                 ${this.currentPage === 1 ? 'disabled' : ''}
-            >Trước</button>
+            >Tiền trang</button>
             <div class="shop-page-list">${pageButtons.join('')}</div>
             <div class="shop-page-status">Trang ${this.currentPage}/${totalPages}</div>
             <button
@@ -151,7 +151,7 @@ ShopUI = {
                 class="btn-shop-page btn-shop-page-nav"
                 data-shop-page-target="${Math.min(totalPages, this.currentPage + 1)}"
                 ${this.currentPage === totalPages ? 'disabled' : ''}
-            >Sau</button>
+            >Hậu trang</button>
         `;
     },
 
@@ -263,63 +263,63 @@ ShopUI.getActionLabel = function (item, options = {}) {
     } = options;
 
     if (item.category === 'BAG') {
-        return canStoreOrUpgrade ? 'Mở rộng' : 'Không hợp lệ';
+        return canStoreOrUpgrade ? 'Khai mở' : 'Duyên pháp chưa hợp';
     }
 
     if (item.category === 'SWORD_ARTIFACT') {
-        return canStoreOrUpgrade ? (CONFIG.SWORD?.ARTIFACT_ITEM?.buttonLabel || 'Mua') : 'Túi đầy';
+        return canStoreOrUpgrade ? (CONFIG.SWORD?.ARTIFACT_ITEM?.buttonLabel || 'Thỉnh bảo') : 'Túi trữ vật đã mãn';
     }
 
     if (item.category === 'SWORD_ART' || item.category === 'FLAME_ART') {
-        return isOwnedUnique ? 'Đã mua' : (canStoreOrUpgrade ? 'Mua' : 'Túi đầy');
+        return isOwnedUnique ? 'Đã kết duyên' : (canStoreOrUpgrade ? 'Thỉnh bảo' : 'Túi trữ vật đã mãn');
     }
 
     if (item.category === 'ARTIFACT') {
-        if (isOwnedUnique) return 'Đã mua';
+        if (isOwnedUnique) return 'Đã kết duyên';
         return canStoreOrUpgrade
-            ? (CONFIG.ARTIFACTS?.[item.uniqueKey]?.buttonLabel || 'Mua')
-            : 'Túi đầy';
+            ? (CONFIG.ARTIFACTS?.[item.uniqueKey]?.buttonLabel || 'Thỉnh bảo')
+            : 'Túi trữ vật đã mãn';
     }
 
     if (item.category === 'RAINBOW_BAG') {
-        return isOwnedUnique ? 'Đã khai mở' : (canStoreOrUpgrade ? 'Mua' : 'Không hợp lệ');
+        return isOwnedUnique ? 'Đã khai mở' : (canStoreOrUpgrade ? 'Thỉnh bảo' : 'Duyên pháp chưa hợp');
     }
 
     if (item.category === 'SPIRIT_BAG') {
-        return canStoreOrUpgrade ? 'Mở rộng' : 'Không hợp lệ';
+        return canStoreOrUpgrade ? 'Khai mở' : 'Duyên pháp chưa hợp';
     }
 
     if (item.category === 'RAINBOW_SPIRIT_BAG') {
-        return isOwnedUnique ? 'Đã khai mở' : (canStoreOrUpgrade ? 'Mua' : 'Không hợp lệ');
+        return isOwnedUnique ? 'Đã khai mở' : (canStoreOrUpgrade ? 'Thỉnh bảo' : 'Duyên pháp chưa hợp');
     }
 
     if (item.category === 'SPIRIT_HABITAT') {
-        return hasRainbowHabitat ? 'Không cần' : (hasDedicatedHabitat ? 'Mở rộng' : 'Mua');
+        return hasRainbowHabitat ? 'Không cần thêm' : (hasDedicatedHabitat ? 'Khai mở' : 'Thỉnh bảo');
     }
 
     if (item.category === 'INSECT_EGG') {
-        return 'Mua';
+        return 'Thỉnh bảo';
     }
 
     if (item.category === 'INSECT_SKILL') {
         return isOwnedUnique
-            ? 'Đã mua'
-            : (canStoreOrUpgrade ? (CONFIG.INSECT?.UNIQUE_ITEMS?.KHU_TRUNG_THUAT?.buttonLabel || 'Mua') : 'Túi đầy');
+            ? 'Đã lĩnh ngộ'
+            : (canStoreOrUpgrade ? (CONFIG.INSECT?.UNIQUE_ITEMS?.KHU_TRUNG_THUAT?.buttonLabel || 'Thỉnh bảo') : 'Túi trữ vật đã mãn');
     }
 
     if (item.category === 'INSECT_ARTIFACT') {
-        return isOwnedUnique ? 'Đã sở hữu' : (canStoreOrUpgrade ? 'Mua' : 'Túi đầy');
+        return isOwnedUnique ? 'Đã kết duyên' : (canStoreOrUpgrade ? 'Thỉnh bảo' : 'Túi trữ vật đã mãn');
     }
 
     if (item.category === 'ALCHEMY_RECIPE') {
-        return isOwnedUnique ? 'Đã lĩnh ngộ' : 'Mua';
+        return isOwnedUnique ? 'Đã lĩnh ngộ' : 'Thỉnh bảo';
     }
 
     if (item.category === 'ALCHEMY_FURNACE') {
-        return isOwnedUnique ? 'Đã sở hữu' : 'Mua';
+        return isOwnedUnique ? 'Đã kết duyên' : 'Thỉnh bảo';
     }
 
-    return canStoreOrUpgrade ? 'Mua' : 'Túi đầy';
+    return canStoreOrUpgrade ? 'Thỉnh bảo' : 'Túi trữ vật đã mãn';
 };
 
 ShopUI.ensureToolbar = function () {

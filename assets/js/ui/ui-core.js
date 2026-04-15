@@ -21,9 +21,9 @@ const UI_TEXT = Object.freeze({
         CHARGING: 'TỤ'
     }),
     PHONG_LOI_SI_RESTING: 'Phong Lôi Sí đang thu liễm',
-    SHOP_RESET_FILTERS: 'Tẩy điều kiện',
-    SHOP_EMPTY: 'Không có bảo vật nào ứng với điều kiện đã định.',
-    BEAST_FOOD_SELECT_HINT: 'Hãy chọn linh liệu phù hợp.',
+    SHOP_RESET_FILTERS: 'Tẩy tuyển điều kiện',
+    SHOP_EMPTY: 'Thiên Bảo Các tạm thời không có bảo vật hợp điều kiện đã định.',
+    BEAST_FOOD_SELECT_HINT: 'Hãy chọn linh liệu tương hợp.',
     BEAST_FOOD_AMOUNT_HINT: 'Hãy nhập số phần linh liệu hợp lệ.',
     BEAST_FOOD_NOT_ENOUGH_INVENTORY: 'Túi trữ vật không đủ linh liệu này.',
     BEAST_FOOD_RAINBOW_NOT_NEEDED: 'Thất Sắc Linh Thú Đại không cần nạp linh liệu.',
@@ -60,7 +60,7 @@ const UI_TEXT = Object.freeze({
 });
 
 function formatShopSummaryText(filteredCount, totalCount) {
-    return `Hiển lộ <strong>${formatNumber(filteredCount)}</strong> / ${formatNumber(totalCount)} bảo vật`;
+    return `Hiển lộ <strong>${formatNumber(filteredCount)}</strong> / ${formatNumber(totalCount)} kiện bảo vật`;
 }
 
 function tryDecodeLatin1Utf8(value) {
