@@ -817,6 +817,7 @@ const CONFIG = {
         OVERFLOW_LIMIT: 1.2,              // Giới hạn tràn exp (120% lượng exp cần thiết)
         TRIBULATION: {
             SOURCE_RANK_ID: 41, // Đại thừa đại viên mãn
+            SOURCE_RANK_MAX_EXP: 600000, // Mốc exp tối đa khi ở SOURCE_RANK_ID (giảm xuống để test độ kiếp nhanh)
             TARGET_RANK_ID: 46, // Chân tiên sơ kỳ
             STRIKE_COUNT: 9,
             BASE_HP: 1000,
@@ -1556,4 +1557,13 @@ const CONFIG = {
 };
 CONFIG.ENEMY.MAX_SHIELD_CRACK_LINES = 48; // Số lượng đường nứt tối đa trên khiên hoặc lá chắn của quái vật (giúp cân bằng hiệu ứng nứt khi có nhiều đòn đánh liên tiếp)
 CONFIG.ENEMY.MAX_SHIELD_CRACK_RINGS = 4; // Số lượng vòng nứt tối đa trên khiên hoặc lá chắn của quái vật
+
+// Cho phép chỉnh nhanh ngưỡng exp tại cảnh giới nguồn trước khi độ kiếp (mặc định là Đại thừa đại viên mãn - id 41).
+// Dùng cho dev/test: giảm SOURCE_RANK_MAX_EXP để kích hoạt độ kiếp nhanh hơn mà không cần sửa trực tiếp mảng RANKS.
+const tribulationSourceRankId = Number(CONFIG.CULTIVATION?.TRIBULATION?.SOURCE_RANK_ID);
+const tribulationSourceMaxExp = Number(CONFIG.CULTIVATION?.TRIBULATION?.SOURCE_RANK_MAX_EXP);
+if (Number.isFinite(tribulationSourceRankId) && Number.isFinite(tribulationSourceMaxExp) && tribulationSourceMaxExp > 0) {
+    const sourceRank = CONFIG.CULTIVATION?.RANKS?.find(rank => Number(rank?.id) === tribulationSourceRankId);
+    if (sourceRank) sourceRank.exp = tribulationSourceMaxExp;
+}
 // <!-- Create By: Vũ Hoài Nam -->
