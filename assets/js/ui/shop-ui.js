@@ -6,9 +6,7 @@ ShopUI = {
     wallet: document.getElementById('shop-wallet'),
     toolbar: document.getElementById('shop-toolbar'),
     pagination: document.getElementById('shop-pagination'),
-    searchQuery: '',
     categoryFilter: 'DAN_DUOC',
-    qualityFilter: 'ALL',
     currentPage: 1,
     lastPageSize: 0,
     expandedDescriptionIds: new Set(),
@@ -50,23 +48,6 @@ ShopUI = {
             });
         }
 
-        this.overlay.addEventListener('input', (e) => {
-            if (e.target.id !== 'shop-search') return;
-
-            e.stopPropagation();
-            this.searchQuery = e.target.value || '';
-            this.currentPage = 1;
-            this.render();
-        });
-
-        this.overlay.addEventListener('change', (e) => {
-            if (e.target.id === 'shop-filter-quality') {
-                this.qualityFilter = e.target.value || 'ALL';
-                this.currentPage = 1;
-                this.render();
-            }
-        });
-
         if (this.pagination) {
             this.pagination.addEventListener('pointerdown', (e) => {
                 const pageBtn = e.target.closest('[data-shop-page-target]');
@@ -94,16 +75,6 @@ ShopUI = {
                     }
                     return;
                 }
-
-                const resetBtn = e.target.closest('[data-shop-action="reset-filters"]');
-                if (!resetBtn) return;
-
-                e.stopPropagation();
-                this.searchQuery = '';
-                this.categoryFilter = 'DAN_DUOC';
-                this.qualityFilter = 'ALL';
-                this.currentPage = 1;
-                this.render();
             });
         }
 
@@ -342,11 +313,6 @@ ShopUI.getActionLabel = function (item, options = {}) {
 ShopUI.ensureToolbar = function () {
     if (!this.toolbar || this.toolbar.dataset.ready === 'true') return;
 
-    const qualityOptions = ['ALL', ...QUALITY_ORDER].map(quality => {
-        const label = quality === 'ALL' ? 'Tất cả phẩm chất' : getQualityLabel(quality);
-        return `<option value="${quality}">${escapeHtml(label)}</option>`;
-    }).join('');
-
     this.toolbar.innerHTML = `
         <div class="shop-tip" id="shop-tip"></div>
         <div class="panel-tabs shop-tabs" id="shop-tabs">
@@ -356,21 +322,8 @@ ShopUI.ensureToolbar = function () {
                 </button>
             `).join('')}
         </div>
-        <div class="shop-toolbar-row">
-            <label class="shop-field shop-field-search">
-                <span>Tìm kiếm</span>
-                <input id="shop-search" class="shop-control-input" type="search" placeholder="Tên đan, túi, công dụng, phẩm chất...">
-            </label>
-            <div class="shop-filter-group">
-                <label class="shop-field">
-                    <span>Phẩm chất</span>
-                    <select id="shop-filter-quality" class="shop-control-input">${qualityOptions}</select>
-                </label>
-            </div>
-        </div>
         <div class="shop-toolbar-meta">
             <div id="shop-summary" class="shop-summary"></div>
-            <button type="button" class="btn-shop-reset" data-shop-action="reset-filters">${UI_TEXT.SHOP_RESET_FILTERS}</button>
         </div>
     `;
 
@@ -386,14 +339,9 @@ ShopUI.syncToolbar = function (totalCount, filteredCount) {
         : 'Đã ở cảnh giới tối cao, cửa hàng vẫn còn đan cường hóa và vật phẩm đặc biệt.';
 
     const tipEl = this.toolbar.querySelector('#shop-tip');
-    const searchEl = this.toolbar.querySelector('#shop-search');
-    const qualityEl = this.toolbar.querySelector('#shop-filter-quality');
     const summaryEl = this.toolbar.querySelector('#shop-summary');
-    const resetBtn = this.toolbar.querySelector('[data-shop-action="reset-filters"]');
 
     if (tipEl) tipEl.innerHTML = tip;
-    if (searchEl && searchEl.value !== this.searchQuery) searchEl.value = this.searchQuery;
-    if (qualityEl && qualityEl.value !== this.qualityFilter) qualityEl.value = this.qualityFilter;
 
     this.toolbar.querySelectorAll('[data-shop-tab]').forEach(tabBtn => {
         tabBtn.classList.toggle('is-active', tabBtn.getAttribute('data-shop-tab') === this.categoryFilter);
@@ -402,10 +350,6 @@ ShopUI.syncToolbar = function (totalCount, filteredCount) {
     if (summaryEl) {
         summaryEl.innerHTML = `${escapeHtml(getItemCollectionTabLabel(this.categoryFilter))}: ${formatShopSummaryText(filteredCount, totalCount)}`;
     }
-
-    if (resetBtn) {
-        resetBtn.disabled = !this.searchQuery && this.categoryFilter === 'DAN_DUOC' && this.qualityFilter === 'ALL';
-    }
 };
 
 ShopUI.filterItems = function (items) {
@@ -413,9 +357,7 @@ ShopUI.filterItems = function (items) {
 };
 
 ShopUI.getFilteredResult = function (items) {
-    const query = normalizeSearchText(this.searchQuery);
     const filteredItems = [];
-    let tabTotalCount = 0;
 
     items.forEach(item => {
         const tabKey = getItemCollectionTabKey(item);
@@ -423,30 +365,8 @@ ShopUI.getFilteredResult = function (items) {
             return;
         }
 
-        tabTotalCount++;
-
-        if (this.qualityFilter !== 'ALL' && item.quality !== this.qualityFilter) {
-            return;
-        }
-
-        if (!query) {
-            filteredItems.push(item);
-            return;
-        }
-
-        const haystack = normalizeSearchText([
-            Input.getItemDisplayName(item),
-            Input.getItemDescription(item),
-            Input.getItemCategoryLabel(item),
-            getQualityLabel(item.quality),
-            item.realmName || '',
-            getItemCollectionTabLabel(tabKey)
-        ].join(' '));
-
-        if (haystack.includes(query)) {
-            filteredItems.push(item);
-        }
+        filteredItems.push(item);
     });
 
-    return { filteredItems, tabTotalCount };
+    return { filteredItems, tabTotalCount: filteredItems.length };
 };
