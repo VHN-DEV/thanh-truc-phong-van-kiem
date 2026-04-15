@@ -1216,7 +1216,6 @@ Object.assign(Input, {
             INSECT_ARTIFACT: CONFIG.INSECT.UNIQUE_ITEMS,
             SPIRIT_BAG: { HIGH: CONFIG.INSECT.BEAST_BAG },
             RAINBOW_SPIRIT_BAG: { SUPREME: CONFIG.INSECT.SEVEN_COLOR_BEAST_BAG },
-            ALCHEMY_RECIPE: this.getAlchemyRecipeDefinitions() || {},
             ALCHEMY_FURNACE: CONFIG.ALCHEMY?.FURNACES || {}
         };
 
