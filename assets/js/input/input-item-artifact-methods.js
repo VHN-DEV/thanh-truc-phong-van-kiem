@@ -2535,6 +2535,7 @@ Object.assign(Input, {
         const cloudEl = document.getElementById('tribulation-cloud');
         const boltEl = document.getElementById('tribulation-bolt');
         const contentEl = document.querySelector('#tribulation-popup .tribulation-content');
+        const cloudLightningEl = document.getElementById('tribulation-cloud-lightning');
         const cloudWrapEl = cloudEl?.parentElement || null;
 
         const spawnBoltFragment = (strikeIndex) => {
@@ -2552,19 +2553,50 @@ Object.assign(Input, {
             setTimeout(() => fragment.remove(), 980);
         };
 
+        const spawnCloudLightning = (strikeIndex, strikePower) => {
+            if (!cloudLightningEl || !cloudEl) return;
+            const cloudRect = cloudEl.getBoundingClientRect();
+            const wrapRect = cloudLightningEl.getBoundingClientRect();
+            if (!cloudRect.width || !wrapRect.width) return;
+
+            const boltCount = Math.min(9, 3 + Math.floor(strikePower));
+            for (let i = 0; i < boltCount; i += 1) {
+                const cloudBolt = document.createElement('div');
+                cloudBolt.className = 'tribulation-cloud-bolt';
+                const offsetRatio = (i + 1) / (boltCount + 1);
+                const jitter = (Math.random() - 0.5) * 0.22;
+                const left = (cloudRect.left - wrapRect.left) + (cloudRect.width * (offsetRatio + jitter));
+                const rotate = (Math.random() - 0.5) * (8 + strikePower * 1.8);
+                cloudBolt.style.left = `${Math.max(12, Math.min(wrapRect.width - 12, left))}px`;
+                cloudBolt.style.transform = `translateX(-50%) rotate(${rotate}deg)`;
+                cloudBolt.style.animationDelay = `${(i % 3) * 0.035}s`;
+                cloudLightningEl.appendChild(cloudBolt);
+                requestAnimationFrame(() => cloudBolt.classList.add('is-striking'));
+                setTimeout(() => cloudBolt.remove(), 520 + (strikeIndex * 12));
+            }
+        };
+
         const performStrike = () => {
             if (!this.tribulation.active) return;
 
             this.tribulation.currentStrike += 1;
+            const progress = this.tribulation.totalStrikes > 0
+                ? this.tribulation.currentStrike / this.tribulation.totalStrikes
+                : 1;
+            const strikePower = 1 + (progress * 6);
             cloudEl?.classList.remove('is-striking');
             boltEl?.classList.remove('is-striking');
             contentEl?.classList.remove('is-striking');
             void cloudEl?.offsetWidth;
             void boltEl?.offsetWidth;
             void contentEl?.offsetWidth;
+            if (contentEl) {
+                contentEl.style.setProperty('--tribulation-strike-power', strikePower.toFixed(2));
+            }
             cloudEl?.classList.add('is-striking');
             boltEl?.classList.add('is-striking');
             contentEl?.classList.add('is-striking');
+            spawnCloudLightning(this.tribulation.currentStrike, strikePower);
             spawnBoltFragment(this.tribulation.currentStrike);
 
             const damageRatio = damageMin + (Math.random() * (damageMax - damageMin));
