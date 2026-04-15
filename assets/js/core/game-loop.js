@@ -451,6 +451,7 @@ function animate() {
     const dt = (now - lastTime) / 1000;
     lastTime = now;
     frameNow = now;
+    Input.lastFrameDeltaMs = dt * 1000;
     Input.lastFrameTime = now;
 
     frameCount++;

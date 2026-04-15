@@ -1015,9 +1015,18 @@ class Sword {
     }
 
     drawAura(ctx, scaleFactor) {
-        const auraCount = Math.floor(random(2, 8));
+        const singleSwordUltActive = Boolean(
+            typeof Input?.isSingleSwordUltimateActive === 'function'
+            && Input.isSingleSwordUltimateActive()
+        );
+        const frameDeltaMs = Math.max(0, Number(Input?.lastFrameDeltaMs) || 16.7);
+        const perfPressure = Math.max(0, Math.min(1, (frameDeltaMs - 16.7) / 18));
+        const auraMin = singleSwordUltActive ? 1 : 2;
+        const auraMax = singleSwordUltActive ? 4 : 8;
+        const auraTargetMax = Math.max(auraMin + 1, auraMax - Math.round(perfPressure * 3));
+        const auraCount = Math.floor(random(auraMin, auraTargetMax));
         ctx.shadowColor = CONFIG.COLORS.SWORD_AURA_SHADOW;
-        ctx.shadowBlur = 8 * scaleFactor;
+        ctx.shadowBlur = (singleSwordUltActive ? 5 : 8) * scaleFactor;
         for (let i = 0; i < auraCount; i++) {
             ctx.beginPath();
             let py = -random(0, CONFIG.SWORD.SIZE * scaleFactor);

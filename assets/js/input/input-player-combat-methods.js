@@ -169,6 +169,16 @@ Object.assign(Input, {
         const attackBtn = document.getElementById('btn-attack');
         if (!attackBtn) return;
         const safeRatio = Math.max(0, Math.min(1, Number(chargeRatio) || 0));
+        const uiCache = this.singleSwordUltimateState || {};
+        const roundedRatio = Number(safeRatio.toFixed(2));
+        const unchanged = uiCache.lastUiRatio === roundedRatio
+            && uiCache.lastUiCharging === Boolean(isCharging)
+            && uiCache.lastUiReady === Boolean(isReady);
+        if (unchanged) return;
+
+        uiCache.lastUiRatio = roundedRatio;
+        uiCache.lastUiCharging = Boolean(isCharging);
+        uiCache.lastUiReady = Boolean(isReady);
         attackBtn.style.setProperty('--single-ult-charge', `${safeRatio * 100}%`);
         attackBtn.style.setProperty('--single-ult-charge-ratio', safeRatio.toFixed(2));
         attackBtn.classList.toggle('is-single-ult-charging', Boolean(isCharging));
@@ -186,7 +196,13 @@ Object.assign(Input, {
         const state = this.singleSwordUltimateState;
         if (!state?.active || !state.charging) return;
 
-        const emitIntervalMs = Math.max(26, 56 - (Math.max(0, Math.min(1, chargeRatio)) * 26));
+        const normalizedCharge = Math.max(0, Math.min(1, chargeRatio));
+        const frameDeltaMs = Math.max(0, Number(this.lastFrameDeltaMs) || 16.7);
+        const perfPressure = Math.max(0, Math.min(1, (frameDeltaMs - 16.7) / 18));
+        const emitIntervalMs = Math.max(
+            26,
+            (56 - (normalizedCharge * 26)) + (perfPressure * 26)
+        );
         if ((now - (state.lastParticleEmitAt || 0)) < emitIntervalMs) return;
         state.lastParticleEmitAt = now;
 
@@ -194,9 +210,10 @@ Object.assign(Input, {
         const centerX = anchor.x;
         const centerY = anchor.y;
         const pullRadius = 34 + (chargeRatio * 82);
-        const spawnCount = Math.round(3 + (chargeRatio * 6));
+        const spawnScale = 1 - (perfPressure * 0.58);
+        const spawnCount = Math.max(1, Math.round((3 + (chargeRatio * 6)) * spawnScale));
 
-        trimVisualParticles(360);
+        trimVisualParticles(Math.round(360 * (1 - perfPressure * 0.45)));
         for (let i = 0; i < spawnCount; i++) {
             const angle = Math.random() * Math.PI * 2;
             const radius = random(pullRadius * 0.65, pullRadius);
@@ -220,7 +237,7 @@ Object.assign(Input, {
                 glow: '#7ee7ff'
             });
 
-            if (Math.random() < (0.22 + (chargeRatio * 0.48))) {
+            if (Math.random() < ((0.22 + (chargeRatio * 0.48)) * (1 - perfPressure * 0.5))) {
                 const trailLen = random(6, 16) * (1 + (chargeRatio * 0.9));
                 visualParticles.push({
                     type: 'ray',
