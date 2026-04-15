@@ -87,3 +87,15 @@ function getDefaultAlchemyUnlockedRecipes() {
 function getDefaultAlchemyFurnaces() {
     return {};
 }
+
+function getRankIndexById(rankId) {
+    const targetId = Math.floor(Number(rankId) || 0);
+    if (targetId <= 0) return -1;
+    return CONFIG.CULTIVATION.RANKS.findIndex(rank => Number(rank?.id) === targetId);
+}
+
+function getConfiguredStartingRankIndex() {
+    const configuredRankId = Math.floor(Number(CONFIG.CULTIVATION?.STARTING_RANK_ID) || 1);
+    const index = getRankIndexById(configuredRankId);
+    return index >= 0 ? index : 0;
+}

@@ -2368,9 +2368,152 @@ Object.assign(Input, {
         return true;
     },
 
+    isAtTribulationThreshold() {
+        const currentRank = this.getCurrentRank();
+        const sourceRankId = Number(CONFIG.CULTIVATION?.TRIBULATION?.SOURCE_RANK_ID) || 41;
+        return Number(currentRank?.id) === sourceRankId;
+    },
+
+    getTribulationTargetRankIndex() {
+        const targetRankId = Number(CONFIG.CULTIVATION?.TRIBULATION?.TARGET_RANK_ID) || 46;
+        return getRankIndexById(targetRankId);
+    },
+
+    getTribulationConfig() {
+        const cfg = CONFIG.CULTIVATION?.TRIBULATION || {};
+        return {
+            strikeCount: Math.max(1, Math.floor(Number(cfg.STRIKE_COUNT) || 9)),
+            baseHp: Math.max(1, Math.floor(Number(cfg.BASE_HP) || 1000)),
+            strikeIntervalMs: Math.max(250, Math.floor(Number(cfg.STRIKE_INTERVAL_MS) || 700)),
+            prepareDelayMs: Math.max(0, Math.floor(Number(cfg.PREPARE_DELAY_MS) || 450)),
+            damageRatioMin: Math.max(0.01, Number(cfg.DAMAGE_RATIO_MIN) || 0.08),
+            damageRatioMax: Math.max(0.01, Number(cfg.DAMAGE_RATIO_MAX) || 0.18)
+        };
+    },
+
+    updateTribulationPopupUI() {
+        const strikeTextEl = document.getElementById('tribulation-strike-text');
+        const hpBarEl = document.getElementById('tribulation-hp-bar');
+        const hpTextEl = document.getElementById('tribulation-hp-text');
+        const state = this.tribulation || {};
+        const maxHp = Math.max(1, Number(state.maxHp) || 1);
+        const hp = Math.max(0, Math.round(Number(state.hp) || 0));
+        const percent = Math.max(0, Math.min(100, (hp / maxHp) * 100));
+
+        if (strikeTextEl) {
+            strikeTextEl.innerText = `Lôi kiếp: ${Math.min(state.currentStrike || 0, state.totalStrikes || 0)}/${state.totalStrikes || 0}`;
+        }
+        if (hpBarEl) {
+            hpBarEl.style.width = `${percent}%`;
+        }
+        if (hpTextEl) {
+            hpTextEl.innerText = `Sinh cơ: ${formatNumber(hp)}/${formatNumber(maxHp)}`;
+        }
+    },
+
+    closeTribulationPopup() {
+        const popup = document.getElementById('tribulation-popup');
+        if (popup) popup.classList.remove('show');
+    },
+
+    openTribulationPopup() {
+        const popup = document.getElementById('tribulation-popup');
+        if (!popup) return false;
+        popup.classList.add('show');
+        return true;
+    },
+
+    finishTribulation({ success }) {
+        this.tribulation.active = false;
+        this.closeTribulationPopup();
+
+        if (success) {
+            const targetIndex = this.getTribulationTargetRankIndex();
+            const nextRank = CONFIG.CULTIVATION.RANKS[targetIndex];
+            if (targetIndex < 0 || !nextRank) {
+                showNotify('Độ kiếp hoàn tất nhưng thiên cơ mục tiêu không tồn tại trong cấu hình', '#ff9f9f');
+                return;
+            }
+
+            this.rankIndex = targetIndex;
+            this.exp = 0;
+            this.isReadyToBreak = false;
+            this.breakthroughBonus = 0;
+            this.syncDerivedStats();
+            this.mana = this.maxMana;
+            this.refreshResourceUI();
+            this.renderManaUI();
+            this.createLevelUpExplosion(this.x, this.y, nextRank.color || '#ffe08f');
+            showNotify(`ĐỘ KIẾP THÀNH CÔNG: ${nextRank.name.toUpperCase()}`, '#ffd36b');
+            return;
+        }
+
+        this.tribulation.hp = 0;
+        this.updateTribulationPopupUI();
+        this.refreshResourceUI();
+        showNotify('ĐỘ KIẾP THẤT BẠI: thân tử đạo tiêu', '#ff5757');
+        this.updateHealth(-this.maxHp, 'lôi kiếp');
+    },
+
+    runTribulationSequence() {
+        const config = this.getTribulationConfig();
+        const popupOpened = this.openTribulationPopup();
+        if (!popupOpened) {
+            showNotify('Không thể mở pháp đàn độ kiếp', '#ff7777');
+            return;
+        }
+
+        const damageMin = Math.min(config.damageRatioMin, config.damageRatioMax);
+        const damageMax = Math.max(config.damageRatioMin, config.damageRatioMax);
+
+        this.tribulation.active = true;
+        this.tribulation.startedAt = performance.now();
+        this.tribulation.currentStrike = 0;
+        this.tribulation.totalStrikes = config.strikeCount;
+        this.tribulation.maxHp = config.baseHp;
+        this.tribulation.hp = config.baseHp;
+        this.updateTribulationPopupUI();
+
+        const cloudEl = document.getElementById('tribulation-cloud');
+        const boltEl = document.getElementById('tribulation-bolt');
+
+        const performStrike = () => {
+            if (!this.tribulation.active) return;
+
+            this.tribulation.currentStrike += 1;
+            cloudEl?.classList.remove('is-striking');
+            boltEl?.classList.remove('is-striking');
+            void cloudEl?.offsetWidth;
+            void boltEl?.offsetWidth;
+            cloudEl?.classList.add('is-striking');
+            boltEl?.classList.add('is-striking');
+
+            const damageRatio = damageMin + (Math.random() * (damageMax - damageMin));
+            const damage = Math.max(1, Math.round(this.tribulation.maxHp * damageRatio));
+            this.tribulation.hp = Math.max(0, this.tribulation.hp - damage);
+            this.updateTribulationPopupUI();
+
+            if (this.tribulation.currentStrike >= this.tribulation.totalStrikes) {
+                const success = this.tribulation.hp > 0;
+                setTimeout(() => this.finishTribulation({ success }), 380);
+                return;
+            }
+
+            setTimeout(performStrike, config.strikeIntervalMs);
+        };
+
+        setTimeout(performStrike, config.prepareDelayMs);
+        showNotify('Thiên lôi tụ vân: bắt đầu độ kiếp Cửu Cửu', '#91d6ff');
+    },
+
     executeBreakthrough(isForced = false) {
         if (this.isVoidCollapsed) {
             showNotify('Thân thể đã tan vào hư vô, cần tải lại giới vực để hồi phục', '#a778ff');
+            return;
+        }
+
+        if (this.tribulation?.active) {
+            showNotify('Độ kiếp đang diễn ra, không thể cưỡng hành đột phá', '#8fc7ff');
             return;
         }
 
@@ -2390,6 +2533,11 @@ Object.assign(Input, {
         totalChance = Math.min(maxAllowed, totalChance);
 
         if (Math.random() <= totalChance) {
+            if (this.isAtTribulationThreshold()) {
+                this.runTribulationSequence();
+                return;
+            }
+
             this.exp = 0;
             this.rankIndex++;
             this.isReadyToBreak = false;
@@ -2445,10 +2593,11 @@ Object.assign(Input, {
         const totalPercent = Math.round(totalChance * 100);
 
         if (textExp) {
+            const isTribulationStep = this.isAtTribulationThreshold();
             const statusText = this.isVoidCollapsed
                 ? `<span style="color:#b48cff; font-weight:bold;">${UI_TEXT.VOID_COLLAPSED}</span>`
                 : this.isReadyToBreak ?
-                `<span style="color:#ffcc00; font-weight:bold;">SẴN SÀNG ĐỘT PHÁ</span>` :
+                `<span style="color:#ffcc00; font-weight:bold;">${isTribulationStep ? 'SẴN SÀNG ĐỘ KIẾP' : 'SẴN SÀNG ĐỘT PHÁ'}</span>` :
                 `Tu vi: ${formatNumber(this.exp)}/${formatNumber(rank.exp)}`;
 
             textExp.innerHTML = `${statusText} | ` +
@@ -2477,7 +2626,9 @@ Object.assign(Input, {
         }
 
         if (rankText) {
-            rankText.innerText = `Cảnh giới: ${rank.name}`;
+            rankText.innerText = this.isAtTribulationThreshold()
+                ? `Cảnh giới: ${rank.name} • Bước Độ kiếp`
+                : `Cảnh giới: ${rank.name}`;
             applyRankTextVisual(rankText, rank);
         }
         if (ProfileUI && typeof ProfileUI.isOpen === 'function' && ProfileUI.isOpen()) {

@@ -40,6 +40,19 @@ document.getElementById('btn-breakthrough').addEventListener('pointerdown', (e) 
     Input.executeBreakthrough();
 });
 
+const closeTribulationBtn = document.getElementById('close-tribulation');
+if (closeTribulationBtn) {
+    closeTribulationBtn.addEventListener('pointerdown', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        if (Input.tribulation?.active) {
+            showNotify('Lôi kiếp đang giáng, không thể thoát pháp đàn', '#9ecfff');
+            return;
+        }
+        Input.closeTribulationPopup?.();
+    });
+}
+
 document.getElementById('btn-ultimate').addEventListener('pointerdown', (e) => {
     e.stopPropagation();
     e.preventDefault();
@@ -339,6 +352,10 @@ function init() {
 function resetRunState() {
     Input.isGameOver = false;
     Input.isVoidCollapsed = false;
+    if (Input.tribulation) {
+        Input.tribulation.active = false;
+        Input.closeTribulationPopup?.();
+    }
     Input.temporaryAscensionOrigin = null;
     if (Input.voidCollapseTimeoutId) {
         clearTimeout(Input.voidCollapseTimeoutId);

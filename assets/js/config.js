@@ -811,9 +811,20 @@ const CONFIG = {
         COST_CHANGE_FORM: 1     // Chi phí Mana mỗi lần chuyển đổi hình thái (vòng bảo vệ)
     },
     CULTIVATION: {
+        STARTING_RANK_ID: 1, // Cảnh giới khởi đầu khi bắt đầu game mới (dùng id trong RANKS để test nhanh)
         MAX_BREAKTHROUGH_CHANCE: 0.99, // Tỉ lệ đột phá tối đa tôi đang để là 99% (luôn có 1% rủi ro để tăng độ kịch tính)
         BREAKTHROUGH_PENALTY_FACTOR: 0.4, // Hệ số mất tu vi khi đột phá thất bại (40%)
         OVERFLOW_LIMIT: 1.2,              // Giới hạn tràn exp (120% lượng exp cần thiết)
+        TRIBULATION: {
+            SOURCE_RANK_ID: 41, // Đại thừa đại viên mãn
+            TARGET_RANK_ID: 46, // Chân tiên sơ kỳ
+            STRIKE_COUNT: 9,
+            BASE_HP: 1000,
+            STRIKE_INTERVAL_MS: 700,
+            PREPARE_DELAY_MS: 450,
+            DAMAGE_RATIO_MIN: 0.08,
+            DAMAGE_RATIO_MAX: 0.18
+        },
         MAJOR_REALMS: [
             { key: "LUYEN_KHI", name: "Luyện khí", startId: 1, endId: 13, nextKey: "TRUC_CO", nextName: "Trúc cơ" },
             { key: "TRUC_CO", name: "Trúc cơ", startId: 14, endId: 17, nextKey: "KET_DAN", nextName: "Kết đan" },
@@ -822,8 +833,7 @@ const CONFIG = {
             { key: "HOA_THAN", name: "Hóa thần", startId: 26, endId: 29, nextKey: "LUYEN_HU", nextName: "Luyện hư" },
             { key: "LUYEN_HU", name: "Luyện hư", startId: 30, endId: 33, nextKey: "HOP_THE", nextName: "Hợp thể" },
             { key: "HOP_THE", name: "Hợp thể", startId: 34, endId: 37, nextKey: "DAI_THUA", nextName: "Đại thừa" },
-            { key: "DAI_THUA", name: "Đại thừa", startId: 38, endId: 41, nextKey: "DO_KIEP", nextName: "Độ kiếp" },
-            { key: "DO_KIEP", name: "Độ kiếp", startId: 42, endId: 45, nextKey: "CHAN_TIEN", nextName: "Chân tiên" },
+            { key: "DAI_THUA", name: "Đại thừa", startId: 38, endId: 41, nextKey: "CHAN_TIEN", nextName: "Chân tiên" },
             { key: "CHAN_TIEN", name: "Chân tiên", startId: 46, endId: 49, nextKey: "KIM_TIEN", nextName: "Kim tiên" },
             { key: "KIM_TIEN", name: "Kim tiên", startId: 50, endId: 53, nextKey: "THAI_AT", nextName: "Thái Ất" },
             { key: "THAI_AT", name: "Thái Ất", startId: 54, endId: 57, nextKey: "DAI_LA", nextName: "Đại la" },

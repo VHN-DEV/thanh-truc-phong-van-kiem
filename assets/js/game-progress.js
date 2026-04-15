@@ -349,7 +349,7 @@ const GameProgress = {
         this.isRestoring = true;
 
         try {
-            Input.rankIndex = 0;
+            Input.rankIndex = getConfiguredStartingRankIndex();
             Input.exp = 0;
             Input.inventory = {};
             Input.inventoryCapacity = this.getDefaultInventoryCapacity();
@@ -394,6 +394,14 @@ const GameProgress = {
             Input.hp = Input.maxHp;
             Input.clearNegativeStatuses();
             Input.clearSpecialPillState();
+            Input.tribulation = {
+                active: false,
+                startedAt: 0,
+                currentStrike: 0,
+                totalStrikes: 0,
+                hp: 0,
+                maxHp: 0
+            };
             Input.activeEffects = [];
             Input.isUltMode = false;
             Input.ultTimeoutId = null;
@@ -425,7 +433,11 @@ const GameProgress = {
             const parsed = parseStoredJson(savedData);
             const rankCount = Math.max(1, CONFIG.CULTIVATION.RANKS.length);
 
-            Input.rankIndex = clampNumber(Math.floor(Number(parsed.rankIndex) || 0), 0, rankCount - 1);
+            Input.rankIndex = clampNumber(
+                Math.floor(Number(parsed.rankIndex) || getConfiguredStartingRankIndex()),
+                0,
+                rankCount - 1
+            );
             Input.inventory = this.sanitizeInventory(parsed.inventory);
             Input.inventoryCapacity = Math.max(this.getDefaultInventoryCapacity(), Math.floor(Number(parsed.inventoryCapacity) || 0));
 
@@ -511,6 +523,14 @@ const GameProgress = {
             Input.hp = Math.max(1, Math.min(Input.maxHp, Number(parsed.hp) || Input.maxHp));
             Input.clearNegativeStatuses();
             Input.clearSpecialPillState();
+            Input.tribulation = {
+                active: false,
+                startedAt: 0,
+                currentStrike: 0,
+                totalStrikes: 0,
+                hp: 0,
+                maxHp: 0
+            };
             if (typeof parsed.specialAuraMode === 'string' && parsed.specialAuraMode) {
                 Input.setSpecialAura(parsed.specialAuraMode);
             }

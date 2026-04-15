@@ -1,3 +1,6 @@
+const INITIAL_RANK_INDEX = getConfiguredStartingRankIndex();
+const INITIAL_RANK = CONFIG.CULTIVATION?.RANKS?.[INITIAL_RANK_INDEX] || CONFIG.CULTIVATION?.RANKS?.[0] || null;
+
 const INPUT_INITIAL_STATE = {
     screenX: width / 2, screenY: height / 2,
     prevScreenX: width / 2, prevScreenY: height / 2,
@@ -13,8 +16,8 @@ const INPUT_INITIAL_STATE = {
     isTouchDevice: IS_TOUCH_ENVIRONMENT,
     mana: CONFIG.MANA.START || 100,
     maxMana: CONFIG.MANA.MAX || 100,
-    hp: Math.max(1, Math.round(CONFIG.CULTIVATION?.RANKS?.[0]?.hp || 100)),
-    maxHp: Math.max(1, Math.round(CONFIG.CULTIVATION?.RANKS?.[0]?.hp || 100)),
+    hp: Math.max(1, Math.round(INITIAL_RANK?.hp || 100)),
+    maxHp: Math.max(1, Math.round(INITIAL_RANK?.hp || 100)),
     isGameOver: false,
     lastEnemyDamageAt: 0,
     lastAilmentTickAt: performance.now(),
@@ -29,7 +32,7 @@ const INPUT_INITIAL_STATE = {
     initialPinchDist: 0,
     lastFrameTime: performance.now(),
     exp: 0,
-    rankIndex: 0, // Vị trí hiện tại trong mảng RANKS
+    rankIndex: INITIAL_RANK_INDEX, // Vị trí hiện tại trong mảng RANKS
     inventory: {},
     inventoryCapacity: getDefaultInventoryCapacity(),
     spiritStones: getStartingSpiritStoneCounts(),
@@ -110,6 +113,14 @@ const INPUT_INITIAL_STATE = {
     temporaryAscensionOrigin: null,
     voidCollapseTimeoutId: null,
     isVoidCollapsed: false,
+    tribulation: {
+        active: false,
+        startedAt: 0,
+        currentStrike: 0,
+        totalStrikes: 0,
+        hp: 0,
+        maxHp: 0
+    },
     combo: 0,
     rage: 0,
     maxRage: CONFIG.ULTIMATE.MAX_RAGE || 100,
