@@ -1116,20 +1116,30 @@ Object.assign(Input, {
     },
 
     getBeastBagTabs() {
-        const tabs = [
-            {
-                key: 'all',
-                label: 'Tổng đàn',
-                note: `${formatNumber(this.getTotalTamedInsectCount())} linh trùng`
-            }
-        ];
-
         if (this.hasSevenColorSpiritBag()) {
-            return tabs;
+            return [
+                {
+                    key: 'all',
+                    label: 'Tổng đàn',
+                    note: `${formatNumber(this.getTotalTamedInsectCount())} linh trùng`
+                }
+            ];
         }
 
         const dedicatedSpeciesKeys = Object.keys(this.insectHabitats || {})
             .filter(speciesKey => this.insectHabitats[speciesKey] && this.getInsectSpecies(speciesKey));
+
+        if (!dedicatedSpeciesKeys.length) {
+            return [
+                {
+                    key: 'all',
+                    label: 'Tổng đàn',
+                    note: `${formatNumber(this.getTotalTamedInsectCount())} linh trùng`
+                }
+            ];
+        }
+
+        const tabs = [];
 
         dedicatedSpeciesKeys
             .sort((a, b) => {
@@ -1189,8 +1199,9 @@ Object.assign(Input, {
         }
 
         const tabs = this.getBeastBagTabs();
+        const fallbackTab = tabs[0]?.key || 'all';
         if (!tabs.some(tab => tab.key === this.selectedBeastBagTab)) {
-            this.selectedBeastBagTab = 'all';
+            this.selectedBeastBagTab = fallbackTab;
         }
 
         return this.selectedBeastBagTab;
