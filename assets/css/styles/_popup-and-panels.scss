@@ -6042,20 +6042,25 @@ select.shop-control-input {
 
 .tribulation-cloud {
     position: relative;
-    width: clamp(420px, 64vw, 980px);
-    height: clamp(112px, 20vh, 238px);
+    width: clamp(460px, 68vw, 1060px);
+    height: clamp(180px, 34vh, 350px);
     margin: 0 auto;
-    border-radius: 999px;
+    border-radius: 46% 54% 50% 50% / 52% 58% 42% 48%;
     background:
-        radial-gradient(20% 56% at 15% 52%, rgba(63, 74, 98, 0.92), rgba(17, 22, 35, 0.99) 78%),
-        radial-gradient(24% 62% at 35% 38%, rgba(72, 82, 106, 0.9), rgba(16, 21, 34, 0.98) 78%),
-        radial-gradient(26% 64% at 58% 44%, rgba(67, 79, 104, 0.88), rgba(17, 22, 35, 0.97) 78%),
-        radial-gradient(22% 58% at 82% 50%, rgba(61, 71, 95, 0.86), rgba(18, 23, 36, 0.98) 78%);
+        radial-gradient(16% 12% at 50% 46%, rgba(9, 9, 15, 0.98), rgba(9, 10, 18, 0.12) 82%),
+        radial-gradient(26% 22% at 50% 48%, rgba(28, 26, 44, 0.9), rgba(10, 12, 20, 0.2) 72%),
+        conic-gradient(from 18deg at 50% 49%, rgba(87, 82, 118, 0.16), rgba(19, 23, 38, 0.7) 11%, rgba(74, 69, 104, 0.24) 22%, rgba(15, 19, 34, 0.82) 34%, rgba(64, 58, 96, 0.3) 46%, rgba(13, 17, 30, 0.9) 58%, rgba(84, 78, 120, 0.2) 72%, rgba(13, 17, 30, 0.9) 84%, rgba(69, 63, 102, 0.25) 100%),
+        radial-gradient(28% 24% at 17% 62%, rgba(58, 64, 86, 0.7), rgba(15, 20, 33, 0.06) 76%),
+        radial-gradient(24% 22% at 83% 62%, rgba(52, 57, 79, 0.7), rgba(15, 20, 33, 0.06) 76%),
+        radial-gradient(18% 16% at 22% 34%, rgba(84, 90, 118, 0.46), rgba(16, 21, 34, 0.04) 78%),
+        radial-gradient(16% 14% at 80% 34%, rgba(84, 89, 117, 0.42), rgba(16, 21, 34, 0.04) 78%),
+        radial-gradient(65% 62% at 50% 58%, rgba(21, 24, 36, 0.96), rgba(10, 13, 23, 0.98) 86%);
     box-shadow:
-        0 16px 30px rgba(7, 12, 22, 0.68),
-        0 0 34px rgba(45, 55, 82, 0.62),
-        inset 0 -14px 22px rgba(5, 10, 19, 0.52);
-    animation: tribulation-cloud-roil 4.8s ease-in-out infinite;
+        0 18px 40px rgba(6, 8, 16, 0.74),
+        0 0 46px rgba(49, 57, 92, 0.58),
+        inset 0 -16px 30px rgba(3, 6, 12, 0.62),
+        inset 0 10px 26px rgba(94, 88, 136, 0.12);
+    animation: tribulation-cloud-roil 5.4s ease-in-out infinite;
     z-index: 2;
 }
 
@@ -6065,22 +6070,27 @@ select.shop-control-input {
     position: absolute;
     border-radius: 50%;
     background:
-        radial-gradient(circle at 38% 36%, rgba(95, 106, 132, 0.8), rgba(20, 24, 38, 0.97) 70%);
-    box-shadow: inset 0 -9px 12px rgba(0, 0, 0, 0.32);
+        conic-gradient(from 30deg at 50% 50%, rgba(94, 88, 136, 0.24), rgba(16, 21, 34, 0.88) 18%, rgba(78, 72, 118, 0.2) 38%, rgba(15, 19, 33, 0.92) 62%, rgba(88, 80, 128, 0.2) 82%, rgba(14, 18, 32, 0.94) 100%),
+        radial-gradient(36% 30% at 40% 40%, rgba(92, 98, 128, 0.34), rgba(18, 23, 37, 0.08) 78%);
+    box-shadow:
+        inset 0 -10px 16px rgba(0, 0, 0, 0.48),
+        0 0 20px rgba(43, 54, 84, 0.4);
 }
 
 .tribulation-cloud::before {
-    width: clamp(180px, 25vw, 330px);
-    height: clamp(116px, 14vh, 210px);
-    left: clamp(-88px, -7vw, -26px);
-    top: clamp(-52px, -5vh, -22px);
+    width: clamp(260px, 30vw, 480px);
+    height: clamp(170px, 20vh, 290px);
+    left: clamp(-120px, -9vw, -40px);
+    top: clamp(-38px, -3.8vh, -12px);
+    transform: rotate(-10deg);
 }
 
 .tribulation-cloud::after {
-    width: clamp(208px, 30vw, 372px);
-    height: clamp(132px, 16vh, 234px);
-    right: clamp(-102px, -8vw, -24px);
-    top: clamp(-58px, -6vh, -24px);
+    width: clamp(284px, 34vw, 520px);
+    height: clamp(180px, 22vh, 320px);
+    right: clamp(-134px, -10vw, -48px);
+    top: clamp(-44px, -4.8vh, -16px);
+    transform: rotate(12deg);
 }
 
 .tribulation-cloud.is-striking {
@@ -6091,38 +6101,59 @@ select.shop-control-input {
     position: absolute;
     top: clamp(110px, 20vh, 212px);
     left: 50%;
-    width: clamp(24px, 2.2vw, 36px);
+    width: clamp(12px, 1vw, 20px);
     height: 0;
-    transform: translateX(-50%) scaleX(calc(1 + var(--tribulation-strike-power) * 0.16));
+    transform: translateX(-50%) scaleX(calc(1 + var(--tribulation-strike-power) * 0.12));
     transform-origin: center top;
     opacity: 0;
-    background:
-        linear-gradient(180deg, rgba(252, 255, 255, 0.98), rgba(178, 235, 255, 0.94) 42%, rgba(96, 156, 255, 0.88) 75%, rgba(96, 156, 255, 0));
+    background: linear-gradient(180deg, rgba(243, 252, 255, 0.98), rgba(214, 233, 255, 0.96) 38%, rgba(151, 194, 255, 0.92) 70%, rgba(105, 150, 255, 0));
     box-shadow:
-        0 0 calc(10px + var(--tribulation-strike-power) * 2px) rgba(154, 232, 255, 0.9),
-        0 0 calc(24px + var(--tribulation-strike-power) * 8px) rgba(118, 172, 255, 0.7);
-    clip-path: polygon(46% 0, 78% 0, 54% 18%, 82% 18%, 42% 48%, 67% 48%, 26% 100%, 40% 64%, 17% 64%, 46% 32%, 28% 32%);
+        0 0 calc(14px + var(--tribulation-strike-power) * 2px) rgba(205, 233, 255, 0.88),
+        0 0 calc(30px + var(--tribulation-strike-power) * 6px) rgba(122, 106, 255, 0.52);
+    clip-path: polygon(50% 0, 72% 8%, 40% 16%, 78% 24%, 28% 34%, 74% 44%, 24% 54%, 70% 64%, 20% 74%, 64% 84%, 26% 92%, 52% 100%, 0 90%, 44% 80%, 10% 68%, 56% 56%, 14% 42%, 60% 30%, 18% 18%, 62% 8%);
 }
 
 .tribulation-bolt.is-striking {
     animation: tribulation-bolt-drop 0.82s ease-out;
 }
 
+.tribulation-bolt::before,
+.tribulation-bolt::after {
+    content: '';
+    position: absolute;
+    width: 88%;
+    height: 44%;
+    left: 6%;
+    background: linear-gradient(180deg, rgba(245, 253, 255, 0.92), rgba(183, 226, 255, 0.9) 54%, rgba(115, 170, 255, 0));
+    clip-path: polygon(50% 0, 72% 10%, 36% 24%, 80% 38%, 22% 54%, 74% 70%, 14% 86%, 60% 100%, 0 88%, 44% 72%, 10% 56%, 54% 40%, 16% 24%, 56% 10%);
+    opacity: 0.98;
+    filter: drop-shadow(0 0 8px rgba(132, 111, 255, 0.6));
+}
+
+.tribulation-bolt::before {
+    top: 16%;
+    transform: translateX(-122%) rotate(-30deg) scale(1.1);
+}
+
+.tribulation-bolt::after {
+    top: 46%;
+    transform: translateX(114%) rotate(26deg);
+}
+
 .tribulation-bolt-fragment {
     position: absolute;
     top: clamp(106px, 19vh, 204px);
     left: 50%;
-    width: clamp(18px, 1.8vw, 28px);
+    width: clamp(4px, 0.45vw, 7px);
     height: 0;
     transform: translateX(-50%);
     opacity: 0;
     pointer-events: none;
-    background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(188, 238, 255, 0.92) 44%, rgba(96, 156, 255, 0.82) 74%, rgba(96, 156, 255, 0));
+    background: linear-gradient(180deg, rgba(247, 254, 255, 0.9), rgba(176, 225, 255, 0.86) 58%, rgba(102, 159, 255, 0));
     box-shadow:
-        0 0 9px rgba(154, 232, 255, 0.84),
-        0 0 20px rgba(118, 172, 255, 0.46);
-    clip-path: polygon(48% 0, 84% 0, 56% 22%, 84% 22%, 48% 52%, 72% 52%, 26% 100%, 38% 66%, 14% 66%, 42% 34%, 24% 34%);
+        0 0 8px rgba(154, 232, 255, 0.74),
+        0 0 14px rgba(128, 112, 255, 0.34);
+    clip-path: polygon(50% 0, 100% 15%, 34% 28%, 88% 42%, 18% 56%, 78% 70%, 10% 84%, 66% 96%, 38% 100%, 0 88%, 56% 72%, 14% 56%, 72% 40%, 18% 24%, 80% 10%);
 }
 
 .tribulation-bolt-fragment.is-striking {
@@ -6136,19 +6167,18 @@ select.shop-control-input {
     position: absolute;
     top: clamp(108px, 19.5vh, 208px);
     left: 50%;
-    width: clamp(9px, 0.7vw, 14px);
+    width: clamp(3px, 0.32vw, 5px);
     height: 0;
     transform: translateX(calc(-50% + var(--prestrike-x))) rotate(var(--prestrike-rot)) scaleX(var(--prestrike-scale));
     transform-origin: top center;
     opacity: 0;
     pointer-events: none;
     z-index: 4;
-    background:
-        linear-gradient(180deg, rgba(253, 255, 255, 0.94), rgba(173, 228, 255, 0.9) 50%, rgba(109, 171, 255, 0));
+    background: linear-gradient(180deg, rgba(251, 255, 255, 0.88), rgba(171, 225, 255, 0.82) 56%, rgba(109, 171, 255, 0));
     box-shadow:
-        0 0 8px rgba(165, 232, 255, 0.8),
-        0 0 16px rgba(106, 169, 255, 0.42);
-    clip-path: polygon(48% 0, 75% 0, 58% 20%, 84% 20%, 47% 58%, 66% 58%, 24% 100%, 38% 68%, 15% 68%, 42% 36%, 26% 36%);
+        0 0 7px rgba(165, 232, 255, 0.66),
+        0 0 12px rgba(118, 98, 255, 0.28);
+    clip-path: polygon(50% 0, 100% 14%, 36% 28%, 90% 42%, 16% 58%, 76% 72%, 8% 86%, 64% 98%, 40% 100%, 0 90%, 54% 74%, 12% 58%, 72% 42%, 18% 24%, 80% 12%);
 }
 
 .tribulation-prestrike-bolt.is-striking {
@@ -6156,14 +6186,12 @@ select.shop-control-input {
 }
 
 .tribulation-prestrike-bolt--forked {
-    clip-path: polygon(48% 0, 74% 0, 56% 18%, 82% 18%, 52% 44%, 74% 44%, 40% 68%, 62% 68%, 28% 100%, 42% 72%, 14% 72%, 38% 40%, 22% 40%);
+    clip-path: polygon(50% 0, 100% 12%, 36% 24%, 92% 36%, 22% 50%, 82% 62%, 14% 78%, 72% 90%, 36% 100%, 0 88%, 58% 68%, 10% 52%, 76% 34%, 20% 18%, 84% 8%);
 }
 
 .tribulation-prestrike-bolt--needle {
-    width: clamp(7px, 0.55vw, 10px);
-    box-shadow:
-        0 0 6px rgba(185, 238, 255, 0.88),
-        0 0 14px rgba(106, 169, 255, 0.5);
+    width: clamp(2px, 0.24vw, 4px);
+    box-shadow: 0 0 6px rgba(185, 238, 255, 0.84);
 }
 
 .tribulation-ground-impact {
@@ -6192,9 +6220,9 @@ select.shop-control-input {
 .tribulation-ground-land {
     position: absolute;
     left: 50%;
-    bottom: clamp(6px, 0.8vh, 12px);
+    bottom: clamp(-14px, -1.8vh, -6px);
     width: min(92%, 960px);
-    height: clamp(56px, 8.2vh, 98px);
+    height: clamp(46px, 7.2vh, 82px);
     transform: translateX(-50%);
     border-radius: 64% 64% 44% 44% / 100% 100% 28% 28%;
     background:
@@ -6213,14 +6241,16 @@ select.shop-control-input {
     --cloud-bolt-scale: 1;
     position: absolute;
     top: clamp(20px, 4.2vh, 42px);
-    width: clamp(14px, 1vw, 20px);
+    width: clamp(4px, 0.36vw, 7px);
     height: 0;
     opacity: 0;
     transform: translateX(-50%) rotate(0deg) scaleX(var(--cloud-bolt-scale));
     transform-origin: center top;
-    background: linear-gradient(180deg, rgba(250, 255, 255, 0.98), rgba(164, 221, 255, 0.92) 50%, rgba(115, 170, 255, 0));
-    clip-path: polygon(48% 0, 78% 0, 56% 24%, 82% 24%, 44% 56%, 70% 56%, 24% 100%, 42% 68%, 14% 68%, 40% 36%, 24% 36%);
-    filter: drop-shadow(0 0 6px rgba(148, 218, 255, 0.74));
+    background: linear-gradient(180deg, rgba(250, 255, 255, 0.9), rgba(164, 221, 255, 0.82) 54%, rgba(115, 170, 255, 0));
+    clip-path: polygon(50% 0, 100% 14%, 34% 28%, 90% 42%, 20% 56%, 84% 70%, 12% 84%, 66% 96%, 38% 100%, 0 88%, 56% 72%, 14% 56%, 72% 40%, 18% 24%, 80% 10%);
+    filter:
+        drop-shadow(0 0 5px rgba(148, 218, 255, 0.66))
+        drop-shadow(0 0 8px rgba(120, 103, 255, 0.34));
 }
 
 .tribulation-cloud-bolt.is-striking {
@@ -6228,12 +6258,12 @@ select.shop-control-input {
 }
 
 .tribulation-cloud-bolt--branch {
-    clip-path: polygon(48% 0, 80% 0, 58% 18%, 82% 18%, 50% 36%, 72% 36%, 40% 58%, 66% 58%, 26% 100%, 44% 70%, 16% 70%, 40% 40%, 24% 40%);
+    clip-path: polygon(50% 0, 100% 10%, 38% 22%, 92% 34%, 24% 48%, 82% 62%, 16% 76%, 72% 90%, 36% 100%, 0 90%, 58% 70%, 10% 52%, 76% 34%, 20% 16%, 84% 8%);
 }
 
 .tribulation-cloud-bolt--thick {
-    --cloud-bolt-scale: 1.18;
-    filter: drop-shadow(0 0 8px rgba(160, 224, 255, 0.8));
+    --cloud-bolt-scale: 1.34;
+    filter: drop-shadow(0 0 6px rgba(160, 224, 255, 0.8));
 }
 
 .tribulation-seated {
@@ -6320,9 +6350,9 @@ select.shop-control-input {
 }
 
 @keyframes tribulation-cloud-roil {
-    0%, 100% { transform: translateY(0) scale(1); filter: saturate(1); }
-    35% { transform: translateY(-4px) scale(1.015); filter: saturate(1.08); }
-    68% { transform: translateY(3px) scale(0.996); filter: saturate(0.94); }
+    0%, 100% { transform: translateY(0) scale(1) rotate(-1deg); filter: saturate(0.98) contrast(1); }
+    32% { transform: translateY(-5px) scale(1.018) rotate(0.8deg); filter: saturate(1.08) contrast(1.04); }
+    64% { transform: translateY(4px) scale(0.994) rotate(-0.6deg); filter: saturate(0.92) contrast(0.96); }
 }
 
 @keyframes tribulation-ambient-drift {
