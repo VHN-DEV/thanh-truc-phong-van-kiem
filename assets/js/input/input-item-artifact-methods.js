@@ -2375,7 +2375,7 @@ Object.assign(Input, {
     },
 
     getTribulationTargetRankIndex() {
-        const targetRankId = Number(CONFIG.CULTIVATION?.TRIBULATION?.TARGET_RANK_ID) || 46;
+        const targetRankId = Number(CONFIG.CULTIVATION?.TRIBULATION?.TARGET_RANK_ID) || 42;
         return getRankIndexById(targetRankId);
     },
 
@@ -2526,6 +2526,13 @@ Object.assign(Input, {
             return;
         }
 
+        // Ở ngưỡng độ kiếp thì không dùng roll tỉ lệ đột phá thông thường.
+        // Bấm đột phá sẽ vào thẳng popup/lộ trình độ kiếp.
+        if (this.isAtTribulationThreshold()) {
+            this.runTribulationSequence();
+            return;
+        }
+
         const pillBoost = this.calculateTotalPillBoost();
         let totalChance = currentRank.chance + pillBoost;
 
@@ -2533,11 +2540,6 @@ Object.assign(Input, {
         totalChance = Math.min(maxAllowed, totalChance);
 
         if (Math.random() <= totalChance) {
-            if (this.isAtTribulationThreshold()) {
-                this.runTribulationSequence();
-                return;
-            }
-
             this.exp = 0;
             this.rankIndex++;
             this.isReadyToBreak = false;
