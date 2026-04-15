@@ -126,18 +126,17 @@ ShopUI = {
     },
 
     buildPaginationTargets(totalPages) {
-        const pages = [];
+        const pages = new Set();
 
         for (let page = 1; page <= totalPages; page++) {
             const isEdge = page === 1 || page === totalPages;
             const isNearCurrent = Math.abs(page - this.currentPage) <= 1;
             if (totalPages <= 5 || isEdge || isNearCurrent) {
-                pages.push(page);
+                pages.add(page);
             }
         }
 
-        return pages.filter((page, index) => pages.indexOf(page) === index)
-            .sort((a, b) => a - b);
+        return [...pages].sort((a, b) => a - b);
     },
 
     renderPagination(totalItems, totalPages) {
@@ -235,8 +234,7 @@ ShopUI = {
         this.ensureToolbar();
 
         const allItems = Input.getShopItems();
-        const filteredItems = this.filterItems(allItems);
-        const tabTotalCount = allItems.filter(item => getItemCollectionTabKey(item) === this.categoryFilter).length;
+        const { filteredItems, tabTotalCount } = this.getFilteredResult(allItems);
         const pageSize = this.getPageSize();
         const totalPages = Math.max(1, Math.ceil(filteredItems.length / pageSize));
 
@@ -411,18 +409,30 @@ ShopUI.syncToolbar = function (totalCount, filteredCount) {
 };
 
 ShopUI.filterItems = function (items) {
-    const query = normalizeSearchText(this.searchQuery);
+    return this.getFilteredResult(items).filteredItems;
+};
 
-    return items.filter(item => {
-        if (getItemCollectionTabKey(item) !== this.categoryFilter) {
-            return false;
+ShopUI.getFilteredResult = function (items) {
+    const query = normalizeSearchText(this.searchQuery);
+    const filteredItems = [];
+    let tabTotalCount = 0;
+
+    items.forEach(item => {
+        const tabKey = getItemCollectionTabKey(item);
+        if (tabKey !== this.categoryFilter) {
+            return;
         }
+
+        tabTotalCount++;
 
         if (this.qualityFilter !== 'ALL' && item.quality !== this.qualityFilter) {
-            return false;
+            return;
         }
 
-        if (!query) return true;
+        if (!query) {
+            filteredItems.push(item);
+            return;
+        }
 
         const haystack = normalizeSearchText([
             Input.getItemDisplayName(item),
@@ -430,9 +440,13 @@ ShopUI.filterItems = function (items) {
             Input.getItemCategoryLabel(item),
             getQualityLabel(item.quality),
             item.realmName || '',
-            getItemCollectionTabLabel(getItemCollectionTabKey(item))
+            getItemCollectionTabLabel(tabKey)
         ].join(' '));
 
-        return haystack.includes(query);
+        if (haystack.includes(query)) {
+            filteredItems.push(item);
+        }
     });
+
+    return { filteredItems, tabTotalCount };
 };
