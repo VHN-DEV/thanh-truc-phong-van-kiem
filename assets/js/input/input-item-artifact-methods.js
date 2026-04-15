@@ -2537,6 +2537,28 @@ Object.assign(Input, {
         const contentEl = document.querySelector('#tribulation-popup .tribulation-content');
         const cloudLightningEl = document.getElementById('tribulation-cloud-lightning');
         const cloudWrapEl = cloudEl?.parentElement || null;
+        const createLightningClipPath = (strikePower = 1, segmentCount = 18) => {
+            const safeSegmentCount = Math.max(12, Math.floor(segmentCount));
+            const powerInfluence = Math.max(1, Number(strikePower) || 1);
+            const maxDrift = Math.min(38, 14 + (powerInfluence * 2.8));
+            const points = ['50% 0%'];
+            let currentX = 50;
+            for (let i = 1; i < safeSegmentCount; i += 1) {
+                const progress = i / safeSegmentCount;
+                const driftScale = 0.7 + (Math.sin(progress * Math.PI) * 0.9);
+                currentX += (Math.random() - 0.5) * maxDrift * driftScale;
+                currentX = Math.max(8, Math.min(92, currentX));
+                const y = Math.round(progress * 100);
+                points.push(`${currentX.toFixed(1)}% ${y}%`);
+            }
+            points.push(`${(46 + (Math.random() * 8)).toFixed(1)}% 100%`);
+            return `polygon(${points.join(', ')})`;
+        };
+        const applyLightningStyle = (targetEl, strikePower = 1) => {
+            if (!targetEl) return;
+            const segmentCount = 16 + Math.floor(Math.max(1, strikePower) * 1.6);
+            targetEl.style.clipPath = createLightningClipPath(strikePower, segmentCount);
+        };
 
         const spawnBoltFragment = (strikeIndex) => {
             if (!cloudWrapEl) return;
@@ -2546,6 +2568,7 @@ Object.assign(Input, {
             const horizontalOffset = direction * (8 + (strikeIndex % 3) * 5);
             const rotateDeg = direction * (4 + (strikeIndex % 4) * 3);
             fragment.style.transform = `translateX(calc(-50% + ${horizontalOffset}px)) rotate(${rotateDeg}deg)`;
+            applyLightningStyle(fragment, 1.1 + ((strikeIndex % 4) * 0.5));
             cloudWrapEl.appendChild(fragment);
             requestAnimationFrame(() => {
                 fragment.classList.add('is-striking');
@@ -2631,6 +2654,7 @@ Object.assign(Input, {
             setTimeout(() => {
                 if (!this.tribulation.active) return;
 
+                applyLightningStyle(boltEl, strikePower);
                 boltEl?.classList.add('is-striking');
                 contentEl?.classList.add('is-striking');
                 spawnBoltFragment(this.tribulation.currentStrike);
