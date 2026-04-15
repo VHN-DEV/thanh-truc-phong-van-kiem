@@ -2576,6 +2576,27 @@ Object.assign(Input, {
             }
         };
 
+        const spawnPreStrikeBolts = (strikeIndex, strikePower) => {
+            if (!cloudWrapEl) return;
+            const preStrikeCount = Math.min(7, 2 + Math.floor(strikePower * 0.65));
+
+            for (let i = 0; i < preStrikeCount; i += 1) {
+                const preStrikeBolt = document.createElement('div');
+                preStrikeBolt.className = 'tribulation-prestrike-bolt';
+                const direction = (i + strikeIndex) % 2 === 0 ? 1 : -1;
+                const baseOffset = 82 + (i * 26);
+                const randomOffset = Math.random() * 34;
+                const horizontalOffset = direction * (baseOffset + randomOffset);
+                const rotateDeg = direction * (6 + Math.random() * (5 + strikePower));
+                preStrikeBolt.style.setProperty('--prestrike-x', `${horizontalOffset}px`);
+                preStrikeBolt.style.setProperty('--prestrike-rot', `${rotateDeg}deg`);
+                preStrikeBolt.style.animationDelay = `${i * 0.026}s`;
+                cloudWrapEl.appendChild(preStrikeBolt);
+                requestAnimationFrame(() => preStrikeBolt.classList.add('is-striking'));
+                setTimeout(() => preStrikeBolt.remove(), 520);
+            }
+        };
+
         const performStrike = () => {
             if (!this.tribulation.active) return;
 
@@ -2594,32 +2615,39 @@ Object.assign(Input, {
                 contentEl.style.setProperty('--tribulation-strike-power', strikePower.toFixed(2));
             }
             cloudEl?.classList.add('is-striking');
-            boltEl?.classList.add('is-striking');
-            contentEl?.classList.add('is-striking');
             spawnCloudLightning(this.tribulation.currentStrike, strikePower);
-            spawnBoltFragment(this.tribulation.currentStrike);
+            spawnPreStrikeBolts(this.tribulation.currentStrike, strikePower);
 
-            const damageRatio = damageMin + (Math.random() * (damageMax - damageMin));
-            const damage = Math.max(1, Math.round(this.tribulation.maxHp * damageRatio));
-            this.tribulation.hp = Math.max(0, this.tribulation.hp - damage);
-            this.updateTribulationPopupUI();
+            const mainStrikeDelay = Math.round(130 + Math.min(140, strikePower * 13));
+            setTimeout(() => {
+                if (!this.tribulation.active) return;
 
-            if (this.tribulation.currentStrike >= this.tribulation.totalStrikes) {
-                let success = this.tribulation.hp > 0;
-                if (!success) {
-                    const heavenlyChance = Math.max(0, Math.min(1, Number(this.tribulation.successChance) || 0));
-                    if (Math.random() <= heavenlyChance) {
-                        success = true;
-                        this.tribulation.hp = Math.max(1, Math.round(this.tribulation.maxHp * 0.12));
-                        this.updateTribulationPopupUI();
-                        showNotify(`Thiên cơ gia hộ: cưỡng chuyển bại thành thắng (${Math.round(heavenlyChance * 100)}%)`, '#ffdf8f');
+                boltEl?.classList.add('is-striking');
+                contentEl?.classList.add('is-striking');
+                spawnBoltFragment(this.tribulation.currentStrike);
+
+                const damageRatio = damageMin + (Math.random() * (damageMax - damageMin));
+                const damage = Math.max(1, Math.round(this.tribulation.maxHp * damageRatio));
+                this.tribulation.hp = Math.max(0, this.tribulation.hp - damage);
+                this.updateTribulationPopupUI();
+
+                if (this.tribulation.currentStrike >= this.tribulation.totalStrikes) {
+                    let success = this.tribulation.hp > 0;
+                    if (!success) {
+                        const heavenlyChance = Math.max(0, Math.min(1, Number(this.tribulation.successChance) || 0));
+                        if (Math.random() <= heavenlyChance) {
+                            success = true;
+                            this.tribulation.hp = Math.max(1, Math.round(this.tribulation.maxHp * 0.12));
+                            this.updateTribulationPopupUI();
+                            showNotify(`Thiên cơ gia hộ: cưỡng chuyển bại thành thắng (${Math.round(heavenlyChance * 100)}%)`, '#ffdf8f');
+                        }
                     }
+                    setTimeout(() => this.finishTribulation({ success }), 380);
+                    return;
                 }
-                setTimeout(() => this.finishTribulation({ success }), 380);
-                return;
-            }
 
-            setTimeout(performStrike, config.strikeIntervalMs);
+                setTimeout(performStrike, config.strikeIntervalMs);
+            }, mainStrikeDelay);
         };
 
         setTimeout(performStrike, config.prepareDelayMs);

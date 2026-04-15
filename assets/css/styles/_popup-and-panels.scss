@@ -6129,6 +6129,31 @@ select.shop-control-input {
     animation: tribulation-bolt-fragment-drop 0.72s ease-out;
 }
 
+.tribulation-prestrike-bolt {
+    --prestrike-x: 0px;
+    --prestrike-rot: 0deg;
+    position: absolute;
+    top: clamp(108px, 19.5vh, 208px);
+    left: 50%;
+    width: clamp(9px, 0.7vw, 14px);
+    height: 0;
+    transform: translateX(calc(-50% + var(--prestrike-x))) rotate(var(--prestrike-rot));
+    transform-origin: top center;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 4;
+    background:
+        linear-gradient(180deg, rgba(253, 255, 255, 0.94), rgba(173, 228, 255, 0.9) 50%, rgba(109, 171, 255, 0));
+    box-shadow:
+        0 0 8px rgba(165, 232, 255, 0.8),
+        0 0 16px rgba(106, 169, 255, 0.42);
+    clip-path: polygon(48% 0, 75% 0, 58% 20%, 84% 20%, 47% 58%, 66% 58%, 24% 100%, 38% 68%, 15% 68%, 42% 36%, 26% 36%);
+}
+
+.tribulation-prestrike-bolt.is-striking {
+    animation: tribulation-prestrike-drop 0.34s ease-out;
+}
+
 .tribulation-ground-impact {
     position: absolute;
     left: 50%;
@@ -6284,6 +6309,12 @@ select.shop-control-input {
     0% { height: 0; opacity: 0; }
     24% { height: clamp(52px, 9vh, 98px); opacity: 0.95; }
     100% { height: clamp(86px, 13vh, 150px); opacity: 0; }
+}
+
+@keyframes tribulation-prestrike-drop {
+    0% { height: 0; opacity: 0; }
+    22% { opacity: 0.9; }
+    100% { height: clamp(240px, 43vh, 418px); opacity: 0; }
 }
 
 @keyframes tribulation-sky-flash-pulse {
