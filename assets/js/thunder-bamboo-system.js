@@ -107,7 +107,7 @@
             years: 0,
             label: 'Kim Lôi Trúc Mẫu',
             displayName: baseName,
-            visualStage: 'buried-root'
+            visualStage: 'seed-core'
         };
 
         thresholds.forEach(entry => {

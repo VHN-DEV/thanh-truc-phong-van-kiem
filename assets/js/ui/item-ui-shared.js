@@ -37,13 +37,13 @@ function getKimLoiTrucArtStageMeta(item) {
         return Input.getKimLoiTrucStageMeta(item);
     }
 
-    return { visualStage: 'buried-root' };
+    return { visualStage: 'seed-core' };
 }
 
 function buildMaterialArtMarkup(materialKey, item = null) {
     if (materialKey === 'KIM_LOI_TRUC_ROOT') {
         const stageMeta = getKimLoiTrucArtStageMeta(item);
-        const visualStage = stageMeta?.visualStage || 'buried-root';
+        const visualStage = stageMeta?.visualStage || 'seed-core';
 
         return `
             <div class="kim-loi-truc-mau-art kim-loi-truc-mau-art--${visualStage}" aria-hidden="true">

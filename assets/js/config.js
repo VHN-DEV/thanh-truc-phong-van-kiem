@@ -181,7 +181,7 @@ const CONFIG = {
             AUTO_YEARS_PER_SECOND: 2, // Số năm tự động gia tăng mỗi giây
             AUTO_UI_REFRESH_MS: 1000, // Thời gian làm mới giao diện người dùng tự động
             AUTO_SAVE_INTERVAL_MS: 5000, // Thời gian tự động lưu tiến trình nuôi dưỡng
-            CHUONG_ACCELERATION_YEARS: 180, // Số năm tăng tốc khi dùng Chuông Thiên Bình
+            CHUONG_ACCELERATION_YEARS: 1200, // Số năm tăng tốc mặc định khi dùng Chưởng Thiên Bình
             MAX_NURTURE_YEARS: 50000, // Giới hạn ôn dưỡng để người chơi có thể tiếp tục tăng sức mạnh kiếm sau mốc 1 vạn năm
             ROOT_SELLBACK_RATIO: 0.5, // Tỉ lệ hoàn lại khi bán nguyên liệu gốc (50% giá mua)
             REFINED_POWER_BASE: 100, // Công lực cơ bản của trúc luyện hóa
@@ -193,25 +193,25 @@ const CONFIG = {
                     years: 0,
                     label: "Kim Lôi Trúc Mẫu",
                     displayName: "Kim Lôi Trúc Mẫu",
-                    visualStage: "buried-root"
+                    visualStage: "seed-core"
                 },
                 {
                     years: 1,
                     label: "Bạch Lôi Trúc",
                     displayName: "Bạch Lôi Trúc - Sét trắng thường",
-                    visualStage: "swollen-mound"
+                    visualStage: "white-lightning"
                 },
                 {
                     years: 5000,
                     label: "Lam Lôi Trúc",
                     displayName: "Lam Lôi Trúc - Sét lam",
-                    visualStage: "sprout"
+                    visualStage: "azure-lightning"
                 },
                 {
                     years: 10000,
                     label: "Kim Lôi Trúc",
                     displayName: "Kim Lôi Trúc - Sét vàng kim",
-                    visualStage: "mature-bamboo"
+                    visualStage: "golden-lightning"
                 }
             ]
         }
@@ -924,8 +924,8 @@ const CONFIG = {
             buttonLabel: "Mua",
             inventoryActionLabel: "Gia tốc",
             isOneTime: true, // Chỉ sử dụng được một lần, sau khi dùng sẽ biến mất khỏi kho
-            cooldownMs: 60000, // Thời gian hồi chiêu sau khi sử dụng
-            nurtureBoostYears: 180, // Số năm gia tăng vào thời điểm hiện tại sau khi sử dụng
+            cooldownMs: 30000, // Thời gian hồi chiêu sau khi sử dụng
+            nurtureBoostYears: 1200, // Số năm gia tăng vào thời điểm hiện tại sau khi sử dụng
             description: "Bình nhỏ màu lục cổ, phủ kín hoa văn huyền ảo và tỏa khí tức thời gian. Có thể gia tốc thời quang, tích trữ lục dịch, thúc sinh cơ và bồi dưỡng linh dược. Đây là một Huyền thiên chi bảo chạm đến pháp tắc thời gian."
         },
         PHONG_LOI_SI: {
