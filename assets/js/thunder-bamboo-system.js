@@ -430,6 +430,113 @@
         return true;
     };
 
+    Input.getAlchemyConfig = function () {
+        return CONFIG.ALCHEMY || {};
+    };
+
+    Input.getAlchemyRecipesForMaterial = function (materialKey) {
+        const alchemyConfig = this.getAlchemyConfig();
+        const recipeMap = alchemyConfig.MATERIAL_RECIPE_MAP || {};
+        const recipeKeys = Array.isArray(recipeMap[materialKey]) ? recipeMap[materialKey] : [];
+        const recipeDefs = alchemyConfig.RECIPES || {};
+
+        return recipeKeys
+            .map(recipeKey => ({
+                key: recipeKey,
+                ...(recipeDefs[recipeKey] || {})
+            }))
+            .filter(recipe => recipe && recipe.name && recipe.output && Array.isArray(recipe.ingredients));
+    };
+
+    Input.getRecipeOwnedIngredientCount = function (materialKey) {
+        return Object.values(this.inventory || {}).reduce((total, entry) => {
+            if (!entry || entry.category !== 'MATERIAL' || entry.materialKey !== materialKey) return total;
+            return total + Math.max(0, Math.floor(Number(entry.count) || 0));
+        }, 0);
+    };
+
+    Input.canUseHuThienDinhForAlchemy = function () {
+        const alchemyConfig = this.getAlchemyConfig();
+        if (!alchemyConfig.ENABLED) return false;
+        if (!alchemyConfig.REQUIRES_HU_THIEN_DINH) return true;
+        return this.hasArtifactUnlocked('HU_THIEN_DINH') && this.isArtifactDeployed('HU_THIEN_DINH');
+    };
+
+    Input.canCraftAlchemyRecipe = function (recipe) {
+        if (!recipe || !Array.isArray(recipe.ingredients)) return false;
+        if (!this.canUseHuThienDinhForAlchemy()) return false;
+
+        return recipe.ingredients.every(ingredient => {
+            const need = Math.max(1, Math.floor(Number(ingredient.count) || 0));
+            const owned = this.getRecipeOwnedIngredientCount(ingredient.materialKey);
+            return owned >= need;
+        });
+    };
+
+    Input.getBestAvailableAlchemyRecipe = function (materialKey) {
+        const recipes = this.getAlchemyRecipesForMaterial(materialKey);
+        if (!recipes.length) return null;
+        return recipes.find(recipe => this.canCraftAlchemyRecipe(recipe)) || recipes[0];
+    };
+
+    Input.craftAlchemyRecipe = function (recipeKey) {
+        const alchemyConfig = this.getAlchemyConfig();
+        const recipe = alchemyConfig.RECIPES?.[recipeKey];
+        if (!recipe || !recipe.output || !Array.isArray(recipe.ingredients)) return false;
+
+        const huThienColor = this.getArtifactConfig('HU_THIEN_DINH')?.color || alchemyConfig.NOTIFY_COLOR || '#93c8d8';
+        if (!this.canUseHuThienDinhForAlchemy()) {
+            showNotify('Cần luyện hóa và triển khai Hư Thiên Đỉnh mới có thể khai đỉnh luyện đan.', huThienColor);
+            return false;
+        }
+
+        const missing = recipe.ingredients.find(ingredient => {
+            const need = Math.max(1, Math.floor(Number(ingredient.count) || 0));
+            return this.getRecipeOwnedIngredientCount(ingredient.materialKey) < need;
+        });
+        if (missing) {
+            const materialCfg = this.getMaterialConfig(missing.materialKey);
+            showNotify(
+                `Thiếu ${materialCfg?.fullName || missing.materialKey} để luyện ${recipe.name}.`,
+                '#ff8a80'
+            );
+            return false;
+        }
+
+        recipe.ingredients.forEach(ingredient => {
+            const need = Math.max(1, Math.floor(Number(ingredient.count) || 0));
+            this.consumeMaterial(ingredient.materialKey, need);
+        });
+
+        const output = recipe.output || {};
+        const outputCount = Math.max(1, Math.floor(Number(output.count) || 1));
+        const outputSpec = {
+            kind: 'PILL',
+            category: output.category || 'EXP',
+            quality: output.quality || 'LOW'
+        };
+
+        for (let i = 0; i < outputCount; i++) {
+            this.addInventoryItem(outputSpec, 1);
+        }
+
+        const outputName = this.getItemDisplayName(outputSpec);
+        showNotify(
+            `Hư Thiên Đỉnh luyện thành ${outputName} (${recipe.realmTier || 'Đan'}) theo ${recipe.name}.`,
+            huThienColor
+        );
+        this.refreshResourceUI();
+        return true;
+    };
+
+    Input.craftAlchemyFromMaterialItem = function (item) {
+        if (!item || item.category !== 'MATERIAL') return false;
+
+        const recipe = this.getBestAvailableAlchemyRecipe(item.materialKey);
+        if (!recipe?.key) return false;
+        return this.craftAlchemyRecipe(recipe.key);
+    };
+
     Input.useChuongThienBinh = function (item) {
         const qualityConfig = this.getItemQualityConfig(item);
         const cooldownRemainingMs = this.getChuongThienBinhCooldownRemainingMs();
@@ -686,6 +793,19 @@
                     ? `Bình đang hồi phục, còn ${getCountdownLabel(cooldownRemainingMs)}.`
                     : 'Bình đang rảnh, có thể thúc động ngay.'
             ].join(' ');
+        }
+
+        if (item?.category === 'MATERIAL') {
+            const baseDescription = baseGetItemDescription.call(this, item);
+            const recipes = this.getAlchemyRecipesForMaterial(item.materialKey);
+            if (!recipes.length) return baseDescription;
+
+            const recipeText = recipes.map(recipe => {
+                const canCraft = this.canCraftAlchemyRecipe(recipe);
+                return `${recipe.name} (${recipe.realmTier || 'Đan'}): ${canCraft ? 'đủ linh dược' : 'chưa đủ linh dược'}`;
+            }).join(' • ');
+
+            return `${baseDescription} Đan phương liên quan: ${recipeText}.`;
         }
 
         if (item?.category === 'SWORD_ARTIFACT') {
@@ -1058,6 +1178,24 @@
             return actions;
         }
 
+        if (item.category === 'MATERIAL') {
+            const recipe = this.getBestAvailableAlchemyRecipe(item.materialKey);
+            const hasRecipe = Boolean(recipe?.key);
+            const canUseDing = this.canUseHuThienDinhForAlchemy();
+
+            if (hasRecipe) {
+                actions.push({
+                    type: 'alchemy',
+                    label: canUseDing ? `Luyện ${recipe.realmTier || 'đan'}` : 'Dùng Hư Thiên Đỉnh',
+                    disabled: !canUseDing,
+                    variant: 'primary'
+                });
+            }
+
+            pushSellAction();
+            return actions.length ? actions : defaultActions;
+        }
+
         return defaultActions;
     };
 
@@ -1077,6 +1215,10 @@
 
         if (action === 'chuong') {
             return this.useChuongThienBinhOnTarget(item);
+        }
+
+        if (action === 'alchemy') {
+            return this.craftAlchemyFromMaterialItem(item);
         }
 
         if (action === 'noop') {
