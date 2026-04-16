@@ -2553,31 +2553,133 @@ Object.assign(Input, {
             setTimeout(() => fragment.remove(), 980);
         };
 
-        const spawnCloudLightning = (strikeIndex, strikePower) => {
-            if (!cloudLightningEl || !cloudEl) return;
+        const ensureTribulationLightningCanvas = () => {
+            if (!cloudLightningEl) return null;
+            let canvas = cloudLightningEl.querySelector('canvas');
+            if (!canvas) {
+                canvas = document.createElement('canvas');
+                canvas.className = 'tribulation-cloud-lightning-canvas';
+                cloudLightningEl.appendChild(canvas);
+            }
+            const rect = cloudLightningEl.getBoundingClientRect();
+            const pixelRatio = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+            const targetWidth = Math.max(1, Math.round(rect.width));
+            const targetHeight = Math.max(1, Math.round(rect.height));
+
+            if (canvas.width !== Math.round(targetWidth * pixelRatio) || canvas.height !== Math.round(targetHeight * pixelRatio)) {
+                canvas.width = Math.round(targetWidth * pixelRatio);
+                canvas.height = Math.round(targetHeight * pixelRatio);
+                canvas.style.width = `${targetWidth}px`;
+                canvas.style.height = `${targetHeight}px`;
+            }
+
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return null;
+            ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+            return { canvas, ctx, width: targetWidth, height: targetHeight };
+        };
+
+        const drawTribulationLightning = (strikePower) => {
+            const renderContext = ensureTribulationLightningCanvas();
+            if (!renderContext || !cloudEl) return;
+            const { canvas, ctx, width, height } = renderContext;
             const cloudRect = cloudEl.getBoundingClientRect();
             const wrapRect = cloudLightningEl.getBoundingClientRect();
             if (!cloudRect.width || !wrapRect.width) return;
 
-            const boltCount = Math.min(9, 3 + Math.floor(strikePower));
-            const cloudBoltVariants = ['tribulation-cloud-bolt--branch', 'tribulation-cloud-bolt--thick', ''];
-            for (let i = 0; i < boltCount; i += 1) {
-                const cloudBolt = document.createElement('div');
-                cloudBolt.className = 'tribulation-cloud-bolt';
-                const variant = cloudBoltVariants[(strikeIndex + i) % cloudBoltVariants.length];
-                if (variant) cloudBolt.classList.add(variant);
-                const offsetRatio = (i + 1) / (boltCount + 1);
-                const jitter = (Math.random() - 0.5) * 0.22;
-                const left = (cloudRect.left - wrapRect.left) + (cloudRect.width * (offsetRatio + jitter));
-                const rotate = (Math.random() - 0.5) * (8 + strikePower * 1.8);
-                const scale = (0.86 + Math.random() * 0.46).toFixed(2);
-                cloudBolt.style.left = `${Math.max(12, Math.min(wrapRect.width - 12, left))}px`;
-                cloudBolt.style.transform = `translateX(-50%) rotate(${rotate}deg) scaleX(${scale})`;
-                cloudBolt.style.animationDelay = `${(i % 3) * 0.035}s`;
-                cloudLightningEl.appendChild(cloudBolt);
-                requestAnimationFrame(() => cloudBolt.classList.add('is-striking'));
-                setTimeout(() => cloudBolt.remove(), 520 + (strikeIndex * 12));
-            }
+            const cloudCenterX = (cloudRect.left - wrapRect.left) + (cloudRect.width / 2);
+            const topAnchor = Math.max(10, (cloudRect.top - wrapRect.top) + (cloudRect.height * 0.35));
+            const strikeDistance = Math.max(120, height - topAnchor - 18);
+            const depthRatio = Math.max(0, Math.min(1, strikePower / 7));
+            const branchChance = Math.min(0.38, 0.14 + (depthRatio * 0.2));
+            const spreadDeg = 10 + Math.round(depthRatio * 18);
+            const speedPx = 18 + Math.round(depthRatio * 14);
+
+            const rand = (min, max) => Math.random() * (max - min) + min;
+            const toRadians = (deg) => (deg * Math.PI) / 180;
+            let totalBranches = 0;
+            const maxTotalBranches = 18 + Math.floor(depthRatio * 12);
+            const maxSegmentsPerBolt = 120;
+            const drawBolt = ({ startX, startY, angle, length, depth, maxDepth }) => {
+                let x = startX;
+                let y = startY;
+                let lastAngle = angle;
+                let remaining = Math.max(0, length);
+                let segmentCount = 0;
+
+                while (remaining > 0 && segmentCount < maxSegmentsPerBolt) {
+                    const segmentLength = Math.min(remaining, rand(speedPx * 0.7, speedPx * 1.2));
+                    const angleChange = rand(1, Math.max(2, spreadDeg));
+                    lastAngle += (Math.random() > 0.5 ? 1 : -1) * angleChange;
+                    const radians = toRadians(lastAngle);
+                    const nextX = x + (Math.cos(radians) * segmentLength);
+                    const nextY = y + (Math.sin(radians) * segmentLength);
+
+                    ctx.beginPath();
+                    ctx.moveTo(x, y);
+                    ctx.lineTo(nextX, nextY);
+                    ctx.stroke();
+
+                    x = nextX;
+                    y = nextY;
+                    remaining -= segmentLength;
+                    segmentCount += 1;
+
+                    const canBranch = depth < maxDepth && totalBranches < maxTotalBranches && remaining > speedPx * 0.5;
+                    if (canBranch && Math.random() < branchChance) {
+                        totalBranches += 1;
+                        drawBolt({
+                            startX: x,
+                            startY: y,
+                            angle: lastAngle + rand(-68, 68),
+                            length: remaining * rand(0.32, 0.72),
+                            depth: depth + 1,
+                            maxDepth
+                        });
+                    }
+                }
+            };
+
+            ctx.clearRect(0, 0, width, height);
+            ctx.globalCompositeOperation = 'screen';
+            ctx.lineCap = 'round';
+            ctx.shadowColor = 'rgba(236, 252, 255, 0.95)';
+            ctx.shadowBlur = 9 + (strikePower * 1.6);
+            ctx.lineWidth = Math.max(1.6, 2.1 + (depthRatio * 1.3));
+            ctx.strokeStyle = 'rgba(236, 252, 255, 0.96)';
+
+            drawBolt({
+                startX: cloudCenterX + rand(-22, 22),
+                startY: topAnchor,
+                length: strikeDistance,
+                angle: 90 + rand(-6, 6),
+                depth: 0,
+                maxDepth: 2 + Math.floor(depthRatio * 3)
+            });
+
+            const fadeStartMs = 72;
+            const fadeDurationMs = 360;
+            setTimeout(() => {
+                const fadeStartedAt = performance.now();
+                const fadeStep = () => {
+                    const elapsed = performance.now() - fadeStartedAt;
+                    const progress = Math.min(1, elapsed / fadeDurationMs);
+                    ctx.fillStyle = `rgba(0, 0, 0, ${0.08 + (progress * 0.24)})`;
+                    ctx.fillRect(0, 0, width, height);
+                    if (progress < 1) {
+                        requestAnimationFrame(fadeStep);
+                    } else {
+                        ctx.clearRect(0, 0, width, height);
+                    }
+                };
+                requestAnimationFrame(fadeStep);
+            }, fadeStartMs);
+
+            setTimeout(() => {
+                if (canvas.parentElement === cloudLightningEl) {
+                    cloudLightningEl.removeChild(canvas);
+                }
+            }, 720);
         };
 
         const spawnPreStrikeBolts = (strikeIndex, strikePower) => {
@@ -2624,7 +2726,7 @@ Object.assign(Input, {
                 contentEl.style.setProperty('--tribulation-strike-power', strikePower.toFixed(2));
             }
             cloudEl?.classList.add('is-striking');
-            spawnCloudLightning(this.tribulation.currentStrike, strikePower);
+            drawTribulationLightning(strikePower);
             spawnPreStrikeBolts(this.tribulation.currentStrike, strikePower);
 
             const mainStrikeDelay = Math.round(130 + Math.min(140, strikePower * 13));
