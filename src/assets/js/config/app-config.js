@@ -6,10 +6,10 @@
 };
 
 const QUALITY_META_BASE = {
-    LOW: { label: "H\u1ea1 ph\u1ea9m", radius: QUALITY_RADIUS_BASE.LOW.radius },
-    MEDIUM: { label: "Trung ph\u1ea9m", radius: QUALITY_RADIUS_BASE.MEDIUM.radius },
-    HIGH: { label: "Th\u01b0\u1ee3ng ph\u1ea9m", radius: QUALITY_RADIUS_BASE.HIGH.radius },
-    SUPREME: { label: "C\u1ef1c ph\u1ea9m", radius: QUALITY_RADIUS_BASE.SUPREME.radius }
+    LOW: { label: "Hạ phẩm", radius: QUALITY_RADIUS_BASE.LOW.radius },
+    MEDIUM: { label: "Trung phẩm", radius: QUALITY_RADIUS_BASE.MEDIUM.radius },
+    HIGH: { label: "Thượng phẩm", radius: QUALITY_RADIUS_BASE.HIGH.radius },
+    SUPREME: { label: "Cực phẩm", radius: QUALITY_RADIUS_BASE.SUPREME.radius }
 };
 
 const PILL_TYPE_BASE = {
@@ -960,9 +960,10 @@ const CONFIG = {
             ELITE: { LOW: 0.10, MEDIUM: 0.60, HIGH: 0.30 }
         },
         TYPES: createTieredConfig({
-            LOW: { name: "H\u1ea1 ph\u1ea9m", boost: 0.02, color: "#00ffcc" },
-            MEDIUM: { name: "Trung ph\u1ea9m", boost: 0.05, color: "#00aaff" },
-            HIGH: { name: "Th\u01b0\u1ee3ng ph\u1ea9m", boost: 0.12, color: "#ffcc00" }
+            LOW: { name: "Hạ phẩm", boost: 0.02, color: "#00ffcc" },
+            MEDIUM: { name: "Trung phẩm", boost: 0.05, color: "#00aaff" },
+            HIGH: { name: "Thượng phẩm", boost: 0.12, color: "#ffcc00" },
+            PERFECT: { name: "Cực phẩm", boost: 0.25, color: "#ff33cc" },
         }, PILL_TYPE_BASE),
         CATEGORY_SORT: {
             EXP: 0, // Loại thưởng EXP
