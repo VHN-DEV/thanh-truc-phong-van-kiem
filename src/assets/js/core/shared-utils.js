@@ -80,33 +80,43 @@ function escapeHtml(value) {
         .replace(/'/g, '&#39;');
 }
 
-function resolveImagePathFromPublic(imagePath) {
-    const normalizedPath = String(imagePath || '').trim();
-    if (!normalizedPath) {
+function normalizeImageAssetName(imageName) {
+    const normalizedPath = String(imageName || '')
+        .trim()
+        .replace(/\\/g, '/')
+        .replace(/[?#].*$/, '');
+
+    if (!normalizedPath) return '';
+
+    const imageRootMarker = '/assets/images/';
+    const markerIndex = normalizedPath.indexOf(imageRootMarker);
+    if (markerIndex !== -1) {
+        return normalizedPath.slice(markerIndex + imageRootMarker.length);
+    }
+
+    return normalizedPath
+        .replace(/^\.?\/?(?:src\/)?assets\/images\//, '')
+        .replace(/^\.?\/?public\/assets\/images\//, '')
+        .replace(/^\.?\/+/, '');
+}
+
+function resolveImagePathFromPublic(imageName) {
+    const normalizedImageName = normalizeImageAssetName(imageName);
+    if (!normalizedImageName) {
         return {
             primarySrc: '',
             fallbackSrc: ''
         };
     }
 
-    const withoutPublicPrefix = normalizedPath.replace(/^\.?\/?public\//, './');
-    const hasAssetImageSegment = /(?:^|\/)assets\/images\//.test(withoutPublicPrefix);
-    const primarySrc = hasAssetImageSegment
-        ? withoutPublicPrefix.replace(/^\.?\/?/, './')
-        : withoutPublicPrefix;
-
-    const fallbackSrc = primarySrc.includes('/assets/images/')
-        ? primarySrc.replace('/assets/images/', '/src/assets/images/')
-        : '';
-
     return {
-        primarySrc,
-        fallbackSrc: fallbackSrc !== primarySrc ? fallbackSrc : ''
+        primarySrc: `./assets/images/${normalizedImageName}`,
+        fallbackSrc: `./src/assets/images/${normalizedImageName}`
     };
 }
 
-function buildImageSrcWithFallbackMarkup(imagePath) {
-    const { primarySrc, fallbackSrc } = resolveImagePathFromPublic(imagePath);
+function buildImageSrcWithFallbackMarkup(imageName) {
+    const { primarySrc, fallbackSrc } = resolveImagePathFromPublic(imageName);
     if (!primarySrc) {
         return 'src=""';
     }

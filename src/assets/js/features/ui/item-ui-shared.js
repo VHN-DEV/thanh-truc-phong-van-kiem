@@ -93,33 +93,36 @@ function buildMaterialArtMarkup(materialKey, item = null) {
 
 function buildChuongThienBinhVisualMarkup() {
     const imagePath = CONFIG.IMAGES?.ARTIFACTS?.CHUONG_THIEN_BINH || '';
+    const imageName = normalizeImageAssetName(imagePath);
     return `
         <div class="chuong-thien-binh-art" aria-hidden="true">
             <span class="chuong-thien-binh-art__halo"></span>
             <span class="chuong-thien-binh-art__particle chuong-thien-binh-art__particle--1"></span>
             <span class="chuong-thien-binh-art__particle chuong-thien-binh-art__particle--2"></span>
             <span class="chuong-thien-binh-art__particle chuong-thien-binh-art__particle--3"></span>
-            <img ${buildImageSrcWithFallbackMarkup(imagePath)} class="chuong-thien-binh-art__image" alt="">
+            <img ${buildImageSrcWithFallbackMarkup(imageName)} class="chuong-thien-binh-art__image" alt="">
         </div>
     `;
 }
 
 function buildPhongLoiArtifactVisualMarkup() {
     const imagePath = CONFIG.IMAGES?.ARTIFACTS?.PHONG_LOI_SI || '';
+    const imageName = normalizeImageAssetName(imagePath);
     return `
         <div class="phong-loi-art" aria-hidden="true">
             <span class="phong-loi-art__halo"></span>
-            <img ${buildImageSrcWithFallbackMarkup(imagePath)} class="phong-loi-art__image" alt="">
+            <img ${buildImageSrcWithFallbackMarkup(imageName)} class="phong-loi-art__image" alt="">
         </div>
     `;
 }
 
 function buildStaticArtifactImageVisualMarkup(imagePath, variantClass = '') {
     const wrapperClass = ['artifact-svg-art', variantClass].filter(Boolean).join(' ');
+    const imageName = normalizeImageAssetName(imagePath);
     return `
         <div class="${wrapperClass}" aria-hidden="true">
             <span class="artifact-svg-art__halo"></span>
-            <img ${buildImageSrcWithFallbackMarkup(imagePath)} class="artifact-svg-art__image" alt="">
+            <img ${buildImageSrcWithFallbackMarkup(imageName)} class="artifact-svg-art__image" alt="">
         </div>
     `;
 }
@@ -165,11 +168,12 @@ function buildThanhTrucSwordArtifactVisualMarkup() {
 
 function buildItemImageVisualMarkup(imagePath, { coreClass = '', imageClass = '', extraMarkup = '' } = {}) {
     const imageClasses = ['pill-visual__item-icon', imageClass].filter(Boolean).join(' ');
+    const imageName = normalizeImageAssetName(imagePath);
 
     return `
         <span class="pill-visual__core ${coreClass}"></span>
         ${extraMarkup}
-        <img ${buildImageSrcWithFallbackMarkup(imagePath)} class="${imageClasses}" alt="">
+        <img ${buildImageSrcWithFallbackMarkup(imageName)} class="${imageClasses}" alt="">
     `;
 }
 
