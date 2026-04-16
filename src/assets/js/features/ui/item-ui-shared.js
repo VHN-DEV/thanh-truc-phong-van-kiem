@@ -99,7 +99,7 @@ function buildChuongThienBinhVisualMarkup() {
             <span class="chuong-thien-binh-art__particle chuong-thien-binh-art__particle--1"></span>
             <span class="chuong-thien-binh-art__particle chuong-thien-binh-art__particle--2"></span>
             <span class="chuong-thien-binh-art__particle chuong-thien-binh-art__particle--3"></span>
-            <img src="${imagePath}" class="chuong-thien-binh-art__image" alt="">
+            <img ${buildImageSrcWithFallbackMarkup(imagePath)} class="chuong-thien-binh-art__image" alt="">
         </div>
     `;
 }
@@ -109,7 +109,7 @@ function buildPhongLoiArtifactVisualMarkup() {
     return `
         <div class="phong-loi-art" aria-hidden="true">
             <span class="phong-loi-art__halo"></span>
-            <img src="${imagePath}" class="phong-loi-art__image" alt="">
+            <img ${buildImageSrcWithFallbackMarkup(imagePath)} class="phong-loi-art__image" alt="">
         </div>
     `;
 }
@@ -119,7 +119,7 @@ function buildStaticArtifactImageVisualMarkup(imagePath, variantClass = '') {
     return `
         <div class="${wrapperClass}" aria-hidden="true">
             <span class="artifact-svg-art__halo"></span>
-            <img src="${imagePath}" class="artifact-svg-art__image" alt="">
+            <img ${buildImageSrcWithFallbackMarkup(imagePath)} class="artifact-svg-art__image" alt="">
         </div>
     `;
 }
@@ -169,7 +169,7 @@ function buildItemImageVisualMarkup(imagePath, { coreClass = '', imageClass = ''
     return `
         <span class="pill-visual__core ${coreClass}"></span>
         ${extraMarkup}
-        <img src="${imagePath}" class="${imageClasses}" alt="">
+        <img ${buildImageSrcWithFallbackMarkup(imagePath)} class="${imageClasses}" alt="">
     `;
 }
 

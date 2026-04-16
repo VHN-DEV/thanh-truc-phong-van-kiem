@@ -80,6 +80,46 @@ function escapeHtml(value) {
         .replace(/'/g, '&#39;');
 }
 
+function resolveImagePathFromPublic(imagePath) {
+    const normalizedPath = String(imagePath || '').trim();
+    if (!normalizedPath) {
+        return {
+            primarySrc: '',
+            fallbackSrc: ''
+        };
+    }
+
+    const withoutPublicPrefix = normalizedPath.replace(/^\.?\/?public\//, './');
+    const hasAssetImageSegment = /(?:^|\/)assets\/images\//.test(withoutPublicPrefix);
+    const primarySrc = hasAssetImageSegment
+        ? withoutPublicPrefix.replace(/^\.?\/?/, './')
+        : withoutPublicPrefix;
+
+    const fallbackSrc = primarySrc.includes('/assets/images/')
+        ? primarySrc.replace('/assets/images/', '/src/assets/images/')
+        : '';
+
+    return {
+        primarySrc,
+        fallbackSrc: fallbackSrc !== primarySrc ? fallbackSrc : ''
+    };
+}
+
+function buildImageSrcWithFallbackMarkup(imagePath) {
+    const { primarySrc, fallbackSrc } = resolveImagePathFromPublic(imagePath);
+    if (!primarySrc) {
+        return 'src=""';
+    }
+
+    const safePrimary = escapeHtml(primarySrc);
+    if (!fallbackSrc) {
+        return `src="${safePrimary}"`;
+    }
+
+    const safeFallback = escapeHtml(fallbackSrc);
+    return `src="${safePrimary}" onerror="if(!this.dataset.fallbackApplied){this.dataset.fallbackApplied='1';this.src='${safeFallback}';}"`;
+}
+
 function buildItemDescriptionContentMarkup(description) {
     const normalizedDescription = repairLegacyText(description).trim();
     const sideEffectMarker = 'Tác dụng phụ:';
