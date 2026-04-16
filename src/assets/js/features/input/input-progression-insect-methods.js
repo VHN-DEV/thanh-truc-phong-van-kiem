@@ -1596,6 +1596,10 @@ Object.assign(Input, {
     },
 
     getSwordConsciousnessStat() {
+        const currentRank = this.getCurrentRank();
+        const rankConsciousness = Math.floor(Number(currentRank?.consciousness) || 0);
+        if (rankConsciousness > 0) return rankConsciousness;
+
         return Math.max(1, this.rankIndex + 1);
     },
 

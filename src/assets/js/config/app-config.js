@@ -1561,4 +1561,16 @@ const CONFIG = {
 CONFIG.ENEMY.MAX_SHIELD_CRACK_LINES = 48; // Số lượng đường nứt tối đa trên khiên hoặc lá chắn của quái vật (giúp cân bằng hiệu ứng nứt khi có nhiều đòn đánh liên tiếp)
 CONFIG.ENEMY.MAX_SHIELD_CRACK_RINGS = 4; // Số lượng vòng nứt tối đa trên khiên hoặc lá chắn của quái vật
 
+// Thần thức nên đi theo từng cảnh giới trong RANKS.
+// Nếu rank chưa khai báo consciousness thủ công thì tự suy ra theo id/rankIndex để tương thích save cũ.
+CONFIG.CULTIVATION.RANKS = (CONFIG.CULTIVATION.RANKS || []).map((rank, index) => {
+    const fallbackConsciousness = Math.max(1, Math.floor(Number(rank?.id) || (index + 1)));
+    const configuredConsciousness = Math.floor(Number(rank?.consciousness) || 0);
+
+    return {
+        ...rank,
+        consciousness: Math.max(1, configuredConsciousness || fallbackConsciousness)
+    };
+});
+
 // <!-- Create By: Vũ Hoài Nam -->
