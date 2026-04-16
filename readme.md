@@ -7,6 +7,32 @@ Demo game tu tiên hành động 2D viết bằng `HTML5 Canvas`, nơi người 
 - Demo trực tuyến: [https://vhn-dev.github.io/thanh-truc-phong-van-kiem/](https://vhn-dev.github.io/thanh-truc-phong-van-kiem/)
 - Mã nguồn GitHub: [https://github.com/VHN-DEV/thanh-truc-phong-van-kiem](https://github.com/VHN-DEV/thanh-truc-phong-van-kiem)
 
+## ✦ Cấu trúc thư mục (đã chuẩn hoá)
+
+```text
+.
+├─ src/
+│  └─ assets/
+│     ├─ css/
+│     ├─ js/
+│     │  ├─ app/
+│     │  ├─ config/
+│     │  ├─ state/
+│     │  ├─ core/
+│     │  ├─ entities/
+│     │  ├─ features/
+│     │  └─ vendors/
+│     ├─ images/
+│     └─ fonts/
+├─ public/                 # build output để deploy
+├─ gulpfile.js             # pipeline build
+└─ package.json            # script build/watch
+```
+
+- Source code phát triển nằm trong `src/assets/*`.
+- Thư mục `public/assets/*` là output được tạo qua gulp.
+
+
 ## ✦ Tổng quan trải nghiệm
 
 Vòng chơi chính của dự án xoay quanh việc di chuyển tâm trận trên bản đồ, áp sát quái để tấn công, thu nhặt chiến lợi phẩm, dùng tài nguyên để tăng sức mạnh và tiếp tục đột phá lên cảnh giới cao hơn. Đây không chỉ là một demo hiệu ứng kiếm trận, mà đã phát triển thành một game loop hoàn chỉnh với nhiều lớp tiến triển:
