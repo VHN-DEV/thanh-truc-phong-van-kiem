@@ -242,4 +242,55 @@ class StarField {
 
         ctx.restore();
     }
+
+    drawSparkStreams(ctx, scaleFactor) {
+        const canvasWidth = ctx.canvas?.width || this.width;
+        const canvasHeight = ctx.canvas?.height || this.height;
+        for (let i = 0; i < this.sparkStreams.length; i++) {
+            const stream = this.sparkStreams[i];
+
+            if (!stream.active && Math.random() < 0.012) {
+                stream.active = true;
+                stream.timer = 1;
+                stream.x = random(-canvasWidth * 0.2, canvasWidth * 1.2);
+                stream.y = random(-canvasHeight * 0.2, canvasHeight * 1.2);
+                stream.angle = random(-Math.PI, Math.PI);
+                stream.length = random(80, 180);
+            }
+
+            if (!stream.active) continue;
+
+            stream.timer -= 0.06;
+            if (stream.timer <= 0) {
+                stream.active = false;
+                continue;
+            }
+
+            const endX = stream.x + Math.cos(stream.angle) * stream.length * scaleFactor;
+            const endY = stream.y + Math.sin(stream.angle) * stream.length * scaleFactor;
+            const grad = ctx.createLinearGradient(stream.x, stream.y, endX, endY);
+            grad.addColorStop(0, `rgba(160,255,255,${stream.timer * 0.5})`);
+            grad.addColorStop(1, 'rgba(80,180,255,0)');
+
+            ctx.strokeStyle = grad;
+            ctx.lineWidth = 1.2 * scaleFactor;
+            ctx.beginPath();
+            ctx.moveTo(stream.x, stream.y);
+            ctx.lineTo(endX, endY);
+            ctx.stroke();
+        }
+    }
+
+    draw(ctx, scaleFactor) {
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.shadowBlur = 0;
+
+        const timeSec = performance.now() * 0.001;
+        this.drawNebulae(ctx, scaleFactor, timeSec);
+        this.drawStars(ctx, scaleFactor, timeSec);
+        this.drawSparkStreams(ctx, scaleFactor);
+
+        ctx.restore();
+    }
 }
