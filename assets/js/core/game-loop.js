@@ -664,8 +664,13 @@ function animate() {
     requestAnimationFrame(animate);
 }
 
-(async function boot() {
+let hasBootedGame = false;
+async function bootGame() {
+    if (hasBootedGame) return;
+    hasBootedGame = true;
+
     await preloadEnemyIcons();
+
     if (startButton) {
         startButton.addEventListener('click', () => startGame());
     }
@@ -677,5 +682,5 @@ function animate() {
         showStartOverlay('Đại Canh Kiếm Trận', 'Đạo tâm sơ ngộ, hãy điểm Bắt đầu để nhập giới tu hành.');
     }
     animate();
-})();
+}
 // <!-- Create By: Vũ Hoài Nam -->

@@ -51,6 +51,7 @@ gulp.task('build-js', function () {
     'assets/js/libs/three/three.min.js',
     'assets/js/libs/three/OrbitControls.js',
     'assets/js/libs/seedrandom/seedrandom.min.js',
+    'assets/js/main.js',
   ])
     .pipe(concat('scripts.js'))
     .pipe(terser())
