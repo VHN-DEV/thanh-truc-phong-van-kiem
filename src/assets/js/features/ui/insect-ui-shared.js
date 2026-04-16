@@ -222,13 +222,14 @@ function buildEggShellSvg(uid, content) {
 
 function buildInsectImageMarkup(species, slug, { egg = false } = {}) {
     const classes = ['insect-art', 'insect-art--image', `insect-art--${slug}`];
+    const imageName = normalizeImageAssetName(species.imagePath);
     if (egg) classes.push('is-egg');
 
     return `
         <div class="${classes.join(' ')}" aria-hidden="true">
             <span class="insect-art__halo"></span>
             ${egg ? '<span class="insect-art__egg-shell"></span><span class="insect-art__egg-sheen"></span>' : ''}
-            <img src="${species.imagePath}" class="insect-art__image" alt="">
+            <img ${buildImageSrcWithFallbackMarkup(imageName)} class="insect-art__image" alt="">
         </div>
     `;
 }

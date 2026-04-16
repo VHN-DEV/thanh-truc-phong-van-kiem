@@ -80,6 +80,38 @@ function escapeHtml(value) {
         .replace(/'/g, '&#39;');
 }
 
+function resolveImagePathFromPublic(imageName) {
+    const normalizedImageName = typeof normalizeImageAssetName === 'function'
+        ? normalizeImageAssetName(imageName)
+        : String(imageName || '').trim();
+    if (!normalizedImageName) {
+        return {
+            primarySrc: '',
+            fallbackSrc: ''
+        };
+    }
+
+    return {
+        primarySrc: `./assets/images/${normalizedImageName}`,
+        fallbackSrc: `./src/assets/images/${normalizedImageName}`
+    };
+}
+
+function buildImageSrcWithFallbackMarkup(imageName) {
+    const { primarySrc, fallbackSrc } = resolveImagePathFromPublic(imageName);
+    if (!primarySrc) {
+        return 'src=""';
+    }
+
+    const safePrimary = escapeHtml(primarySrc);
+    if (!fallbackSrc) {
+        return `src="${safePrimary}"`;
+    }
+
+    const safeFallback = escapeHtml(fallbackSrc);
+    return `src="${safePrimary}" onerror="if(!this.dataset.fallbackApplied){this.dataset.fallbackApplied='1';this.src='${safeFallback}';}"`;
+}
+
 function buildItemDescriptionContentMarkup(description) {
     const normalizedDescription = repairLegacyText(description).trim();
     const sideEffectMarker = 'Tác dụng phụ:';
