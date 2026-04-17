@@ -4902,6 +4902,12 @@ select.shop-control-input {
 }
 
 @media (max-width: 720px) {
+    .popup-overlay {
+        padding-top: max(8px, env(safe-area-inset-top));
+        padding-bottom: max(8px, env(safe-area-inset-bottom));
+        box-sizing: border-box;
+    }
+
     .controls-layer {
         .setting-group {
             top: 135px;
@@ -4916,19 +4922,23 @@ select.shop-control-input {
         }
     }
 
+    .popup-content,
+    .popup-content-wide,
+    .popup-content-profile,
+    .popup-content-beast {
+        max-height: calc(100dvh - max(8px, env(safe-area-inset-top)) - max(8px, env(safe-area-inset-bottom)) - 4px);
+    }
+
     .popup-content-wide {
         width: calc(100% - 8px);
-        max-height: 92vh;
     }
 
     .popup-content-profile {
         width: calc(100% - 8px);
-        max-height: 92vh;
     }
 
     .popup-content-beast {
         width: calc(100% - 8px);
-        max-height: 92vh;
     }
 
     .popup-header {
