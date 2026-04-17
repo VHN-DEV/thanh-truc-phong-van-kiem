@@ -1715,7 +1715,8 @@ Object.assign(Input, {
     },
 
     getShopRestockIntervalMs() {
-        return 60 * 60 * 1000;
+        const restockMinutes = Math.max(1, Math.floor(Number(CONFIG?.SHOP?.RESTOCK_INTERVAL_MINUTES) || 60));
+        return restockMinutes * 60 * 1000;
     },
 
     isShopLimitedStockItem(item) {
