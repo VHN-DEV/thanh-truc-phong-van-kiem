@@ -110,8 +110,8 @@ const CONFIG = {
     },
     BG: {
         STAR_COUNT: 1000,                       // Tổng số lượng sao trên nền trời
-        STAR_RENDER_MIN_COUNT: 4000,            // [Bổ sung] Số hạt nền tối thiểu cho lớp particle 3D để tránh nền bị quá thưa
-        STAR_RENDER_DEFAULT_COUNT: 8000,        // [Bổ sung] Giá trị mặc định cho lớp particle 3D khi STAR_COUNT chưa sẵn sàng
+        STAR_RENDER_MIN_COUNT: 4000,            // Số hạt nền tối thiểu cho lớp particle 3D để tránh nền bị quá thưa
+        STAR_RENDER_DEFAULT_COUNT: 8000,        // Giá trị mặc định cho lớp particle 3D khi STAR_COUNT chưa sẵn sàng
         STAR_SIZE: { MIN: 0.5, MAX: 2 },        // Kích thước ngẫu nhiên của hạt sao
         STAR_ALPHA: { MIN: 0.2, MAX: 1 },       // Độ trong suốt ngẫu nhiên của sao
         STAR_TWINKLE_SPEED: 0.01                // Tốc độ nhấp nháy của sao
@@ -302,9 +302,9 @@ const CONFIG = {
         SPAWN_PADDING: 50,                // Khoảng cách an toàn từ mép màn hình khi quái xuất hiện
         ELITE_MULT: 5, // Hệ số nhân phần thưởng cho quái Tinh Anh
         ELITE_CHANCE: 0.01,               // Tỉ lệ quái tinh anh xuất hiện (1%)
-        CONTACT_RADIUS: 44,               // [Bổ sung] Bán kính tiếp xúc cơ bản để kích hoạt logic tấn công cận chiến của quái
-        MAX_MELEE_STRIKES: 120,           // [Bổ sung] Giới hạn số đòn cận chiến đang chờ xử lý để tránh phình mảng hiệu ứng
-        MAX_HOSTILE_PROJECTILES: 260,     // [Bổ sung] Giới hạn số phi đạn thù địch tồn tại đồng thời để giữ ổn định hiệu năng
+        CONTACT_RADIUS: 44,               // Bán kính tiếp xúc cơ bản để kích hoạt logic tấn công cận chiến của quái
+        MAX_MELEE_STRIKES: 120,           // Giới hạn số đòn cận chiến đang chờ xử lý để tránh phình mảng hiệu ứng
+        MAX_HOSTILE_PROJECTILES: 260,     // Giới hạn số phi đạn thù địch tồn tại đồng thời để giữ ổn định hiệu năng
         BASE_SIZE: { MIN: 10, VAR: 50 },  // Công thức kích thước: r = MIN + random^1.5 * VAR
         GUARANTEED_PLAYER_SCALE_COUNT: 1, // Số lượng quái luôn bám theo cấp người chơi
         GUARANTEED_COUNT: 3,              // Số lượng quái vừa sức luôn xuất hiện mỗi lần spawn
@@ -322,8 +322,8 @@ const CONFIG = {
         SHIELD_CHANCE: 0.3,                         // Tỉ lệ quái sinh ra có khiên (0.3 = 30%)
         SHIELD_COLOR: "rgba(100, 200, 255, 0.4)", // Màu lõi khiên
         SHIELD_LINE: "#80dfff",                     // Màu nét vẽ vết nứt khiên
-        MAX_SHIELD_CRACK_LINES: 48,                 // [Bổ sung] Số lượng đường nứt tối đa trên khiên/lá chắn để tránh quá dày khi nhận nhiều hit liên tiếp
-        MAX_SHIELD_CRACK_RINGS: 4,                  // [Bổ sung] Số vòng nứt tối đa hiển thị đồng thời trên khiên/lá chắn
+        MAX_SHIELD_CRACK_LINES: 48,                 // Số lượng đường nứt tối đa trên khiên/lá chắn để tránh quá dày khi nhận nhiều hit liên tiếp
+        MAX_SHIELD_CRACK_RINGS: 4,                  // Số vòng nứt tối đa hiển thị đồng thời trên khiên/lá chắn
         SHIELD_HP_RATIO: 0.1,                       // 0.1 tương đương 10% máu quái
         RECOVERY_DELAY_MS: 3000,                    // Thời gian chờ sau khi bị tấn công trước khi bắt đầu hồi phục khiên
         RECOVERY_SPEED_PER_SEC: 0.05,               // Tốc độ hồi phục khiên mỗi giây (0.05 = 5% HP khiên mỗi giây)
