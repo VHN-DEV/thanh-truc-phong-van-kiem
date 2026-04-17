@@ -2610,6 +2610,35 @@ select.shop-control-input {
                     8px 0 0 rgba(255, 240, 184, 0.86);
             }
         }
+
+        &--herb {
+            width: 20px;
+            height: 20px;
+
+            &::before {
+                left: 9px;
+                top: 3px;
+                width: 2px;
+                height: 14px;
+                border-radius: 999px;
+                background: linear-gradient(180deg, rgba(241, 255, 238, 0.96), rgba(156, 248, 189, 0.54));
+                box-shadow: 0 0 8px rgba(126, 238, 178, 0.34);
+            }
+
+            &::after {
+                left: 4px;
+                top: 7px;
+                width: 12px;
+                height: 8px;
+                border-radius: 10px 10px 10px 2px;
+                border: 1px solid rgba(234, 255, 234, 0.86);
+                background: linear-gradient(180deg, rgba(213, 255, 208, 0.86), rgba(101, 224, 153, 0.2));
+                transform: rotate(-30deg);
+                box-shadow:
+                    7px -2px 0 -1px rgba(210, 255, 208, 0.7),
+                    7px -2px 0 0 rgba(111, 228, 164, 0.26);
+            }
+        }
     }
 
     &__core--flame {

@@ -282,7 +282,10 @@ function buildPillVisualMarkup(item, qualityConfig, options = {}) {
         : visual.className === 'is-material'
             ? buildMaterialArtMarkup(item.materialKey, item)
         : visual.className === 'is-alchemy-recipe'
-            ? buildAlchemyRecipeVisualMarkup(item)
+            ? `
+                <span class="pill-visual__core pill-visual__core--book"></span>
+                <span class="pill-visual__cover-seal pill-visual__cover-seal--herb"></span>
+            `
         : visual.className === 'is-alchemy-furnace'
             ? buildAlchemyFurnaceVisualMarkup(item)
         : visual.isBagLike
@@ -328,6 +331,7 @@ function buildPillVisualMarkup(item, qualityConfig, options = {}) {
             : visual.className === 'is-insect-artifact'
                 ? `
                     <span class="pill-visual__core pill-visual__core--book"></span>
+                    <span class="pill-visual__cover-seal pill-visual__cover-seal--insect"></span>
                 `
         : `
             <span class="pill-visual__core"></span>
