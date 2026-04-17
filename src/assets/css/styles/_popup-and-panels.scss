@@ -5480,7 +5480,9 @@ select.shop-control-input {
     }
 
     .shop-page-status {
-        width: 100%;
+        width: auto;
+        flex: 0 0 auto;
+        white-space: nowrap;
         text-align: center;
     }
 }
