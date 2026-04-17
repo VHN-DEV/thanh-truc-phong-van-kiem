@@ -434,7 +434,7 @@ Object.assign(Input, {
     performUnarmedTapStrike(strikePoint = null) {
         if (!Array.isArray(enemies) || !enemies.length) return false;
         if (!this.getAliveSwordStats || this.getAliveSwordStats().alive > 0) return false;
-        const attackRange = 82 * scaleFactor;
+        const attackRange = 18 * scaleFactor;
         const sourceX = Number.isFinite(strikePoint?.x)
             ? strikePoint.x
             : (Number.isFinite(this.x) ? this.x : guardCenter.x);
@@ -453,7 +453,8 @@ Object.assign(Input, {
             }
         }
 
-        if (!nearestEnemy || nearestDistance > attackRange + (nearestEnemy.r || 0)) return false;
+        const targetBodyAllowance = Math.min(18 * scaleFactor, Math.max(0, Number(nearestEnemy?.r) || 0));
+        if (!nearestEnemy || nearestDistance > attackRange + targetBodyAllowance) return false;
 
         const punchSource = {
             powerPenalty: 0.5,
