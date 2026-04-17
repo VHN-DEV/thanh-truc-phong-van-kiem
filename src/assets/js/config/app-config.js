@@ -1346,6 +1346,11 @@ const CONFIG = {
                 'HAO_AM_HAN_PHACH_CUC_SON',
                 'BAC_CUC_NGUYEN_QUANG_CUC_SON'
             ],
+            shield: {
+                MAX_CAPACITY: 360,
+                DAMAGE_REDUCTION_PCT: 0.9,
+                CRACK_RECOVER_PER_SEC: 0.13
+            },
             description: "Bảo vật hậu huyền thiên chi bảo hợp từ ngũ cực sơn. Khi đủ năm cực sơn và đã luyện hóa hoàn chỉnh có thể kết hợp/tách rời tùy ý."
         }
     },

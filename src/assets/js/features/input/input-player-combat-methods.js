@@ -1190,8 +1190,22 @@ Object.assign(Input, {
         const safeDamage = Math.max(0, Number(amount) || 0);
         if (safeDamage <= 0) return;
 
-        const shieldResult = this.absorbDamageWithHuThienDinh(safeDamage);
-        const finalDamage = shieldResult ? Math.max(0, shieldResult.remainingDamage) : safeDamage;
+        const nguCucShieldResult = typeof this.absorbDamageWithNguCucSonComposite === 'function'
+            ? this.absorbDamageWithNguCucSonComposite(safeDamage)
+            : null;
+        const afterNguCucDamage = nguCucShieldResult ? Math.max(0, nguCucShieldResult.remainingDamage) : safeDamage;
+        if (nguCucShieldResult) {
+            const artifactColor = this.getArtifactConfig('NGUYEN_HOP_NGU_CUC_SON')?.color || '#ffd76a';
+            if (nguCucShieldResult.absorbed > 0) {
+                showNotify(`Nguyên Hợp Ngũ Cực Sơn hấp thụ ${formatNumber(Math.round(nguCucShieldResult.absorbed))} sát thương.`, artifactColor, 1100);
+            }
+            if (nguCucShieldResult.depleted) {
+                showNotify('Ngũ sắc sơn ảnh đã nứt vỡ, tạm thời không thể hấp thụ thêm sát thương.', '#ffd2a1', 1300);
+            }
+        }
+
+        const shieldResult = this.absorbDamageWithHuThienDinh(afterNguCucDamage);
+        const finalDamage = shieldResult ? Math.max(0, shieldResult.remainingDamage) : afterNguCucDamage;
         if (shieldResult) {
             const artifactColor = this.getArtifactConfig('HU_THIEN_DINH')?.color || '#93c8d8';
             if (shieldResult.absorbed > 0) {
