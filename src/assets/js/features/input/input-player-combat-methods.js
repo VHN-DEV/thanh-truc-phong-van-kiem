@@ -388,8 +388,8 @@ Object.assign(Input, {
         }, Math.max(120, Number(windowMs) || 320));
     },
 
-    triggerUnarmedTapAttack(windowMs = 260) {
-        this.performUnarmedTapStrike();
+    triggerUnarmedTapAttack(windowMs = 260, strikePoint = null) {
+        this.performUnarmedTapStrike(strikePoint);
         this.isAttacking = true;
         if (this.singleSwordAttackTapTimeoutId) {
             clearTimeout(this.singleSwordAttackTapTimeoutId);
@@ -431,12 +431,16 @@ Object.assign(Input, {
         return result !== 'missed';
     },
 
-    performUnarmedTapStrike() {
+    performUnarmedTapStrike(strikePoint = null) {
         if (!Array.isArray(enemies) || !enemies.length) return false;
         if (!this.getAliveSwordStats || this.getAliveSwordStats().alive > 0) return false;
         const attackRange = 82 * scaleFactor;
-        const sourceX = Number.isFinite(this.x) ? this.x : guardCenter.x;
-        const sourceY = Number.isFinite(this.y) ? this.y : guardCenter.y;
+        const sourceX = Number.isFinite(strikePoint?.x)
+            ? strikePoint.x
+            : (Number.isFinite(this.x) ? this.x : guardCenter.x);
+        const sourceY = Number.isFinite(strikePoint?.y)
+            ? strikePoint.y
+            : (Number.isFinite(this.y) ? this.y : guardCenter.y);
         let nearestEnemy = null;
         let nearestDistance = Infinity;
 
