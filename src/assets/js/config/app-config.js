@@ -72,7 +72,13 @@ const IMAGE_PATHS = {
         CHUONG_THIEN_BINH: imagePath("artifacts/chuong-thien-binh.svg"),
         PHONG_LOI_SI: imagePath("artifacts/phong-loi-si.svg"),
         HUYET_SAC_PHI_PHONG: imagePath("artifacts/huyet-sac-phi-phong.svg"),
-        HU_THIEN_DINH: imagePath("artifacts/hu-thien-dinh.svg")
+        HU_THIEN_DINH: imagePath("artifacts/hu-thien-dinh.svg"),
+        NGUYEN_TU_CUC_SON: imagePath("artifacts/chuong-thien-binh.svg"),
+        THAI_AT_THANH_QUANG_CUC_SON: imagePath("artifacts/chuong-thien-binh.svg"),
+        AM_DUONG_DAI_NGU_HANH_CUC_SON: imagePath("artifacts/chuong-thien-binh.svg"),
+        HAO_AM_HAN_PHACH_CUC_SON: imagePath("artifacts/chuong-thien-binh.svg"),
+        BAC_CUC_NGUYEN_QUANG_CUC_SON: imagePath("artifacts/chuong-thien-binh.svg"),
+        NGUYEN_HOP_NGU_CUC_SON: imagePath("artifacts/chuong-thien-binh.svg")
     },
     ABERRATIONS: {
         KIEN_THIEN_TINH: imagePath("aberrations/kien-thien-tinh.svg"),
@@ -1249,6 +1255,98 @@ const CONFIG = {
                 CRACK_RECOVER_PER_SEC: 0.16
             },
             description: "Tiểu đỉnh cổ xanh xám, mang không gian nội tại như một tiểu thế giới. Có thể thu nạp, phong ấn và trấn áp mục tiêu. Khi triển khai sẽ dựng Đỉnh ảnh hộ thể, hấp thụ sát thương cho đến khi dần nứt vỡ."
+        },
+        NGUYEN_TU_CUC_SON: {
+            fullName: "Nguyên Từ Cực Sơn",
+            quality: "SUPREME",
+            color: "#d4a14b",
+            secondaryColor: "#ffe5b0",
+            auraColor: "#8f5f14",
+            buyPriceLowStone: 2800000,
+            buttonLabel: "Mua",
+            inventoryActionLabel: "Luyện hóa",
+            deployLabel: "Triển khai",
+            stowLabel: "Thu hồi",
+            imagePath: IMAGE_PATHS.ARTIFACTS.NGUYEN_TU_CUC_SON,
+            description: "Cực sơn mang nguyên từ thần quang, khắc chế kim mộc thủy hỏa thổ và đồng hóa ngũ hành khí cơ."
+        },
+        THAI_AT_THANH_QUANG_CUC_SON: {
+            fullName: "Thái Ất Thanh Quang Cực Sơn",
+            quality: "SUPREME",
+            color: "#2ecc71",
+            secondaryColor: "#cfffe0",
+            auraColor: "#178f4b",
+            buyPriceLowStone: 2800000,
+            buttonLabel: "Mua",
+            inventoryActionLabel: "Luyện hóa",
+            deployLabel: "Triển khai",
+            stowLabel: "Thu hồi",
+            imagePath: IMAGE_PATHS.ARTIFACTS.THAI_AT_THANH_QUANG_CUC_SON,
+            description: "Cực sơn bùng nở thái ất thanh quang, hóa vạn đạo kiếm quang công phạt với độ sắc bén kinh người."
+        },
+        AM_DUONG_DAI_NGU_HANH_CUC_SON: {
+            fullName: "Âm Dương Đại Ngũ Hành Cực Sơn",
+            quality: "SUPREME",
+            color: "#e74c3c",
+            secondaryColor: "#ffd6d2",
+            auraColor: "#a9281c",
+            buyPriceLowStone: 2800000,
+            buttonLabel: "Mua",
+            inventoryActionLabel: "Luyện hóa",
+            deployLabel: "Triển khai",
+            stowLabel: "Thu hồi",
+            imagePath: IMAGE_PATHS.ARTIFACTS.AM_DUONG_DAI_NGU_HANH_CUC_SON,
+            description: "Cực sơn phóng âm dương ngũ hành chân quang, dung nhập đa hệ thần thông và rút cạn chân nguyên mục tiêu."
+        },
+        HAO_AM_HAN_PHACH_CUC_SON: {
+            fullName: "Hạo Âm Hàn Phách Cực Sơn",
+            quality: "SUPREME",
+            color: "#3498db",
+            secondaryColor: "#d4ecff",
+            auraColor: "#1f6698",
+            buyPriceLowStone: 2800000,
+            buttonLabel: "Mua",
+            inventoryActionLabel: "Luyện hóa",
+            deployLabel: "Triển khai",
+            stowLabel: "Thu hồi",
+            imagePath: IMAGE_PATHS.ARTIFACTS.HAO_AM_HAN_PHACH_CUC_SON,
+            description: "Cực sơn kết tụ hạo âm hàn phách, băng hàn khí tức phủ xuống khiến mục tiêu chậm dần và khó vận linh lực."
+        },
+        BAC_CUC_NGUYEN_QUANG_CUC_SON: {
+            fullName: "Bắc Cực Nguyên Quang Cực Sơn",
+            quality: "SUPREME",
+            color: "#8e44ad",
+            secondaryColor: "#ead7ff",
+            auraColor: "#5f2f78",
+            buyPriceLowStone: 2800000,
+            buttonLabel: "Mua",
+            inventoryActionLabel: "Luyện hóa",
+            deployLabel: "Triển khai",
+            stowLabel: "Thu hồi",
+            imagePath: IMAGE_PATHS.ARTIFACTS.BAC_CUC_NGUYEN_QUANG_CUC_SON,
+            description: "Cực sơn vận chuyển bắc cực nguyên quang, tách thành ngân ti xuyên phá phòng hộ và bào mòn pháp bảo đối phương."
+        },
+        NGUYEN_HOP_NGU_CUC_SON: {
+            fullName: "Nguyên Hợp Ngũ Cực Sơn",
+            quality: "SUPREME",
+            color: "#ffd76a",
+            secondaryColor: "#fff2c7",
+            auraColor: "#b78b1d",
+            buttonLabel: "Kết hợp",
+            inventoryActionLabel: "Kết hợp",
+            deployLabel: "Kết hợp",
+            stowLabel: "Tách rời",
+            imagePath: IMAGE_PATHS.ARTIFACTS.NGUYEN_HOP_NGU_CUC_SON,
+            buyPriceLowStone: 0,
+            shopHidden: true,
+            componentKeys: [
+                'NGUYEN_TU_CUC_SON',
+                'THAI_AT_THANH_QUANG_CUC_SON',
+                'AM_DUONG_DAI_NGU_HANH_CUC_SON',
+                'HAO_AM_HAN_PHACH_CUC_SON',
+                'BAC_CUC_NGUYEN_QUANG_CUC_SON'
+            ],
+            description: "Bảo vật hậu huyền thiên chi bảo hợp từ ngũ cực sơn. Khi đủ năm cực sơn và đã luyện hóa hoàn chỉnh có thể kết hợp/tách rời tùy ý."
         }
     },
     INSECT: {

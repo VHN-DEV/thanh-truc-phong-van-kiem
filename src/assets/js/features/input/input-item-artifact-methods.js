@@ -2,6 +2,119 @@
 // Purpose: item, artifact and inventory utility methods
 
 Object.assign(Input, {
+    isNguCucSonComposite(uniqueKey) {
+        return uniqueKey === 'NGUYEN_HOP_NGU_CUC_SON';
+    },
+
+    getNguCucSonComponentKeys() {
+        const componentKeys = this.getArtifactConfig('NGUYEN_HOP_NGU_CUC_SON')?.componentKeys;
+        return Array.isArray(componentKeys) ? componentKeys : [];
+    },
+
+    hasAllNguCucSonPurchased() {
+        const componentKeys = this.getNguCucSonComponentKeys();
+        return componentKeys.length > 0 && componentKeys.every(key => this.hasUniquePurchase(key));
+    },
+
+    hasAllNguCucSonUnlocked() {
+        const componentKeys = this.getNguCucSonComponentKeys();
+        return componentKeys.length > 0 && componentKeys.every(key => this.hasCultivationArt(key));
+    },
+
+    getActiveNguCucSonKeys() {
+        const componentKeys = this.getNguCucSonComponentKeys();
+        if (!componentKeys.length) return [];
+        if (this.isArtifactDeployed('NGUYEN_HOP_NGU_CUC_SON')) {
+            return componentKeys;
+        }
+        return componentKeys.filter(key => this.isArtifactDeployed(key));
+    },
+
+    isNguCucSonBarrierActive() {
+        return this.getActiveNguCucSonKeys().length > 0;
+    },
+
+    ensureNguCucSonGuardState() {
+        if (!this.nguCucSonGuard) {
+            this.nguCucSonGuard = {
+                blockCount: 0,
+                lastBlockedAt: 0,
+                lastNotifyAt: 0
+            };
+        }
+        return this.nguCucSonGuard;
+    },
+
+    getNguCucSonOrbitNodes(scaleFactor = 1, now = performance.now()) {
+        const activeKeys = this.getActiveNguCucSonKeys();
+        if (!activeKeys.length) return [];
+
+        const count = activeKeys.length;
+        const ringRadius = (22 + (count * 3.4)) * scaleFactor;
+        const spinDirection = this.isArtifactDeployed('NGUYEN_HOP_NGU_CUC_SON') ? 1 : -1;
+        const spinSpeed = this.isArtifactDeployed('NGUYEN_HOP_NGU_CUC_SON') ? 0.0019 : 0.00135;
+        const baseAngle = now * spinSpeed * spinDirection;
+
+        return activeKeys.map((key, index) => {
+            const cfg = this.getArtifactConfig(key) || {};
+            const angle = baseAngle + ((Math.PI * 2 * index) / count);
+            const bob = Math.sin((now * 0.0038) + (index * 0.8)) * 1.4 * scaleFactor;
+            const x = this.x + (Math.cos(angle) * (ringRadius + bob));
+            const y = this.y + (Math.sin(angle) * (ringRadius + bob));
+            return {
+                key,
+                x,
+                y,
+                angle,
+                orbitRadius: ringRadius,
+                bodyRadius: Math.max(5, 7.6 * scaleFactor),
+                color: cfg.color || '#ffd76a',
+                secondaryColor: cfg.secondaryColor || '#fff2c7',
+                auraColor: cfg.auraColor || '#b78b1d'
+            };
+        });
+    },
+
+    tryBlockWithNguCucSon(impactX, impactY, threatRadius = 6, source = 'đòn đánh') {
+        if (!this.isNguCucSonBarrierActive()) return false;
+        const now = performance.now();
+        const nodes = this.getNguCucSonOrbitNodes(1, now);
+        if (!nodes.length) return false;
+
+        const safeThreatRadius = Math.max(2, Number(threatRadius) || 6);
+        const blockingNode = nodes.find(node => Math.hypot((impactX || 0) - node.x, (impactY || 0) - node.y) <= (node.bodyRadius + safeThreatRadius));
+        if (!blockingNode) return false;
+
+        const state = this.ensureNguCucSonGuardState();
+        state.blockCount += 1;
+        state.lastBlockedAt = now;
+
+        trimVisualParticles(320);
+        for (let i = 0; i < 6; i++) {
+            const angle = (Math.PI * 2 * i) / 6 + random(-0.22, 0.22);
+            const speed = random(0.5, 1.8);
+            visualParticles.push({
+                type: 'spark',
+                x: blockingNode.x,
+                y: blockingNode.y,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                size: random(1.1, 2.1),
+                life: 0.45,
+                decay: random(0.06, 0.085),
+                color: blockingNode.secondaryColor,
+                glow: blockingNode.color
+            });
+        }
+
+        if (now - (state.lastNotifyAt || 0) > 520) {
+            showNotify(`Ngũ Cực Sơn cản lại ${source}.`, blockingNode.color, 650);
+            state.lastNotifyAt = now;
+        }
+
+        return true;
+    },
+
     hasKnownThanhLinhKiemQuyet() {
         return this.hasUniquePurchase('THANH_LINH_KIEM_QUYET')
             || this.hasThanhLinhKiemQuyetUnlocked()
@@ -55,6 +168,16 @@ Object.assign(Input, {
             if (unlocked) {
                 return 'Đã luyện hóa, có thể triển khai Đỉnh ảnh để tạo lá chắn hộ thể cực mạnh.';
             }
+        } else if (this.isNguCucSonComposite(uniqueKey)) {
+            if (active) {
+                return 'Ngũ sắc cực sơn đang hợp nhất, có thể tách rời để dùng riêng từng cực sơn.';
+            }
+            if (unlocked) {
+                return 'Đã luyện hóa đủ năm cực sơn, có thể kết hợp hoặc tách rời tùy ý.';
+            }
+            if (purchased) {
+                return 'Đã mua đủ ngũ cực sơn, hãy luyện hóa đủ cả năm để mở kết hợp.';
+            }
         }
 
         if (unlocked) {
@@ -87,6 +210,11 @@ Object.assign(Input, {
                 ? `${artifactConfig.fullName} đã dựng Đỉnh ảnh hộ thể.`
                 : `${artifactConfig.fullName} đã thu vào thần hải.`;
         }
+        if (this.isNguCucSonComposite(uniqueKey)) {
+            return nextActive
+                ? `${artifactConfig.fullName} đã hợp thành ngũ sắc sơn ảnh.`
+                : `${artifactConfig.fullName} đã tách rời về năm cực sơn độc lập.`;
+        }
 
         return nextActive
             ? `${artifactConfig.fullName || uniqueKey} đã khai triển bên tâm ấn.`
@@ -94,10 +222,16 @@ Object.assign(Input, {
     },
 
     hasArtifactPurchased(uniqueKey) {
+        if (this.isNguCucSonComposite(uniqueKey)) {
+            return this.hasAllNguCucSonPurchased();
+        }
         return Boolean(uniqueKey && this.hasUniquePurchase(uniqueKey));
     },
 
     hasArtifactUnlocked(uniqueKey) {
+        if (this.isNguCucSonComposite(uniqueKey)) {
+            return this.hasAllNguCucSonPurchased();
+        }
         return Boolean(uniqueKey && this.hasCultivationArt(uniqueKey));
     },
 
@@ -487,6 +621,16 @@ Object.assign(Input, {
                 return false;
             }
         }
+
+        if (this.isNguCucSonComposite(uniqueKey) && normalized) {
+            this.getNguCucSonComponentKeys().forEach(componentKey => {
+                this.activeArtifacts[componentKey] = false;
+            });
+        }
+        if (!this.isNguCucSonComposite(uniqueKey) && normalized && this.isArtifactDeployed('NGUYEN_HOP_NGU_CUC_SON')) {
+            this.activeArtifacts.NGUYEN_HOP_NGU_CUC_SON = false;
+        }
+
         this.activeArtifacts[uniqueKey] = normalized;
 
         if (uniqueKey === 'PHONG_LOI_SI') {
@@ -537,6 +681,10 @@ Object.assign(Input, {
 
     getArtifactSkillList() {
         return Object.entries(CONFIG.ARTIFACTS || {}).map(([uniqueKey, artifactConfig]) => {
+            const isComposite = this.isNguCucSonComposite(uniqueKey);
+            if (isComposite && !this.hasAllNguCucSonPurchased() && !this.hasArtifactUnlocked(uniqueKey) && !this.isArtifactDeployed(uniqueKey)) {
+                return null;
+            }
             const purchased = this.hasArtifactPurchased(uniqueKey);
             const unlocked = this.hasArtifactUnlocked(uniqueKey);
             const active = this.isArtifactDeployed(uniqueKey);
@@ -553,7 +701,7 @@ Object.assign(Input, {
                 accent: artifactConfig.color || '#9fe8ff',
                 note: this.getArtifactStatusNote(uniqueKey, { active, unlocked, purchased })
             };
-        });
+        }).filter(Boolean);
     },
 
     hasKyTrungBang() {
@@ -1884,6 +2032,7 @@ Object.assign(Input, {
         }
 
         Object.entries(CONFIG.ARTIFACTS || {}).forEach(([uniqueKey, artifactConfig]) => {
+            if (artifactConfig?.shopHidden) return;
             items.push({
                 id: `ARTIFACT:${uniqueKey}`,
                 kind: 'UNIQUE',
@@ -5122,6 +5271,7 @@ Object.assign(Input, {
 
     drawCursor(ctx, scaleFactor) {
         this.drawHuyetSacPhiPhongCloak(ctx, scaleFactor);
+        this.drawNguCucSonOrbit(ctx, scaleFactor);
         this.drawHuThienDinhShield(ctx, scaleFactor);
         if (this.isArtifactDeployed('CAN_LAM_BANG_DIEM')) {
             this.drawFlame(ctx, scaleFactor);
@@ -5132,6 +5282,63 @@ Object.assign(Input, {
         this.drawPhongLoiArtifact(ctx, scaleFactor);
         this.drawHuThienDinhShield(ctx, scaleFactor);
         this.drawCursorDamageFeedback(ctx, scaleFactor);
+    },
+
+    drawNguCucSonOrbit(ctx, scaleFactor) {
+        if (!this.isNguCucSonBarrierActive()) return;
+        const now = performance.now();
+        const nodes = this.getNguCucSonOrbitNodes(scaleFactor, now);
+        if (!nodes.length) return;
+
+        ctx.save();
+        ctx.globalCompositeOperation = 'source-over';
+
+        const orbitPulse = 0.84 + (Math.sin(now * 0.0032) * 0.12);
+        const orbitRadius = nodes[0].orbitRadius;
+        ctx.beginPath();
+        ctx.strokeStyle = withAlpha(nodes[0].color, 0.16 + (orbitPulse * 0.08));
+        ctx.lineWidth = Math.max(1, 1.5 * scaleFactor);
+        ctx.arc(this.x, this.y, orbitRadius, 0, Math.PI * 2);
+        ctx.stroke();
+
+        nodes.forEach((node, index) => {
+            const glow = 0.22 + (Math.sin((now * 0.005) + index) * 0.08);
+            ctx.save();
+            ctx.translate(node.x, node.y);
+            ctx.rotate(node.angle + (Math.PI / 2));
+
+            const halo = ctx.createRadialGradient(0, 0, 0, 0, 0, node.bodyRadius * 2.2);
+            halo.addColorStop(0, withAlpha(node.secondaryColor, 0.26 + glow));
+            halo.addColorStop(0.52, withAlpha(node.color, 0.16 + glow));
+            halo.addColorStop(1, withAlpha(node.auraColor, 0));
+            ctx.fillStyle = halo;
+            ctx.beginPath();
+            ctx.arc(0, 0, node.bodyRadius * 2.2, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.fillStyle = withAlpha(node.color, 0.86);
+            ctx.strokeStyle = withAlpha(node.secondaryColor, 0.8);
+            ctx.lineWidth = Math.max(1, 1.1 * scaleFactor);
+            ctx.moveTo(0, -node.bodyRadius * 1.05);
+            ctx.lineTo(node.bodyRadius * 0.92, node.bodyRadius * 0.95);
+            ctx.lineTo(-node.bodyRadius * 0.92, node.bodyRadius * 0.95);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.fillStyle = withAlpha('#ffffff', 0.35);
+            ctx.moveTo(0, -node.bodyRadius * 0.76);
+            ctx.lineTo(node.bodyRadius * 0.32, node.bodyRadius * 0.1);
+            ctx.lineTo(-node.bodyRadius * 0.32, node.bodyRadius * 0.1);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.restore();
+        });
+
+        ctx.restore();
     },
 
     drawHuThienDinhShield(ctx, scaleFactor) {

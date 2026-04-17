@@ -1310,6 +1310,14 @@ Object.assign(Input, {
             if (!strike.hasDamaged) {
                 const touchDistance = Math.hypot((centerX || 0) - strike.x, (centerY || 0) - strike.y);
                 if (touchDistance <= coreRadius) {
+                    const blocked = typeof this.tryBlockWithNguCucSon === 'function'
+                        ? this.tryBlockWithNguCucSon(strike.x, strike.y, coreRadius * 0.36, strike.source || 'cận chiến')
+                        : false;
+                    if (blocked) {
+                        strike.hasDamaged = true;
+                        strike.latchUntil = now;
+                        continue;
+                    }
                     this.inflictEnemyAttackDamage(strike.damage, strike.ailmentChance, strike.source);
                     strike.hasDamaged = true;
                     if (strike.type === 'BITE') {
@@ -1321,6 +1329,14 @@ Object.assign(Input, {
 
             if (strike.type === 'BITE' && strike.latchUntil > now && strike.canMultiTickDamage && strike.hasDamaged) {
                 if (now >= (strike.nextDamageTickAt || 0)) {
+                    const blocked = typeof this.tryBlockWithNguCucSon === 'function'
+                        ? this.tryBlockWithNguCucSon(centerX, centerY, coreRadius * 0.28, 'cắn bám')
+                        : false;
+                    if (blocked) {
+                        strike.latchUntil = now;
+                        strike.nextDamageTickAt = now + strike.damageTickEveryMs;
+                        continue;
+                    }
                     this.inflictEnemyAttackDamage(strike.damage * 0.28, Math.max(0.1, strike.ailmentChance * 0.45), 'cắn bám');
                     strike.nextDamageTickAt = now + strike.damageTickEveryMs;
                 }
@@ -1405,6 +1421,13 @@ Object.assign(Input, {
 
             shot.x += shot.vx * elapsed;
             shot.y += shot.vy * elapsed;
+
+            const blockedByNguCucSon = typeof this.tryBlockWithNguCucSon === 'function'
+                ? this.tryBlockWithNguCucSon(shot.x, shot.y, Math.max(3, shot.radius), 'phi đạn tà lực')
+                : false;
+            if (blockedByNguCucSon) {
+                continue;
+            }
 
             const hitDistance = Math.hypot(shot.x - centerX, shot.y - centerY);
             if (hitDistance <= this.getCursorCoreHitRadius()) {
