@@ -205,8 +205,8 @@ ShopUI = {
                         <span class="slot-meta-title">Giá</span>
                         ${priceMarkup}
                     </div>
-                    ${stockText ? `<div class="slot-meta">${escapeHtml(stockText)}</div>` : ''}
-                    ${purchasableText ? `<div class="slot-meta">${escapeHtml(purchasableText)}</div>` : ''}
+                    ${stockText ? `<div class="slot-meta slot-meta-stock">${escapeHtml(stockText)}</div>` : ''}
+                    ${purchasableText ? `<div class="slot-meta slot-meta-remaining">${escapeHtml(purchasableText)}</div>` : ''}
                     <button class="btn-slot-action" data-shop-id="${escapeHtml(item.id)}" ${canAfford ? '' : 'disabled'}>${escapeHtml(actionLabel)}</button>
                 </article>
             `;

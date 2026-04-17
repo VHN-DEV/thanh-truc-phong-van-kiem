@@ -4508,6 +4508,11 @@ select.shop-control-input {
     display: none;
 }
 
+.shop-card>.slot-meta.slot-meta-stock,
+.shop-card>.slot-meta.slot-meta-remaining {
+    display: inline-flex;
+}
+
 .slot-meta-price {
     width: 100%;
     display: flex;

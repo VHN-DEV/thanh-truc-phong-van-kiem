@@ -1233,7 +1233,16 @@ Object.assign(Input, {
         }
 
         if (item.category === 'ALCHEMY_RECIPE') {
-            return this.getAlchemyRecipeByKey(item.recipeKey) || CONFIG.PILL.EXP_QUALITIES.LOW;
+            const recipeConfig = this.getAlchemyRecipeByKey(item.recipeKey);
+            if (!recipeConfig) return CONFIG.PILL.EXP_QUALITIES.LOW;
+            const outputConfig = this.getItemQualityConfig({
+                category: recipeConfig.output?.category || 'EXP',
+                quality: recipeConfig.output?.quality || 'LOW'
+            });
+            return {
+                ...recipeConfig,
+                color: recipeConfig.color || outputConfig?.color || CONFIG.PILL.EXP_QUALITIES.LOW.color
+            };
         }
 
         if (item.category === 'ALCHEMY_FURNACE') {
