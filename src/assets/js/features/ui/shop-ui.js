@@ -184,7 +184,7 @@ ShopUI = {
                 ? Math.max(1, Math.ceil((item.shopRestockAt - Date.now()) / 1000))
                 : 0;
             const stockText = isLimitedStock
-                ? `Tồn kho: ${formatNumber(item.shopStockRemaining)}/${formatNumber(item.shopStockMax)}${restockCountdown > 0 ? ` • Làm mới sau ${formatNumber(restockCountdown)}s` : ''}`
+                ? `${formatNumber(item.shopStockRemaining)}/${formatNumber(item.shopStockMax)}${restockCountdown > 0 ? ` • ${formatNumber(restockCountdown)}s` : ''}`
                 : '';
             const purchasableText = this.getPurchasableStockText(item, {
                 isLimitedStock,
@@ -198,15 +198,22 @@ ShopUI = {
                 <article class="shop-card has-pill-art" style="--slot-accent:${qualityConfig.color}">
                     <div class="slot-badge">${escapeHtml(Input.getItemCategoryLabel(item))}</div>
                     ${buildPillVisualMarkup(item, qualityConfig, { context: 'shop' })}
-                    <h4>${escapeHtml(Input.getItemDisplayName(item))}</h4>
+                    <div class="shop-card-header">
+                        <h4>${escapeHtml(Input.getItemDisplayName(item))}</h4>
+                        ${(stockText || purchasableText)
+                            ? `<div class="shop-card-corner-meta">
+                                ${stockText ? `<span>${escapeHtml(stockText)}</span>` : ''}
+                                ${purchasableText ? `<span>${escapeHtml(purchasableText)}</span>` : ''}
+                            </div>`
+                            : ''
+                        }
+                    </div>
                     <div class="item-description" data-description-card data-description-id="${escapeHtml(item.id)}">${Input.getItemDescriptionMarkup(item)}</div>
                     <div class="slot-meta">Giá: ${formatNumber(item.priceLowStone)} hạ phẩm linh thạch</div>
                     <div class="slot-meta slot-meta-price">
                         <span class="slot-meta-title">Giá</span>
                         ${priceMarkup}
                     </div>
-                    ${stockText ? `<div class="slot-meta slot-meta-stock">${escapeHtml(stockText)}</div>` : ''}
-                    ${purchasableText ? `<div class="slot-meta slot-meta-remaining">${escapeHtml(purchasableText)}</div>` : ''}
                     <button class="btn-slot-action" data-shop-id="${escapeHtml(item.id)}" ${canAfford ? '' : 'disabled'}>${escapeHtml(actionLabel)}</button>
                 </article>
             `;
@@ -282,22 +289,22 @@ ShopUI.getPurchasableStockText = function (item, options = {}) {
     } = options;
 
     if (isLimitedStock) {
-        return `Có thể mua: ${formatNumber(Math.max(0, Math.floor(Number(item.shopStockRemaining) || 0)))} món`;
+        return `${formatNumber(Math.max(0, Math.floor(Number(item.shopStockRemaining) || 0)))} món`;
     }
 
     if (item.isOneTime) {
-        return `Có thể mua: ${isOwnedUnique ? '0' : '1'} món`;
+        return `${isOwnedUnique ? '0' : '1'} món`;
     }
 
     if (item.category === 'SPIRIT_HABITAT' && hasRainbowHabitat) {
-        return 'Có thể mua: 0 món';
+        return '0 món';
     }
 
     if (item.category === 'SPIRIT_HABITAT' && !hasDedicatedHabitat) {
-        return 'Có thể mua: vô hạn';
+        return 'vô hạn';
     }
 
-    return canStoreOrUpgrade ? 'Có thể mua: vô hạn' : 'Có thể mua: 0 món';
+    return canStoreOrUpgrade ? 'vô hạn' : '0 món';
 };
 
 ShopUI.getActionLabel = function (item, options = {}) {
