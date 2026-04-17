@@ -21,6 +21,178 @@ Object.assign(Input, {
         return componentKeys.length > 0 && componentKeys.every(key => this.hasCultivationArt(key));
     },
 
+    getActiveNguCucSonKeys() {
+        const componentKeys = this.getNguCucSonComponentKeys();
+        if (!componentKeys.length) return [];
+        if (this.isArtifactDeployed('NGUYEN_HOP_NGU_CUC_SON')) {
+            return componentKeys;
+        }
+        return componentKeys.filter(key => this.isArtifactDeployed(key));
+    },
+
+    isNguCucSonBarrierActive() {
+        return this.getActiveNguCucSonKeys().length > 0;
+    },
+
+    ensureNguCucSonGuardState() {
+        if (!this.nguCucSonGuard) {
+            this.nguCucSonGuard = {
+                blockCount: 0,
+                lastBlockedAt: 0,
+                lastNotifyAt: 0
+            };
+        }
+        return this.nguCucSonGuard;
+    },
+
+    isNguCucSonCompositeShieldActive() {
+        return this.isArtifactDeployed('NGUYEN_HOP_NGU_CUC_SON');
+    },
+
+    getNguCucSonCompositeShieldConfig() {
+        const shieldConfig = this.getArtifactConfig('NGUYEN_HOP_NGU_CUC_SON')?.shield || {};
+        return {
+            maxCapacity: Math.max(1, Math.floor(Number(shieldConfig.MAX_CAPACITY) || 360)),
+            damageReductionPct: clampNumber(Number(shieldConfig.DAMAGE_REDUCTION_PCT) || 0.9, 0, 1),
+            crackRecoverPerSec: clampNumber(Number(shieldConfig.CRACK_RECOVER_PER_SEC) || 0.13, 0, 1)
+        };
+    },
+
+    ensureNguCucSonCompositeShieldState() {
+        if (!this.nguCucSonCompositeShield) {
+            const maxCapacity = this.getNguCucSonCompositeShieldConfig().maxCapacity;
+            this.nguCucSonCompositeShield = {
+                maxCapacity,
+                currentCapacity: maxCapacity,
+                crackIntensity: 0,
+                lastHitAt: 0,
+                lastRecoverAt: performance.now()
+            };
+        }
+        return this.nguCucSonCompositeShield;
+    },
+
+    resetNguCucSonCompositeShieldCapacity() {
+        const state = this.ensureNguCucSonCompositeShieldState();
+        const cfg = this.getNguCucSonCompositeShieldConfig();
+        state.maxCapacity = cfg.maxCapacity;
+        state.currentCapacity = cfg.maxCapacity;
+        state.crackIntensity = 0;
+        state.lastRecoverAt = performance.now();
+        return state;
+    },
+
+    tickNguCucSonCompositeShieldRecovery(now = performance.now()) {
+        if (!this.isNguCucSonCompositeShieldActive()) return;
+        const state = this.ensureNguCucSonCompositeShieldState();
+        const cfg = this.getNguCucSonCompositeShieldConfig();
+        const elapsedSec = Math.max(0, (now - (state.lastRecoverAt || now)) / 1000);
+        if (elapsedSec <= 0) return;
+
+        if (state.crackIntensity > 0) {
+            state.crackIntensity = clampNumber(state.crackIntensity - (cfg.crackRecoverPerSec * elapsedSec), 0, 1);
+        }
+
+        state.lastRecoverAt = now;
+    },
+
+    absorbDamageWithNguCucSonComposite(rawDamage) {
+        const incomingDamage = Math.max(0, Number(rawDamage) || 0);
+        if (incomingDamage <= 0 || !this.isNguCucSonCompositeShieldActive()) return null;
+
+        const state = this.ensureNguCucSonCompositeShieldState();
+        const cfg = this.getNguCucSonCompositeShieldConfig();
+        if (state.currentCapacity <= 0) return null;
+
+        const mitigated = incomingDamage * cfg.damageReductionPct;
+        const absorbed = Math.min(state.currentCapacity, mitigated);
+        if (absorbed <= 0) return null;
+
+        state.currentCapacity = Math.max(0, state.currentCapacity - absorbed);
+        const damageRatio = absorbed / Math.max(1, state.maxCapacity);
+        state.crackIntensity = clampNumber(state.crackIntensity + (damageRatio * 1.7), 0, 1);
+        state.lastHitAt = performance.now();
+        state.lastRecoverAt = state.lastHitAt;
+
+        return {
+            absorbed,
+            remainingDamage: Math.max(0, incomingDamage - absorbed),
+            depleted: state.currentCapacity <= 0
+        };
+    },
+
+    getNguCucSonOrbitNodes(scaleFactor = 1, now = performance.now()) {
+        if (this.isNguCucSonCompositeShieldActive()) return [];
+        const activeKeys = this.getActiveNguCucSonKeys();
+        if (!activeKeys.length) return [];
+
+        const count = activeKeys.length;
+        const ringRadius = (22 + (count * 3.4)) * scaleFactor;
+        const spinDirection = this.isArtifactDeployed('NGUYEN_HOP_NGU_CUC_SON') ? 1 : -1;
+        const spinSpeed = this.isArtifactDeployed('NGUYEN_HOP_NGU_CUC_SON') ? 0.0019 : 0.00135;
+        const baseAngle = now * spinSpeed * spinDirection;
+
+        return activeKeys.map((key, index) => {
+            const cfg = this.getArtifactConfig(key) || {};
+            const angle = baseAngle + ((Math.PI * 2 * index) / count);
+            const bob = Math.sin((now * 0.0038) + (index * 0.8)) * 1.4 * scaleFactor;
+            const x = this.x + (Math.cos(angle) * (ringRadius + bob));
+            const y = this.y + (Math.sin(angle) * (ringRadius + bob));
+            return {
+                key,
+                x,
+                y,
+                angle,
+                orbitRadius: ringRadius,
+                bodyRadius: Math.max(5, 7.6 * scaleFactor),
+                color: cfg.color || '#ffd76a',
+                secondaryColor: cfg.secondaryColor || '#fff2c7',
+                auraColor: cfg.auraColor || '#b78b1d'
+            };
+        });
+    },
+
+    tryBlockWithNguCucSon(impactX, impactY, threatRadius = 6, source = 'đòn đánh') {
+        if (this.isNguCucSonCompositeShieldActive()) return false;
+        if (!this.isNguCucSonBarrierActive()) return false;
+        const now = performance.now();
+        const nodes = this.getNguCucSonOrbitNodes(1, now);
+        if (!nodes.length) return false;
+
+        const safeThreatRadius = Math.max(2, Number(threatRadius) || 6);
+        const blockingNode = nodes.find(node => Math.hypot((impactX || 0) - node.x, (impactY || 0) - node.y) <= (node.bodyRadius + safeThreatRadius));
+        if (!blockingNode) return false;
+
+        const state = this.ensureNguCucSonGuardState();
+        state.blockCount += 1;
+        state.lastBlockedAt = now;
+
+        trimVisualParticles(320);
+        for (let i = 0; i < 6; i++) {
+            const angle = (Math.PI * 2 * i) / 6 + random(-0.22, 0.22);
+            const speed = random(0.5, 1.8);
+            visualParticles.push({
+                type: 'spark',
+                x: blockingNode.x,
+                y: blockingNode.y,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                size: random(1.1, 2.1),
+                life: 0.45,
+                decay: random(0.06, 0.085),
+                color: blockingNode.secondaryColor,
+                glow: blockingNode.color
+            });
+        }
+
+        if (now - (state.lastNotifyAt || 0) > 520) {
+            showNotify(`Ngũ Cực Sơn cản lại ${source}.`, blockingNode.color, 650);
+            state.lastNotifyAt = now;
+        }
+
+        return true;
+    },
+
     hasKnownThanhLinhKiemQuyet() {
         return this.hasUniquePurchase('THANH_LINH_KIEM_QUYET')
             || this.hasThanhLinhKiemQuyetUnlocked()
@@ -75,8 +247,9 @@ Object.assign(Input, {
                 return 'Đã luyện hóa, có thể triển khai Đỉnh ảnh để tạo lá chắn hộ thể cực mạnh.';
             }
         } else if (this.isNguCucSonComposite(uniqueKey)) {
+            const shieldState = this.ensureNguCucSonCompositeShieldState();
             if (active) {
-                return 'Ngũ sắc cực sơn đang hợp nhất, có thể tách rời để dùng riêng từng cực sơn.';
+                return `Ngũ sắc cực sơn đang hộ thể (${formatNumber(Math.max(0, shieldState.currentCapacity))}/${formatNumber(Math.max(1, shieldState.maxCapacity))}), có thể nứt vỡ khi chịu quá nhiều sát thương.`;
             }
             if (unlocked) {
                 return 'Đã luyện hóa đủ năm cực sơn, có thể kết hợp hoặc tách rời tùy ý.';
@@ -552,6 +725,9 @@ Object.assign(Input, {
             if (normalized) {
                 this.resetHuThienDinhShieldCapacity();
             }
+        }
+        if (uniqueKey === 'NGUYEN_HOP_NGU_CUC_SON' && normalized) {
+            this.resetNguCucSonCompositeShieldCapacity();
         }
 
         if (!silent) {
@@ -5177,6 +5353,8 @@ Object.assign(Input, {
 
     drawCursor(ctx, scaleFactor) {
         this.drawHuyetSacPhiPhongCloak(ctx, scaleFactor);
+        this.drawNguCucSonOrbit(ctx, scaleFactor);
+        this.drawNguCucSonCompositeShield(ctx, scaleFactor);
         this.drawHuThienDinhShield(ctx, scaleFactor);
         if (this.isArtifactDeployed('CAN_LAM_BANG_DIEM')) {
             this.drawFlame(ctx, scaleFactor);
@@ -5187,6 +5365,132 @@ Object.assign(Input, {
         this.drawPhongLoiArtifact(ctx, scaleFactor);
         this.drawHuThienDinhShield(ctx, scaleFactor);
         this.drawCursorDamageFeedback(ctx, scaleFactor);
+    },
+
+    drawNguCucSonOrbit(ctx, scaleFactor) {
+        if (!this.isNguCucSonBarrierActive()) return;
+        const now = performance.now();
+        const nodes = this.getNguCucSonOrbitNodes(scaleFactor, now);
+        if (!nodes.length) return;
+
+        ctx.save();
+        ctx.globalCompositeOperation = 'source-over';
+
+        const orbitPulse = 0.84 + (Math.sin(now * 0.0032) * 0.12);
+        const orbitRadius = nodes[0].orbitRadius;
+        ctx.beginPath();
+        ctx.strokeStyle = withAlpha(nodes[0].color, 0.16 + (orbitPulse * 0.08));
+        ctx.lineWidth = Math.max(1, 1.5 * scaleFactor);
+        ctx.arc(this.x, this.y, orbitRadius, 0, Math.PI * 2);
+        ctx.stroke();
+
+        nodes.forEach((node, index) => {
+            const glow = 0.22 + (Math.sin((now * 0.005) + index) * 0.08);
+            ctx.save();
+            ctx.translate(node.x, node.y);
+            ctx.rotate(node.angle + (Math.PI / 2));
+
+            const halo = ctx.createRadialGradient(0, 0, 0, 0, 0, node.bodyRadius * 2.2);
+            halo.addColorStop(0, withAlpha(node.secondaryColor, 0.26 + glow));
+            halo.addColorStop(0.52, withAlpha(node.color, 0.16 + glow));
+            halo.addColorStop(1, withAlpha(node.auraColor, 0));
+            ctx.fillStyle = halo;
+            ctx.beginPath();
+            ctx.arc(0, 0, node.bodyRadius * 2.2, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.fillStyle = withAlpha(node.color, 0.86);
+            ctx.strokeStyle = withAlpha(node.secondaryColor, 0.8);
+            ctx.lineWidth = Math.max(1, 1.1 * scaleFactor);
+            ctx.moveTo(0, -node.bodyRadius * 1.05);
+            ctx.lineTo(node.bodyRadius * 0.92, node.bodyRadius * 0.95);
+            ctx.lineTo(-node.bodyRadius * 0.92, node.bodyRadius * 0.95);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.fillStyle = withAlpha('#ffffff', 0.35);
+            ctx.moveTo(0, -node.bodyRadius * 0.76);
+            ctx.lineTo(node.bodyRadius * 0.32, node.bodyRadius * 0.1);
+            ctx.lineTo(-node.bodyRadius * 0.32, node.bodyRadius * 0.1);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.restore();
+        });
+
+        ctx.restore();
+    },
+
+    drawNguCucSonCompositeShield(ctx, scaleFactor) {
+        if (!this.isNguCucSonCompositeShieldActive()) return;
+        this.tickNguCucSonCompositeShieldRecovery();
+        const state = this.ensureNguCucSonCompositeShieldState();
+        const ratio = clampNumber(state.currentCapacity / Math.max(1, state.maxCapacity), 0, 1);
+        if (ratio <= 0) return;
+
+        const cfg = this.getArtifactConfig('NGUYEN_HOP_NGU_CUC_SON') || {};
+        const primaryColor = cfg.color || '#ffd76a';
+        const secondaryColor = cfg.secondaryColor || '#fff2c7';
+        const auraColor = cfg.auraColor || '#b78b1d';
+        const crackLevel = clampNumber(1 - ratio + (state.crackIntensity * 0.24), 0, 1);
+        const height = (26 + (ratio * 6)) * scaleFactor;
+        const width = height * 1.15;
+
+        ctx.save();
+        ctx.translate(this.x, this.y);
+
+        const halo = ctx.createRadialGradient(0, 0, 0, 0, 0, width * 2.2);
+        halo.addColorStop(0, withAlpha('#ffffff', 0.05 + (ratio * 0.05)));
+        halo.addColorStop(0.42, withAlpha(primaryColor, 0.12 + (ratio * 0.1)));
+        halo.addColorStop(1, withAlpha(auraColor, 0));
+        ctx.fillStyle = halo;
+        ctx.beginPath();
+        ctx.arc(0, 0, width * 2.2, 0, Math.PI * 2);
+        ctx.fill();
+
+        const mountainGrad = ctx.createLinearGradient(0, -height, 0, height);
+        mountainGrad.addColorStop(0, withAlpha(secondaryColor, 0.95));
+        mountainGrad.addColorStop(0.22, withAlpha('#ffd36b', 0.9));
+        mountainGrad.addColorStop(0.42, withAlpha('#2ecc71', 0.88));
+        mountainGrad.addColorStop(0.64, withAlpha('#e74c3c', 0.85));
+        mountainGrad.addColorStop(0.82, withAlpha('#3498db', 0.83));
+        mountainGrad.addColorStop(1, withAlpha('#8e44ad', 0.82));
+
+        ctx.fillStyle = mountainGrad;
+        ctx.strokeStyle = withAlpha(secondaryColor, 0.78);
+        ctx.lineWidth = Math.max(1.2, 1.6 * scaleFactor);
+        ctx.shadowBlur = 16 * scaleFactor;
+        ctx.shadowColor = withAlpha(primaryColor, 0.48);
+        ctx.beginPath();
+        ctx.moveTo(0, -height * 1.16);
+        ctx.lineTo(width * 0.92, height * 0.95);
+        ctx.lineTo(-width * 0.92, height * 0.95);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        if (crackLevel > 0.08) {
+            ctx.strokeStyle = withAlpha('#2f2132', 0.2 + (crackLevel * 0.48));
+            ctx.lineWidth = Math.max(0.8, 1.2 * scaleFactor);
+            ctx.beginPath();
+            ctx.moveTo(-width * 0.1, -height * 0.4);
+            ctx.lineTo(width * 0.04, -height * 0.04);
+            ctx.lineTo(-width * 0.14, height * 0.3);
+            ctx.moveTo(width * 0.22, -height * 0.62);
+            ctx.lineTo(width * 0.1, -height * 0.2);
+            ctx.lineTo(width * 0.24, height * 0.24);
+            if (crackLevel > 0.46) {
+                ctx.moveTo(-width * 0.45, -height * 0.1);
+                ctx.lineTo(-width * 0.2, height * 0.2);
+                ctx.lineTo(-width * 0.4, height * 0.52);
+            }
+            ctx.stroke();
+        }
+
+        ctx.restore();
     },
 
     drawHuThienDinhShield(ctx, scaleFactor) {

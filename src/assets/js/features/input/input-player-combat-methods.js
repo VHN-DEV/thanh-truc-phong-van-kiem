@@ -1190,8 +1190,22 @@ Object.assign(Input, {
         const safeDamage = Math.max(0, Number(amount) || 0);
         if (safeDamage <= 0) return;
 
-        const shieldResult = this.absorbDamageWithHuThienDinh(safeDamage);
-        const finalDamage = shieldResult ? Math.max(0, shieldResult.remainingDamage) : safeDamage;
+        const nguCucShieldResult = typeof this.absorbDamageWithNguCucSonComposite === 'function'
+            ? this.absorbDamageWithNguCucSonComposite(safeDamage)
+            : null;
+        const afterNguCucDamage = nguCucShieldResult ? Math.max(0, nguCucShieldResult.remainingDamage) : safeDamage;
+        if (nguCucShieldResult) {
+            const artifactColor = this.getArtifactConfig('NGUYEN_HOP_NGU_CUC_SON')?.color || '#ffd76a';
+            if (nguCucShieldResult.absorbed > 0) {
+                showNotify(`Nguyên Hợp Ngũ Cực Sơn hấp thụ ${formatNumber(Math.round(nguCucShieldResult.absorbed))} sát thương.`, artifactColor, 1100);
+            }
+            if (nguCucShieldResult.depleted) {
+                showNotify('Ngũ sắc sơn ảnh đã nứt vỡ, tạm thời không thể hấp thụ thêm sát thương.', '#ffd2a1', 1300);
+            }
+        }
+
+        const shieldResult = this.absorbDamageWithHuThienDinh(afterNguCucDamage);
+        const finalDamage = shieldResult ? Math.max(0, shieldResult.remainingDamage) : afterNguCucDamage;
         if (shieldResult) {
             const artifactColor = this.getArtifactConfig('HU_THIEN_DINH')?.color || '#93c8d8';
             if (shieldResult.absorbed > 0) {
@@ -1310,6 +1324,14 @@ Object.assign(Input, {
             if (!strike.hasDamaged) {
                 const touchDistance = Math.hypot((centerX || 0) - strike.x, (centerY || 0) - strike.y);
                 if (touchDistance <= coreRadius) {
+                    const blocked = typeof this.tryBlockWithNguCucSon === 'function'
+                        ? this.tryBlockWithNguCucSon(strike.x, strike.y, coreRadius * 0.36, strike.source || 'cận chiến')
+                        : false;
+                    if (blocked) {
+                        strike.hasDamaged = true;
+                        strike.latchUntil = now;
+                        continue;
+                    }
                     this.inflictEnemyAttackDamage(strike.damage, strike.ailmentChance, strike.source);
                     strike.hasDamaged = true;
                     if (strike.type === 'BITE') {
@@ -1321,6 +1343,14 @@ Object.assign(Input, {
 
             if (strike.type === 'BITE' && strike.latchUntil > now && strike.canMultiTickDamage && strike.hasDamaged) {
                 if (now >= (strike.nextDamageTickAt || 0)) {
+                    const blocked = typeof this.tryBlockWithNguCucSon === 'function'
+                        ? this.tryBlockWithNguCucSon(centerX, centerY, coreRadius * 0.28, 'cắn bám')
+                        : false;
+                    if (blocked) {
+                        strike.latchUntil = now;
+                        strike.nextDamageTickAt = now + strike.damageTickEveryMs;
+                        continue;
+                    }
                     this.inflictEnemyAttackDamage(strike.damage * 0.28, Math.max(0.1, strike.ailmentChance * 0.45), 'cắn bám');
                     strike.nextDamageTickAt = now + strike.damageTickEveryMs;
                 }
@@ -1405,6 +1435,13 @@ Object.assign(Input, {
 
             shot.x += shot.vx * elapsed;
             shot.y += shot.vy * elapsed;
+
+            const blockedByNguCucSon = typeof this.tryBlockWithNguCucSon === 'function'
+                ? this.tryBlockWithNguCucSon(shot.x, shot.y, Math.max(3, shot.radius), 'phi đạn tà lực')
+                : false;
+            if (blockedByNguCucSon) {
+                continue;
+            }
 
             const hitDistance = Math.hypot(shot.x - centerX, shot.y - centerY);
             if (hitDistance <= this.getCursorCoreHitRadius()) {
