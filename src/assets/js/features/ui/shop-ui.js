@@ -190,10 +190,8 @@ ShopUI = {
 
             return `
                 <article class="shop-card has-pill-art" style="--slot-accent:${qualityConfig.color}">
-                    <div class="slot-badge">${escapeHtml(Input.getItemCategoryLabel(item))}</div>
-                    ${buildPillVisualMarkup(item, qualityConfig, { context: 'shop' })}
-                    <div class="shop-card-header">
-                        <h4>${escapeHtml(Input.getItemDisplayName(item))}</h4>
+                    <div class="shop-card-topline">
+                        <div class="slot-badge">${escapeHtml(Input.getItemCategoryLabel(item))}</div>
                         ${cornerStockText
                             ? `<div class="shop-card-corner-meta">
                                 <span>${escapeHtml(cornerStockText)}</span>
@@ -201,6 +199,8 @@ ShopUI = {
                             : ''
                         }
                     </div>
+                    ${buildPillVisualMarkup(item, qualityConfig, { context: 'shop' })}
+                    <h4>${escapeHtml(Input.getItemDisplayName(item))}</h4>
                     <div class="item-description" data-description-card data-description-id="${escapeHtml(item.id)}">${Input.getItemDescriptionMarkup(item)}</div>
                     <div class="slot-meta">Giá: ${formatNumber(item.priceLowStone)} hạ phẩm linh thạch</div>
                     <div class="slot-meta slot-meta-price">
