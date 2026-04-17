@@ -5449,10 +5449,13 @@ select.shop-control-input {
 }
 
 .chuong-thien-binh-art__image {
-    inset: -1px;
-    width: calc(100% + 2px);
-    height: calc(100% + 2px);
+    left: 50%;
+    top: 50%;
+    width: 106%;
+    height: auto;
+    max-width: none;
     object-fit: contain;
+    transform: translate(-50%, -50%);
     animation: chuong-thien-binh-image 4.1s ease-in-out infinite;
 }
 
