@@ -1715,7 +1715,7 @@ Object.assign(Input, {
     },
 
     getShopRestockIntervalMs() {
-        return 10 * 60 * 1000;
+        return 60 * 60 * 1000;
     },
 
     isShopLimitedStockItem(item) {
@@ -1759,14 +1759,30 @@ Object.assign(Input, {
 
         const maxStock = this.getShopItemMaxStock(item);
         const intervalMs = this.getShopRestockIntervalMs();
+        const hasTrackedStock = Object.prototype.hasOwnProperty.call(this.shopConsumableStock, stockKey);
         const nextRestockAt = Math.max(0, Number(this.shopConsumableRestockAt?.[stockKey]) || 0);
         const currentStock = Math.max(0, Math.floor(Number(this.shopConsumableStock?.[stockKey]) || 0));
 
-        const shouldRefill = currentStock <= 0 && (!nextRestockAt || now >= nextRestockAt);
-        if (!shouldRefill) return;
+        if (!hasTrackedStock) {
+            this.shopConsumableStock[stockKey] = maxStock;
+            this.shopConsumableRestockAt[stockKey] = 0;
+            return;
+        }
+
+        if (currentStock > 0) {
+            this.shopConsumableRestockAt[stockKey] = 0;
+            return;
+        }
+
+        if (nextRestockAt <= 0) {
+            this.shopConsumableRestockAt[stockKey] = now + intervalMs;
+            return;
+        }
+
+        if (now < nextRestockAt) return;
 
         this.shopConsumableStock[stockKey] = maxStock;
-        this.shopConsumableRestockAt[stockKey] = now + intervalMs;
+        this.shopConsumableRestockAt[stockKey] = 0;
     },
 
     getLimitedShopItemStock(item) {
@@ -1790,7 +1806,9 @@ Object.assign(Input, {
         if (stockInfo.remaining < amount) return false;
 
         const stockKey = this.getShopStockKey(item);
-        this.shopConsumableStock[stockKey] = Math.max(0, stockInfo.remaining - amount);
+        const updatedStock = Math.max(0, stockInfo.remaining - amount);
+        this.shopConsumableStock[stockKey] = updatedStock;
+        this.shopConsumableRestockAt[stockKey] = updatedStock <= 0 ? Date.now() + this.getShopRestockIntervalMs() : 0;
         GameProgress.requestSave();
         return true;
     },
