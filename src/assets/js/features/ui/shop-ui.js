@@ -145,7 +145,7 @@ ShopUI = {
                 ${this.currentPage === 1 ? 'disabled' : ''}
             aria-label="Trang trước"
                 title="Trang trước"
-            ><span aria-hidden="true">←</span></button>
+            ><span aria-hidden="true">&lt;</span></button>
             <div class="shop-page-list">${pageButtons.join('')}</div>
             <div class="shop-page-status">Trang ${this.currentPage}/${totalPages}</div>
             <button
@@ -155,7 +155,7 @@ ShopUI = {
                 ${this.currentPage === totalPages ? 'disabled' : ''}
             aria-label="Trang sau"
                 title="Trang sau"
-            ><span aria-hidden="true">→</span></button>
+            ><span aria-hidden="true">&gt;</span></button>
         `;
     },
 

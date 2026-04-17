@@ -473,7 +473,7 @@ const GameProgress = {
             );
             Input.equippedSwordArtifacts = this.sanitizeSwordArtifacts(parsed.equippedSwordArtifacts);
             Input.attackMode = parsed.attackMode === 'INSECT' || parsed.attackMode === 'SWORD' ? parsed.attackMode : 'BASE';
-            Input.selectedInventoryTab = ['items', 'stones', 'beasts'].includes(parsed.selectedInventoryTab) ? parsed.selectedInventoryTab : 'items';
+            Input.selectedInventoryTab = 'items';
             Input.selectedBeastBagTab = typeof parsed.selectedBeastBagTab === 'string' && parsed.selectedBeastBagTab.trim()
                 ? parsed.selectedBeastBagTab
                 : 'all';
