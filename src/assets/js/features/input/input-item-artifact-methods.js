@@ -1233,7 +1233,16 @@ Object.assign(Input, {
         }
 
         if (item.category === 'ALCHEMY_RECIPE') {
-            return this.getAlchemyRecipeByKey(item.recipeKey) || CONFIG.PILL.EXP_QUALITIES.LOW;
+            const recipeConfig = this.getAlchemyRecipeByKey(item.recipeKey);
+            if (!recipeConfig) return CONFIG.PILL.EXP_QUALITIES.LOW;
+            const outputConfig = this.getItemQualityConfig({
+                category: recipeConfig.output?.category || 'EXP',
+                quality: recipeConfig.output?.quality || 'LOW'
+            });
+            return {
+                ...recipeConfig,
+                color: recipeConfig.color || outputConfig?.color || CONFIG.PILL.EXP_QUALITIES.LOW.color
+            };
         }
 
         if (item.category === 'ALCHEMY_FURNACE') {
@@ -1388,7 +1397,7 @@ Object.assign(Input, {
                 ? ` Trong túi còn ${formatNumber(progress.stocked)} thanh chờ triển khai.`
                 : '';
 
-            return `${qualityConfig.description || 'Kiếm khí trúc xanh có thể hợp tan tùy niệm.'} Tính năng: ${qualityConfig.featureSummary || 'Phân kiếm thành trận và dẫn lôi điện.'} Phẩm cấp hiện tại: ${qualityConfig.realmLabel || 'Pháp bảo'}. Tiềm lực tiến hóa: ${qualityConfig.evolutionLabel || 'Linh bảo'}. Hệ phẩm cấp pháp bảo: ${qualityConfig.gradeSystem || ''} Hiện đã triển khai ${formatNumber(progress.bonded)} thanh hộ thân; Đại Canh Kiếm Trận sẽ vận dụng ${formatNumber(progress.required)} thanh.${storedText}`;
+            return `${qualityConfig.description || 'Kiếm khí trúc xanh có thể hợp tan tùy niệm.'} Hiện đã triển khai ${formatNumber(progress.bonded)} thanh; Đại Canh Kiếm Trận cần ${formatNumber(progress.required)} thanh.${storedText}`;
         }
 
         if (item.category === 'INSECT_EGG') {
