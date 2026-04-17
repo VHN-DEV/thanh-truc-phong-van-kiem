@@ -2,6 +2,25 @@
 // Purpose: item, artifact and inventory utility methods
 
 Object.assign(Input, {
+    isNguCucSonComposite(uniqueKey) {
+        return uniqueKey === 'NGUYEN_HOP_NGU_CUC_SON';
+    },
+
+    getNguCucSonComponentKeys() {
+        const componentKeys = this.getArtifactConfig('NGUYEN_HOP_NGU_CUC_SON')?.componentKeys;
+        return Array.isArray(componentKeys) ? componentKeys : [];
+    },
+
+    hasAllNguCucSonPurchased() {
+        const componentKeys = this.getNguCucSonComponentKeys();
+        return componentKeys.length > 0 && componentKeys.every(key => this.hasUniquePurchase(key));
+    },
+
+    hasAllNguCucSonUnlocked() {
+        const componentKeys = this.getNguCucSonComponentKeys();
+        return componentKeys.length > 0 && componentKeys.every(key => this.hasCultivationArt(key));
+    },
+
     hasKnownThanhLinhKiemQuyet() {
         return this.hasUniquePurchase('THANH_LINH_KIEM_QUYET')
             || this.hasThanhLinhKiemQuyetUnlocked()
@@ -55,6 +74,16 @@ Object.assign(Input, {
             if (unlocked) {
                 return 'Đã luyện hóa, có thể triển khai Đỉnh ảnh để tạo lá chắn hộ thể cực mạnh.';
             }
+        } else if (this.isNguCucSonComposite(uniqueKey)) {
+            if (active) {
+                return 'Ngũ sắc cực sơn đang hợp nhất, có thể tách rời để dùng riêng từng cực sơn.';
+            }
+            if (unlocked) {
+                return 'Đã luyện hóa đủ năm cực sơn, có thể kết hợp hoặc tách rời tùy ý.';
+            }
+            if (purchased) {
+                return 'Đã mua đủ ngũ cực sơn, hãy luyện hóa đủ cả năm để mở kết hợp.';
+            }
         }
 
         if (unlocked) {
@@ -87,6 +116,11 @@ Object.assign(Input, {
                 ? `${artifactConfig.fullName} đã dựng Đỉnh ảnh hộ thể.`
                 : `${artifactConfig.fullName} đã thu vào thần hải.`;
         }
+        if (this.isNguCucSonComposite(uniqueKey)) {
+            return nextActive
+                ? `${artifactConfig.fullName} đã hợp thành ngũ sắc sơn ảnh.`
+                : `${artifactConfig.fullName} đã tách rời về năm cực sơn độc lập.`;
+        }
 
         return nextActive
             ? `${artifactConfig.fullName || uniqueKey} đã khai triển bên tâm ấn.`
@@ -94,10 +128,16 @@ Object.assign(Input, {
     },
 
     hasArtifactPurchased(uniqueKey) {
+        if (this.isNguCucSonComposite(uniqueKey)) {
+            return this.hasAllNguCucSonPurchased();
+        }
         return Boolean(uniqueKey && this.hasUniquePurchase(uniqueKey));
     },
 
     hasArtifactUnlocked(uniqueKey) {
+        if (this.isNguCucSonComposite(uniqueKey)) {
+            return this.hasAllNguCucSonPurchased();
+        }
         return Boolean(uniqueKey && this.hasCultivationArt(uniqueKey));
     },
 
@@ -487,6 +527,16 @@ Object.assign(Input, {
                 return false;
             }
         }
+
+        if (this.isNguCucSonComposite(uniqueKey) && normalized) {
+            this.getNguCucSonComponentKeys().forEach(componentKey => {
+                this.activeArtifacts[componentKey] = false;
+            });
+        }
+        if (!this.isNguCucSonComposite(uniqueKey) && normalized && this.isArtifactDeployed('NGUYEN_HOP_NGU_CUC_SON')) {
+            this.activeArtifacts.NGUYEN_HOP_NGU_CUC_SON = false;
+        }
+
         this.activeArtifacts[uniqueKey] = normalized;
 
         if (uniqueKey === 'PHONG_LOI_SI') {
@@ -537,6 +587,10 @@ Object.assign(Input, {
 
     getArtifactSkillList() {
         return Object.entries(CONFIG.ARTIFACTS || {}).map(([uniqueKey, artifactConfig]) => {
+            const isComposite = this.isNguCucSonComposite(uniqueKey);
+            if (isComposite && !this.hasAllNguCucSonPurchased() && !this.hasArtifactUnlocked(uniqueKey) && !this.isArtifactDeployed(uniqueKey)) {
+                return null;
+            }
             const purchased = this.hasArtifactPurchased(uniqueKey);
             const unlocked = this.hasArtifactUnlocked(uniqueKey);
             const active = this.isArtifactDeployed(uniqueKey);
@@ -553,7 +607,7 @@ Object.assign(Input, {
                 accent: artifactConfig.color || '#9fe8ff',
                 note: this.getArtifactStatusNote(uniqueKey, { active, unlocked, purchased })
             };
-        });
+        }).filter(Boolean);
     },
 
     hasKyTrungBang() {
@@ -1884,6 +1938,7 @@ Object.assign(Input, {
         }
 
         Object.entries(CONFIG.ARTIFACTS || {}).forEach(([uniqueKey, artifactConfig]) => {
+            if (artifactConfig?.shopHidden) return;
             items.push({
                 id: `ARTIFACT:${uniqueKey}`,
                 kind: 'UNIQUE',
