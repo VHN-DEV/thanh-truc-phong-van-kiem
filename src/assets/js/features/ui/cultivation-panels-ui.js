@@ -63,6 +63,17 @@ SkillsUI = {
                 return;
             }
 
+            const artifactCombineBtn = e.target.closest('[data-artifact-combine]');
+            if (artifactCombineBtn) {
+                e.stopPropagation();
+                e.preventDefault();
+
+                if (Input.toggleNguCucSonCombined?.()) {
+                    this.render();
+                }
+                return;
+            }
+
             const skillBtn = e.target.closest('[data-attack-skill]');
             if (!skillBtn) return;
 
@@ -708,6 +719,17 @@ Object.assign(SkillsUI, {
                 return;
             }
 
+            const artifactCombineBtn = e.target.closest('[data-artifact-combine]');
+            if (artifactCombineBtn) {
+                e.stopPropagation();
+                e.preventDefault();
+
+                if (Input.toggleNguCucSonCombined?.()) {
+                    this.render();
+                }
+                return;
+            }
+
             const secretArtBtn = e.target.closest('[data-secret-art-use]');
             if (secretArtBtn) {
                 e.stopPropagation();
@@ -923,7 +945,7 @@ Object.assign(SkillsUI, {
 
     getVisibleArtifactEntries() {
         const visibleArtifacts = Input.getArtifactSkillList().filter(artifact => artifact.purchased || artifact.unlocked);
-        if (!Input.isArtifactDeployed('NGUYEN_HOP_NGU_CUC_SON')) {
+        if (!Input.isNguCucSonCombined?.()) {
             return visibleArtifacts;
         }
 
@@ -1210,6 +1232,24 @@ Object.assign(SkillsUI, {
                     ? 'Đã luyện hóa'
                     : 'Đã mua';
 
+            const isNguCucComposite = artifact.uniqueKey === 'NGUYEN_HOP_NGU_CUC_SON';
+            const compositeActions = isNguCucComposite
+                ? `
+                    <div class="attack-skill-card__actions">
+                        <button class="btn-slot-action is-secondary" type="button" data-artifact-combine ${artifact.unlocked ? '' : 'disabled'}>
+                            ${escapeHtml(artifact.combined ? 'Tách rời' : 'Kết hợp')}
+                        </button>
+                        <button class="btn-slot-action" type="button" data-artifact-toggle="${escapeHtml(artifact.uniqueKey)}" ${(artifact.unlocked && artifact.combined) ? '' : 'disabled'}>
+                            ${escapeHtml(artifact.active ? 'Thu hồi' : 'Triển khai')}
+                        </button>
+                    </div>
+                `
+                : `
+                    <button class="btn-slot-action" type="button" data-artifact-toggle="${escapeHtml(artifact.uniqueKey)}" ${artifact.unlocked ? '' : 'disabled'}>
+                        ${escapeHtml(actionLabel)}
+                    </button>
+                `;
+
             cards.push(`
                 <article class="attack-skill-card ${artifact.active ? 'is-active' : ''} ${!artifact.unlocked ? 'is-disabled' : ''}" style="--skill-accent:${artifact.accent}">
                     <div class="attack-skill-card__head">
@@ -1221,9 +1261,7 @@ Object.assign(SkillsUI, {
                     </div>
                     <div class="attack-skill-card__foot">
                         <span>${escapeHtml(artifact.note)}</span>
-                        <button class="btn-slot-action" type="button" data-artifact-toggle="${escapeHtml(artifact.uniqueKey)}" ${artifact.unlocked ? '' : 'disabled'}>
-                            ${escapeHtml(actionLabel)}
-                        </button>
+                        ${compositeActions}
                     </div>
                 </article>
             `);
