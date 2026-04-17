@@ -837,7 +837,7 @@ Object.assign(SkillsUI, {
                 active: Input.attackMode === 'SWORD',
                 ready: Input.canDeployDaiCanhKiemTran(),
                 accent: CONFIG.SECRET_ARTS?.DAI_CANH_KIEM_TRAN?.color || '#ffd36b',
-                imagePath: CONFIG.SECRET_ARTS?.DAI_CANH_KIEM_TRAN?.imagePath || CONFIG.IMAGES?.UI?.PROFILE_SWORD || '',
+                productKey: 'DAI_CANH_KIEM_TRAN',
                 statusLabel: daiCanhLearned
                     ? 'Đã lĩnh ngộ'
                     : daiCanhItem
@@ -867,7 +867,7 @@ Object.assign(SkillsUI, {
                 active: false,
                 ready: true,
                 accent: CONFIG.SECRET_ARTS?.THANH_LINH_KIEM_QUYET?.color || '#72f7d0',
-                imagePath: CONFIG.SECRET_ARTS?.THANH_LINH_KIEM_QUYET?.imagePath || CONFIG.IMAGES?.UI?.PROFILE_SWORD || '',
+                productKey: 'THANH_LINH_KIEM_QUYET',
                 statusLabel: thanhLinhLearned
                     ? 'Đã lĩnh ngộ'
                     : thanhLinhItem
@@ -893,9 +893,7 @@ Object.assign(SkillsUI, {
                 active: Input.attackMode === 'INSECT',
                 ready: Input.canUseInsectAttackMode(),
                 accent: CONFIG.INSECT?.UNIQUE_ITEMS?.KHU_TRUNG_THUAT?.color || '#ff92c2',
-                imagePath: CONFIG.INSECT?.UNIQUE_ITEMS?.KHU_TRUNG_THUAT?.imagePath
-                    || CONFIG.INSECT?.SPECIES?.KIEN_THIEN_TINH?.imagePath
-                    || '',
+                productKey: 'KHU_TRUNG_THUAT',
                 statusLabel: khuTrungLearned
                     ? 'Đã lĩnh ngộ'
                     : khuTrungItem
@@ -932,7 +930,7 @@ Object.assign(SkillsUI, {
                 active: false,
                 ready: canLamLearned,
                 accent: CONFIG.SECRET_ARTS?.CAN_LAM_BANG_DIEM?.color || '#69d9ff',
-                imagePath: CONFIG.ARTIFACTS?.CAN_LAM_BANG_DIEM?.imagePath || '',
+                productKey: 'CAN_LAM_BANG_DIEM',
                 statusLabel: canLamLearned ? 'Đã lĩnh ngộ' : canLamItem ? 'Chờ lĩnh ngộ' : 'Đã mua',
                 note: canLamLearned
                     ? 'Kích hoạt để truy kích mục tiêu gần nhất, đóng băng thiêu đốt rồi tan rã khi sinh lực cạn.'
@@ -1102,7 +1100,24 @@ Object.assign(SkillsUI, {
         `;
     },
 
-    renderSkillAvatarMarkup({ imagePath = '', name = '' } = {}) {
+    renderShopProductAvatarMarkup(productKey) {
+        if (!productKey || typeof buildPillVisualMarkup !== 'function') return '';
+        const shopItems = typeof Input?.getShopItems === 'function' ? Input.getShopItems() : [];
+        const matchedItem = shopItems.find(item => item?.uniqueKey === productKey);
+        if (!matchedItem) return '';
+        const qualityConfig = typeof Input?.getItemQualityConfig === 'function'
+            ? Input.getItemQualityConfig(matchedItem)
+            : { color: '#9fe8ff' };
+        return `
+            <div class="attack-skill-card__avatar attack-skill-card__avatar--pill" aria-hidden="true">
+                ${buildPillVisualMarkup(matchedItem, qualityConfig, { context: 'shop' })}
+            </div>
+        `;
+    },
+
+    renderSkillAvatarMarkup({ imagePath = '', name = '', productKey = '' } = {}) {
+        const productAvatarMarkup = this.renderShopProductAvatarMarkup(productKey);
+        if (productAvatarMarkup) return productAvatarMarkup;
         if (!imagePath) return '';
         return `
             <div class="attack-skill-card__avatar" aria-hidden="true">
@@ -1116,7 +1131,7 @@ Object.assign(SkillsUI, {
             <article class="attack-skill-card ${skill.active ? 'is-active' : ''} ${(skill.unlocked && (skill.ready || !skill.modeKey)) ? '' : 'is-disabled'}" style="--skill-accent:${skill.accent}">
                 <div class="attack-skill-card__head">
                     <div class="attack-skill-card__summary">
-                        ${this.renderSkillAvatarMarkup({ imagePath: skill.imagePath, name: skill.name })}
+                        ${this.renderSkillAvatarMarkup({ imagePath: skill.imagePath, name: skill.name, productKey: skill.productKey })}
                         <h4>${escapeHtml(skill.name)}</h4>
                         <p>${escapeHtml(skill.description)}</p>
                     </div>
@@ -1213,7 +1228,11 @@ Object.assign(SkillsUI, {
             <article class="attack-skill-card ${this.expandedSwordArtifactPanel ? 'is-active' : ''}" style="--skill-accent:${swordConfig.color || '#66f0c2'}">
                 <div class="attack-skill-card__head">
                     <div class="attack-skill-card__summary">
-                        ${this.renderSkillAvatarMarkup({ imagePath: swordConfig.imagePath || CONFIG.IMAGES?.UI?.PROFILE_SWORD || '', name: swordConfig.fullName || 'Thanh Trúc Phong Vân Kiếm' })}
+                        ${this.renderSkillAvatarMarkup({
+                            imagePath: swordConfig.imagePath || CONFIG.IMAGES?.UI?.PROFILE_SWORD || '',
+                            name: swordConfig.fullName || 'Thanh Trúc Phong Vân Kiếm',
+                            productKey: swordConfig.uniqueKey || 'THANH_TRUC_PHONG_VAN_KIEM'
+                        })}
                         <h4>${escapeHtml(swordConfig.fullName || 'Thanh Trúc Phong Vân Kiếm')}</h4>
                         <p>Quản lý từng thanh kiếm đã trang bị, xem uy năng và độ bền, đồng thời có thể gỡ về túi trữ vật.</p>
                     </div>
@@ -1271,7 +1290,7 @@ Object.assign(SkillsUI, {
                 <article class="attack-skill-card ${artifact.active ? 'is-active' : ''} ${!artifact.unlocked ? 'is-disabled' : ''}" style="--skill-accent:${artifact.accent}">
                     <div class="attack-skill-card__head">
                         <div class="attack-skill-card__summary">
-                            ${this.renderSkillAvatarMarkup({ imagePath: artifactConfig.imagePath || '', name: artifact.name })}
+                            ${this.renderSkillAvatarMarkup({ imagePath: artifactConfig.imagePath || '', name: artifact.name, productKey: artifact.uniqueKey })}
                             <h4>${escapeHtml(artifact.name)}</h4>
                             <p>${escapeHtml(artifact.description)}</p>
                         </div>

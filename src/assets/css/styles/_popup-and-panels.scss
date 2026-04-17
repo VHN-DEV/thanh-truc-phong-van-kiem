@@ -1413,6 +1413,20 @@ select.shop-control-input {
     }
 }
 
+.attack-skill-card__avatar--pill {
+    padding: 0;
+
+    .pill-visual {
+        width: 42px;
+        min-width: 42px;
+        height: 42px;
+        margin: 0;
+        transform: scale(0.56);
+        transform-origin: center;
+        filter: none;
+    }
+}
+
 .attack-skill-card__foot {
     align-items: center;
     color: rgba(240, 255, 249, 0.68);
