@@ -357,7 +357,7 @@ Object.assign(Input, {
         if (this.isInsectSwarmActive()) return false;
 
         const swordStats = this.getAliveSwordStats();
-        return swordStats.alive <= 1;
+        return swordStats.alive === 1;
     },
 
     isSingleSwordPreThanhLinhState() {
@@ -365,7 +365,7 @@ Object.assign(Input, {
         if (this.hasThanhLinhKiemQuyetUnlocked()) return false;
 
         const swordStats = this.getAliveSwordStats();
-        return swordStats.alive <= 1;
+        return swordStats.alive === 1;
     },
 
     triggerSingleSwordTapAttack(windowMs = 320) {
@@ -383,7 +383,8 @@ Object.assign(Input, {
 
     performSingleSwordTapStrike() {
         if (!Array.isArray(enemies) || !enemies.length) return false;
-        const attackRange = 102 * scaleFactor;
+        if (!this.getAliveSwordStats || this.getAliveSwordStats().alive < 1) return false;
+        const attackRange = 96 * scaleFactor;
         const sourceX = Number.isFinite(this.x) ? this.x : guardCenter.x;
         const sourceY = Number.isFinite(this.y) ? this.y : guardCenter.y;
         let nearestEnemy = null;
