@@ -266,6 +266,8 @@ const GameProgress = {
             alchemyFurnaces: Input.alchemyFurnaces,
             alchemySelectedFurnace: Input.alchemySelectedFurnace,
             alchemyBatch: Input.alchemyBatch,
+            shopConsumableStock: Input.shopConsumableStock,
+            shopConsumableRestockAt: Input.shopConsumableRestockAt,
             bonusStats: Input.bonusStats,
             breakthroughBonus: Input.breakthroughBonus,
             isReadyToBreak: Input.isReadyToBreak,
@@ -365,6 +367,8 @@ const GameProgress = {
             Input.alchemyFurnaces = this.getDefaultAlchemyFurnaces();
             Input.alchemySelectedFurnace = null;
             Input.alchemyBatch = null;
+            Input.shopConsumableStock = {};
+            Input.shopConsumableRestockAt = {};
             Input.uniquePurchases = this.getDefaultUniquePurchases();
             Input.cultivationArts = this.getDefaultCultivationArts();
             Input.activeArtifacts = this.getDefaultActiveArtifacts();
@@ -491,6 +495,8 @@ const GameProgress = {
                     resolved: Boolean(parsed.alchemyBatch.resolved)
                 }
                 : null;
+            Input.shopConsumableStock = this.sanitizeNumberMap(parsed.shopConsumableStock);
+            Input.shopConsumableRestockAt = this.sanitizeNumberMap(parsed.shopConsumableRestockAt, { min: 0, max: Number.MAX_SAFE_INTEGER });
             Input.uniquePurchases = this.sanitizeBooleanMap(parsed.uniquePurchases, this.getDefaultUniquePurchases());
             Input.cultivationArts = this.sanitizeBooleanMap(parsed.cultivationArts, this.getDefaultCultivationArts());
             Input.restorePendingSecretArts();

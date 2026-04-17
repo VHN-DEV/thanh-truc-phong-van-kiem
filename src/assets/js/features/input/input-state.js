@@ -47,6 +47,8 @@ const INPUT_INITIAL_STATE = {
     alchemyFurnaces: getDefaultAlchemyFurnaces(),
     alchemySelectedFurnace: null,
     alchemyBatch: null,
+    shopConsumableStock: {},
+    shopConsumableRestockAt: {},
     uniquePurchases: getDefaultUniquePurchases(),
     cultivationArts: getDefaultCultivationArts(),
     activeArtifacts: {

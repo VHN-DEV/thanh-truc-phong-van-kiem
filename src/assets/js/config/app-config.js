@@ -211,8 +211,8 @@ const CONFIG = {
             ROOT_SELLBACK_RATIO: 0.5, // Tỉ lệ hoàn lại khi bán nguyên liệu gốc (50% giá mua)
             REFINED_POWER_BASE: 100, // Công lực cơ bản của trúc luyện hóa
             REFINED_POWER_PER_YEAR: 1.05, // Tăng công lực theo từng năm
-            REFINED_SELL_BASE: 800, // Giá bán cơ bản của trúc luyện hóa
-            REFINED_SELL_PER_POWER: 10, // Giá bán tăng theo công lực
+            REFINED_SELL_BASE: 1400, // Giá bán cơ bản của trúc luyện hóa (tăng để khuyến khích tự luyện rồi bán)
+            REFINED_SELL_PER_POWER: 14, // Giá bán tăng theo công lực (tăng để tương xứng công sức ôn dưỡng)
             STAGE_THRESHOLDS: [
                 {
                     years: 0,

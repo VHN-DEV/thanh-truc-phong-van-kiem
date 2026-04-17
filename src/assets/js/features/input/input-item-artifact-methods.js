@@ -1705,9 +1705,92 @@ Object.assign(Input, {
         };
     },
 
+    getShopRestockIntervalMs() {
+        return 10 * 60 * 1000;
+    },
+
+    isShopLimitedStockItem(item) {
+        return ['EXP', 'INSIGHT', 'ATTACK', 'SHIELD_BREAK', 'BERSERK', 'RAGE', 'MANA', 'MAX_MANA', 'REGEN', 'SPEED', 'FORTUNE', 'BREAKTHROUGH', 'SPECIAL'].includes(item?.category);
+    },
+
+    getShopStockKey(item) {
+        return item?.id || '';
+    },
+
+    ensureShopConsumableStockState() {
+        if (!this.shopConsumableStock || typeof this.shopConsumableStock !== 'object') {
+            this.shopConsumableStock = {};
+        }
+        if (!this.shopConsumableRestockAt || typeof this.shopConsumableRestockAt !== 'object') {
+            this.shopConsumableRestockAt = {};
+        }
+    },
+
+    getShopItemMaxStock(item) {
+        if (!item) return 0;
+
+        if (item.category === 'SPECIAL') return 4;
+
+        const qualityStockMap = {
+            LOW: 30,
+            MEDIUM: 20,
+            HIGH: 12,
+            SUPREME: 6
+        };
+
+        return qualityStockMap[item.quality] || 10;
+    },
+
+    restockLimitedShopItem(item, now = Date.now()) {
+        if (!this.isShopLimitedStockItem(item)) return;
+        this.ensureShopConsumableStockState();
+
+        const stockKey = this.getShopStockKey(item);
+        if (!stockKey) return;
+
+        const maxStock = this.getShopItemMaxStock(item);
+        const intervalMs = this.getShopRestockIntervalMs();
+        const nextRestockAt = Math.max(0, Number(this.shopConsumableRestockAt?.[stockKey]) || 0);
+        const currentStock = Math.max(0, Math.floor(Number(this.shopConsumableStock?.[stockKey]) || 0));
+
+        const shouldRefill = currentStock <= 0 && (!nextRestockAt || now >= nextRestockAt);
+        if (!shouldRefill) return;
+
+        this.shopConsumableStock[stockKey] = maxStock;
+        this.shopConsumableRestockAt[stockKey] = now + intervalMs;
+    },
+
+    getLimitedShopItemStock(item) {
+        if (!this.isShopLimitedStockItem(item)) {
+            return { limited: false, remaining: Number.POSITIVE_INFINITY, max: Number.POSITIVE_INFINITY, restockAt: 0 };
+        }
+
+        this.restockLimitedShopItem(item);
+        const stockKey = this.getShopStockKey(item);
+        const max = this.getShopItemMaxStock(item);
+        const remaining = Math.max(0, Math.floor(Number(this.shopConsumableStock?.[stockKey]) || 0));
+        const restockAt = Math.max(0, Number(this.shopConsumableRestockAt?.[stockKey]) || 0);
+        return { limited: true, remaining, max, restockAt };
+    },
+
+    consumeLimitedShopItemStock(item, amount = 1) {
+        if (!this.isShopLimitedStockItem(item)) return true;
+        this.restockLimitedShopItem(item);
+        const stockInfo = this.getLimitedShopItemStock(item);
+        if (!stockInfo.limited) return true;
+        if (stockInfo.remaining < amount) return false;
+
+        const stockKey = this.getShopStockKey(item);
+        this.shopConsumableStock[stockKey] = Math.max(0, stockInfo.remaining - amount);
+        GameProgress.requestSave();
+        return true;
+    },
+
     getShopItems() {
         const shopCategories = ['EXP', 'INSIGHT', 'ATTACK', 'SHIELD_BREAK', 'BERSERK', 'RAGE', 'MANA', 'MAX_MANA', 'REGEN', 'SPEED', 'FORTUNE'];
         const items = [];
+        const craftablePillBuyMultiplier = 1.35;
+        const swordArtifactBuyMultiplier = 1.6;
 
         shopCategories.forEach(category => {
             QUALITY_ORDER.forEach(quality => {
@@ -1717,7 +1800,7 @@ Object.assign(Input, {
                     kind: 'PILL',
                     category,
                     quality,
-                    priceLowStone: qualityConfig.buyPriceLowStone
+                    priceLowStone: Math.floor((qualityConfig.buyPriceLowStone || 0) * craftablePillBuyMultiplier)
                 });
             });
         });
@@ -1732,7 +1815,7 @@ Object.assign(Input, {
                     quality,
                     realmKey: nextRealm.key,
                     realmName: nextRealm.name,
-                    priceLowStone: CONFIG.PILL.BREAKTHROUGH_QUALITIES[quality].buyPriceLowStone
+                    priceLowStone: Math.floor((CONFIG.PILL.BREAKTHROUGH_QUALITIES[quality].buyPriceLowStone || 0) * craftablePillBuyMultiplier)
                 });
             });
         }
@@ -1744,7 +1827,7 @@ Object.assign(Input, {
                 category: 'SPECIAL',
                 quality: specialConfig.quality || 'SUPREME',
                 specialKey,
-                priceLowStone: specialConfig.buyPriceLowStone || 0
+                priceLowStone: Math.floor((specialConfig.buyPriceLowStone || 0) * craftablePillBuyMultiplier)
             });
         });
 
@@ -1768,7 +1851,7 @@ Object.assign(Input, {
                 category: 'SWORD_ARTIFACT',
                 quality: CONFIG.SWORD.ARTIFACT_ITEM.quality || 'HIGH',
                 uniqueKey: CONFIG.SWORD.ARTIFACT_ITEM.uniqueKey || 'THANH_TRUC_PHONG_VAN_KIEM',
-                priceLowStone: CONFIG.SWORD.ARTIFACT_ITEM.buyPriceLowStone || 0
+                priceLowStone: Math.floor((CONFIG.SWORD.ARTIFACT_ITEM.buyPriceLowStone || 0) * swordArtifactBuyMultiplier)
             });
         }
 
@@ -1929,6 +2012,11 @@ Object.assign(Input, {
             if (categoryDiff !== 0) return categoryDiff;
 
             return QUALITY_ORDER.indexOf(a.quality) - QUALITY_ORDER.indexOf(b.quality);
+        }).map(item => {
+            const stockInfo = this.getLimitedShopItemStock(item);
+            return stockInfo.limited
+                ? { ...item, shopStockRemaining: stockInfo.remaining, shopStockMax: stockInfo.max, shopRestockAt: stockInfo.restockAt }
+                : item;
         });
     },
 
@@ -2006,6 +2094,14 @@ Object.assign(Input, {
         const item = this.getShopItems().find(entry => entry.id === itemId);
         if (!item) return false;
         const qualityConfig = this.getItemQualityConfig(item);
+        const stockInfo = this.getLimitedShopItemStock(item);
+
+        if (stockInfo.limited && stockInfo.remaining <= 0) {
+            const remainingMs = Math.max(0, stockInfo.restockAt - Date.now());
+            const waitSeconds = Math.max(1, Math.ceil(remainingMs / 1000));
+            showNotify(`Món này đã hết hàng, xin chờ ${formatNumber(waitSeconds)} giây để làm mới.`, qualityConfig.color || '#ffd36b');
+            return false;
+        }
 
         if (item.isOneTime && item.uniqueKey && this.hasUniquePurchase(item.uniqueKey)) {
             showNotify('Vật phẩm này chỉ có thể mua một lần.', qualityConfig.color || '#ffd36b');
@@ -2127,6 +2223,7 @@ Object.assign(Input, {
 
         if (item.category === 'INSECT_EGG') {
             this.addInsectEgg(item.speciesKey, 1);
+            this.consumeLimitedShopItemStock(item);
             showNotify(`Đã mua ${this.getItemDisplayName(item)}`, qualityConfig.color || '#79ffd4');
             this.refreshResourceUI();
             return true;
@@ -2136,6 +2233,7 @@ Object.assign(Input, {
             this.alchemyUnlockedRecipes = this.alchemyUnlockedRecipes || {};
             this.alchemyUnlockedRecipes[item.recipeKey] = true;
             this.markUniquePurchase(item.uniqueKey);
+            this.consumeLimitedShopItemStock(item);
             showNotify(`Đã lĩnh ${this.getItemDisplayName(item)}. Có thể mở Đan Lô để luyện.`, qualityConfig.color || '#93c8d8');
             this.refreshResourceUI();
             return true;
@@ -2146,6 +2244,7 @@ Object.assign(Input, {
             this.alchemyFurnaces[item.furnaceKey] = true;
             this.alchemySelectedFurnace = item.furnaceKey;
             this.markUniquePurchase(item.uniqueKey);
+            this.consumeLimitedShopItemStock(item);
             showNotify(`Đã mua ${this.getItemDisplayName(item)}. Đan lư này đã sẵn sàng để luyện đan.`, qualityConfig.color || '#93c8d8');
             if (AlchemyUI && typeof AlchemyUI.open === 'function') {
                 AlchemyUI.open();
@@ -2158,6 +2257,7 @@ Object.assign(Input, {
         if (item.isOneTime && item.uniqueKey) {
             this.markUniquePurchase(item.uniqueKey);
         }
+        this.consumeLimitedShopItemStock(item);
         showNotify(`Đã mua ${this.getItemDisplayName(addedItem)}`, this.getItemQualityConfig(addedItem).color);
         this.refreshResourceUI();
         return true;
@@ -2173,7 +2273,7 @@ Object.assign(Input, {
         const qualityConfig = this.getItemQualityConfig(item);
         const buyPrice = Math.max(0, qualityConfig.buyPriceLowStone || 0);
         const ratio = Math.max(0, parseFloat(CONFIG.ITEMS.SELLBACK_RATIO) || 0);
-        const craftedBonusMultiplier = item.source === 'ALCHEMY' ? 1.6 : 1;
+        const craftedBonusMultiplier = item.source === 'ALCHEMY' ? 2.2 : 1;
         const computedPrice = Math.floor(buyPrice * ratio * craftedBonusMultiplier);
 
         return Math.max(1, computedPrice);

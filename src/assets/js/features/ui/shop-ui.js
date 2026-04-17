@@ -169,14 +169,23 @@ ShopUI = {
             const hasDedicatedHabitat = item.category === 'SPIRIT_HABITAT' && Boolean(Input.insectHabitats?.[item.speciesKey]);
             const hasRainbowHabitat = item.category === 'SPIRIT_HABITAT' && Input.hasSevenColorSpiritBag();
             const canStoreOrUpgrade = this.canStoreOrUpgrade(item, isOwnedUnique);
-            const canAfford = !Input.isVoidCollapsed && canStoreOrUpgrade && Input.canAffordLowStoneCost(item.priceLowStone);
+            const isLimitedStock = Number.isFinite(item.shopStockRemaining);
+            const hasStock = !isLimitedStock || item.shopStockRemaining > 0;
+            const canAfford = !Input.isVoidCollapsed && canStoreOrUpgrade && hasStock && Input.canAffordLowStoneCost(item.priceLowStone);
             const priceMarkup = Input.renderSpiritStoneCostMarkup(item.priceLowStone);
             const actionLabel = this.getActionLabel(item, {
                 canStoreOrUpgrade,
                 isOwnedUnique,
                 hasDedicatedHabitat,
-                hasRainbowHabitat
+                hasRainbowHabitat,
+                hasStock
             });
+            const restockCountdown = isLimitedStock && item.shopStockRemaining <= 0 && item.shopRestockAt > Date.now()
+                ? Math.max(1, Math.ceil((item.shopRestockAt - Date.now()) / 1000))
+                : 0;
+            const stockText = isLimitedStock
+                ? `Tồn kho: ${formatNumber(item.shopStockRemaining)}/${formatNumber(item.shopStockMax)}${restockCountdown > 0 ? ` • Làm mới sau ${formatNumber(restockCountdown)}s` : ''}`
+                : '';
 
             return `
                 <article class="shop-card has-pill-art" style="--slot-accent:${qualityConfig.color}">
@@ -189,6 +198,7 @@ ShopUI = {
                         <span class="slot-meta-title">Giá</span>
                         ${priceMarkup}
                     </div>
+                    ${stockText ? `<div class="slot-meta">${escapeHtml(stockText)}</div>` : ''}
                     <button class="btn-slot-action" data-shop-id="${escapeHtml(item.id)}" ${canAfford ? '' : 'disabled'}>${escapeHtml(actionLabel)}</button>
                 </article>
             `;
@@ -259,8 +269,11 @@ ShopUI.getActionLabel = function (item, options = {}) {
         canStoreOrUpgrade = false,
         isOwnedUnique = false,
         hasDedicatedHabitat = false,
-        hasRainbowHabitat = false
+        hasRainbowHabitat = false,
+        hasStock = true
     } = options;
+
+    if (!hasStock) return 'Hết hàng';
 
     if (item.category === 'BAG') {
         return canStoreOrUpgrade ? 'Khai mở' : 'Duyên pháp chưa hợp';
