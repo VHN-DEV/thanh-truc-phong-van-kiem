@@ -925,7 +925,12 @@ select.shop-control-input {
 }
 
 .btn-shop-page-nav {
-    min-width: 72px;
+    min-width: 40px;
+    width: 40px;
+    padding-inline: 0;
+    font-size: 18px;
+    line-height: 1;
+    flex-shrink: 0;
 }
 
 .shop-page-gap,
@@ -5465,8 +5470,8 @@ select.shop-control-input {
     }
 
     .btn-shop-page-nav {
-        min-width: 72px;
-        width: auto;
+        min-width: 40px;
+        width: 40px;
     }
 
     .shop-page-status {
