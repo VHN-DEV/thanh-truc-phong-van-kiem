@@ -436,8 +436,7 @@ class Sword {
         while (diff > Math.PI) diff -= Math.PI * 2;
         this.drawAngle += diff * 0.24;
 
-        this.trail.push({ x: this.x, y: this.y });
-        if (this.trail.length > CONFIG.SWORD.TRAIL_LENGTH) this.trail.shift();
+        this.pushTrailPoint(CONFIG.SWORD.TRAIL_LENGTH, Input);
 
         const snapDistance = (Input.isUltMode && this.isUltimateCore()) ? 18 : 10;
         if (distance <= snapDistance * scaleFactor && Math.hypot(this.vx, this.vy) <= 2.2 * scaleFactor * speedMult) {
@@ -499,7 +498,7 @@ class Sword {
         }
 
         if (this.isStunned) {
-            this.handleStun(scaleFactor, now);
+            this.handleStun(scaleFactor, Input, now);
             return;
         }
 
@@ -519,15 +518,14 @@ class Sword {
         }
     }
 
-    handleStun(scaleFactor, now = null) {
+    handleStun(scaleFactor, Input, now = null) {
         this.x += this.vx;
         this.y += this.vy;
         this.vx *= 0.95;
         this.vy *= 0.95;
         this.drawAngle += 0.2;
 
-        this.trail.push({ x: this.x, y: this.y });
-        if (this.trail.length > CONFIG.SWORD.TRAIL_LENGTH) this.trail.shift();
+        this.pushTrailPoint(CONFIG.SWORD.TRAIL_LENGTH, Input);
 
         if (getSwordFrameNow(now) > this.stunTimer) {
             this.isStunned = false;
@@ -779,8 +777,7 @@ class Sword {
                 }
             }
 
-            this.trail.push({ x: this.x, y: this.y });
-            if (this.trail.length > 8) this.trail.shift();
+            this.pushTrailPoint(8, Input);
             return;
         }
         this.committedCloseSlashCycle = -1;
@@ -826,8 +823,7 @@ class Sword {
             }
 
             if (isUltimateCore && (frameNow - (this.lastUltimateHitAt || 0)) < ultimateHitInterval) {
-                this.trail.push({ x: this.x, y: this.y });
-                if (this.trail.length > CONFIG.SWORD.TRAIL_LENGTH) this.trail.shift();
+                this.pushTrailPoint(CONFIG.SWORD.TRAIL_LENGTH, Input);
                 return;
             }
 
@@ -873,8 +869,7 @@ class Sword {
         }
 
         // Vẽ vệt kiếm
-        this.trail.push({ x: this.x, y: this.y });
-        if (this.trail.length > CONFIG.SWORD.TRAIL_LENGTH) this.trail.shift();
+        this.pushTrailPoint(CONFIG.SWORD.TRAIL_LENGTH, Input);
     }
 
     breakSword(scaleFactor, now = null) {
@@ -926,6 +921,76 @@ class Sword {
         }
     }
 
+    isSingleSwordDeployState(Input) {
+        return Boolean(
+            Input
+            && !Input.isUltMode
+            && Input.attackMode === 'SWORD'
+            && typeof Input.isSingleSwordPreThanhLinhState === 'function'
+            && Input.isSingleSwordPreThanhLinhState()
+        );
+    }
+
+    pushTrailPoint(maxLength = CONFIG.SWORD.TRAIL_LENGTH, Input = null) {
+        const vx = Number(this.vx) || 0;
+        const vy = Number(this.vy) || 0;
+        const speed = Math.hypot(vx, vy);
+        const dynamicWidth = clampNumber(1.8 + (speed * 0.26), 1.8, 13.5);
+        this.trail.push({
+            x: this.x,
+            y: this.y,
+            angle: this.drawAngle,
+            width: this.isSingleSwordDeployState(Input)
+                ? dynamicWidth
+                : 2
+        });
+        if (this.trail.length > maxLength) this.trail.shift();
+    }
+
+    drawSingleSwordDeployTrail(ctx, scaleFactor) {
+        if (!Array.isArray(this.trail) || this.trail.length < 2) return;
+        const pointCount = this.trail.length;
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        for (let i = 0; i < pointCount - 1; i++) {
+            const current = this.trail[i];
+            const next = this.trail[i + 1];
+            const ratio = i / Math.max(1, pointCount - 1);
+            const opacity = (0.08 + ratio * 0.5) * this.renderOpacity;
+            const cAngle = Number.isFinite(current.angle) ? current.angle : this.drawAngle;
+            const nAngle = Number.isFinite(next.angle) ? next.angle : cAngle;
+            const cWidth = (Number(current.width) || 2) * scaleFactor;
+            const nWidth = (Number(next.width) || cWidth) * scaleFactor;
+
+            const cNormalX = Math.cos(cAngle - Math.PI / 2);
+            const cNormalY = Math.sin(cAngle - Math.PI / 2);
+            const nNormalX = Math.cos(nAngle - Math.PI / 2);
+            const nNormalY = Math.sin(nAngle - Math.PI / 2);
+
+            const p1x = current.x + cNormalX * cWidth * 0.26;
+            const p1y = current.y + cNormalY * cWidth * 0.26;
+            const p2x = current.x - cNormalX * cWidth * 1.8;
+            const p2y = current.y - cNormalY * cWidth * 1.8;
+            const p3x = next.x - nNormalX * nWidth * 1.8;
+            const p3y = next.y - nNormalY * nWidth * 1.8;
+            const p4x = next.x + nNormalX * nWidth * 0.26;
+            const p4y = next.y + nNormalY * nWidth * 0.26;
+
+            const fill = ctx.createLinearGradient(current.x, current.y, next.x, next.y);
+            fill.addColorStop(0, `rgba(118, 255, 226, ${Math.max(0, opacity * 0.75)})`);
+            fill.addColorStop(1, `rgba(255, 248, 184, ${Math.min(1, opacity)})`);
+            ctx.fillStyle = fill;
+            ctx.beginPath();
+            ctx.moveTo(p1x, p1y);
+            ctx.lineTo(p2x, p2y);
+            ctx.lineTo(p3x, p3y);
+            ctx.lineTo(p4x, p4y);
+            ctx.closePath();
+            ctx.fill();
+        }
+        ctx.restore();
+    }
+
     draw(ctx, scaleFactor, now = null) {
         if (this.isDead) {
             if (this.fragments.length > 0) {
@@ -948,15 +1013,19 @@ class Sword {
         }
 
         if (this.trail.length > 1) {
-            ctx.save();
-            ctx.globalAlpha = Math.max(0.2, this.renderOpacity * 0.72);
-            ctx.beginPath();
-            ctx.moveTo(this.trail[0].x, this.trail[0].y);
-            for (let i = 1; i < this.trail.length; i++) ctx.lineTo(this.trail[i].x, this.trail[i].y);
-            ctx.strokeStyle = CONFIG.COLORS.SWORD_TRAIL;
-            ctx.lineWidth = 2 * scaleFactor;
-            ctx.stroke();
-            ctx.restore();
+            if (this.isSingleSwordDeployState(Input)) {
+                this.drawSingleSwordDeployTrail(ctx, scaleFactor);
+            } else {
+                ctx.save();
+                ctx.globalAlpha = Math.max(0.2, this.renderOpacity * 0.72);
+                ctx.beginPath();
+                ctx.moveTo(this.trail[0].x, this.trail[0].y);
+                for (let i = 1; i < this.trail.length; i++) ctx.lineTo(this.trail[i].x, this.trail[i].y);
+                ctx.strokeStyle = CONFIG.COLORS.SWORD_TRAIL;
+                ctx.lineWidth = 2 * scaleFactor;
+                ctx.stroke();
+                ctx.restore();
+            }
         }
         ctx.save();
         ctx.globalAlpha = this.renderOpacity;
