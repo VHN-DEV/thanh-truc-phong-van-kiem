@@ -5,10 +5,7 @@ InventoryUI = {
     wallet: document.getElementById('inventory-wallet'),
     tabs: document.getElementById('inventory-tabs'),
     itemPanel: document.getElementById('inventory-panel-items'),
-    stonePanel: document.getElementById('inventory-panel-stones'),
     pillGrid: document.getElementById('inventory-pill-grid'),
-    stoneGrid: document.getElementById('inventory-stone-grid'),
-    currentTab: 'items',
     expandedDescriptionIds: new Set(),
 
     init() {
@@ -61,46 +58,19 @@ InventoryUI = {
             });
         }
 
-        if (this.tabs) {
-            this.tabs.addEventListener('pointerdown', (e) => {
-                const tabBtn = e.target.closest('[data-inventory-tab]');
-                if (!tabBtn) return;
-
-                e.stopPropagation();
-                this.currentTab = tabBtn.getAttribute('data-inventory-tab') || 'items';
-                Input.selectedInventoryTab = this.currentTab;
-                this.render();
-            });
-        }
-
         this.overlay.addEventListener('pointerdown', (e) => {
             if (e.target === this.overlay) this.close();
         });
     },
 
     render() {
-        if (!this.wallet || !this.pillGrid || !this.stoneGrid) return;
+        if (!this.wallet || !this.pillGrid) return;
 
-        this.currentTab = Input.selectedInventoryTab || this.currentTab || 'items';
-        if (!['items', 'stones'].includes(this.currentTab)) {
-            this.currentTab = 'items';
-            Input.selectedInventoryTab = 'items';
-        }
+        Input.selectedInventoryTab = 'items';
         this.wallet.innerHTML = buildWalletMarkup() + buildInventoryCapacityMarkup();
-
-        if (this.tabs) {
-            this.tabs.querySelectorAll('[data-inventory-tab]').forEach(tabBtn => {
-                tabBtn.classList.toggle('is-active', tabBtn.getAttribute('data-inventory-tab') === this.currentTab);
-            });
+        if (this.itemPanel) {
+            this.itemPanel.classList.add('is-active');
         }
-
-        [
-            { panel: this.itemPanel, key: 'items' },
-            { panel: this.stonePanel, key: 'stones' }
-        ].forEach(entry => {
-            if (!entry.panel) return;
-            entry.panel.classList.toggle('is-active', entry.key === this.currentTab);
-        });
 
         const inventorySummary = Input.getInventorySummary();
         const entries = inventorySummary.entries;
@@ -174,19 +144,6 @@ InventoryUI = {
         }
         this.pillGrid.innerHTML = cards.join('');
         restoreTrackedDescriptionCards(this.pillGrid, this.expandedDescriptionIds);
-
-        this.stoneGrid.innerHTML = STONE_ORDER.map(quality => {
-            const stoneType = Input.getSpiritStoneType(quality);
-
-            return `
-                <article class="inventory-slot stone-slot" style="--slot-accent:${stoneType.color}">
-                    <div class="slot-badge">Linh thạch</div>
-                    <h4>${escapeHtml(stoneType.label)}</h4>
-                    <p>Quy đổi: ${formatNumber(stoneType.value)} hạ phẩm linh thạch.</p>
-                    <div class="slot-count">${formatNumber(Input.spiritStones[quality] || 0)}</div>
-                </article>
-            `;
-        }).join('');
     },
 
     open() {

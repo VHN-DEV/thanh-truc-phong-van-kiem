@@ -39,8 +39,7 @@ const UI_TEXT = Object.freeze({
         ALCHEMY: 'ĐAN LÔ - HƯ THIÊN ĐỈNH'
     }),
     INVENTORY_TABS: Object.freeze({
-        ITEMS: 'Vật phẩm',
-        STONES: 'Linh thạch'
+        ITEMS: 'Vật phẩm'
     }),
     ARIA: Object.freeze({
         PROFILE: 'Mở hồ sơ kiếm tu',
@@ -281,10 +280,7 @@ function repairLegacyUiText() {
         ['#insect-book-popup .popup-header h3', UI_TEXT.POPUP_TITLES.INSECT_BOOK],
         ['#profile-popup .popup-header h3', UI_TEXT.POPUP_TITLES.PROFILE],
         ['#alchemy-popup .popup-header h3', UI_TEXT.POPUP_TITLES.ALCHEMY],
-        ['#inventory-tabs [data-inventory-tab="items"]', UI_TEXT.INVENTORY_TABS.ITEMS],
-        ['#inventory-tabs [data-inventory-tab="stones"]', UI_TEXT.INVENTORY_TABS.STONES],
         ['#inventory-panel-items h4', UI_TEXT.INVENTORY_TABS.ITEMS],
-        ['#inventory-panel-stones h4', UI_TEXT.INVENTORY_TABS.STONES],
         ['#btn-phong-loi-blink .phong-loi-toggle__state', UI_TEXT.PHONG_LOI_SI_STATES.INACTIVE]
     ].forEach(([selector, text]) => setTextIfPresent(selector, text));
 
