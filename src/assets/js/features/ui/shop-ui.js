@@ -143,7 +143,9 @@ ShopUI = {
                 class="btn-shop-page btn-shop-page-nav"
                 data-shop-page-target="${Math.max(1, this.currentPage - 1)}"
                 ${this.currentPage === 1 ? 'disabled' : ''}
-            >Tiền trang</button>
+            aria-label="Trang trước"
+                title="Trang trước"
+            ><span aria-hidden="true">←</span></button>
             <div class="shop-page-list">${pageButtons.join('')}</div>
             <div class="shop-page-status">Trang ${this.currentPage}/${totalPages}</div>
             <button
@@ -151,7 +153,9 @@ ShopUI = {
                 class="btn-shop-page btn-shop-page-nav"
                 data-shop-page-target="${Math.min(totalPages, this.currentPage + 1)}"
                 ${this.currentPage === totalPages ? 'disabled' : ''}
-            >Hậu trang</button>
+            aria-label="Trang sau"
+                title="Trang sau"
+            ><span aria-hidden="true">→</span></button>
         `;
     },
 
