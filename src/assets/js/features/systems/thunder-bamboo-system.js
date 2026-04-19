@@ -540,6 +540,16 @@
         return Boolean(this.alchemyBatch && !this.alchemyBatch.resolved && this.getAlchemyBatchRemainingMs() > 0);
     };
 
+    Input.destroyAlchemyFurnace = function (furnaceKey) {
+        this.ensureAlchemyState();
+        if (!furnaceKey || furnaceKey === 'HU_THIEN_DINH' || !this.alchemyFurnaces?.[furnaceKey]) return false;
+        delete this.alchemyFurnaces[furnaceKey];
+        if (this.alchemySelectedFurnace === furnaceKey) {
+            this.alchemySelectedFurnace = this.getOwnedAlchemyFurnaceKeys()[0] || null;
+        }
+        return true;
+    };
+
     Input.resolveAlchemyBatch = function () {
         const batch = this.alchemyBatch;
         if (!batch || batch.resolved) return false;
@@ -549,6 +559,18 @@
             ? this.getAlchemyRecipeByKey(batch.recipeKey)
             : this.getAlchemyConfig().RECIPES?.[batch.recipeKey];
         const outputName = this.getItemDisplayName({ category: batch.outputCategory, quality: batch.outputQuality });
+        const isExplosion = Boolean(batch.isExplosion);
+        if (isExplosion) {
+            const furnaceName = this.getAlchemyFurnaceConfig(batch.furnaceKey)?.name || 'Đan lư';
+            const furnaceDestroyed = this.destroyAlchemyFurnace(batch.furnaceKey);
+            showNotify(
+                `${furnaceName} phát nổ khi luyện đan! Mẻ đan hóa tro${furnaceDestroyed ? ' và đan lư đã vỡ nát' : ''}.`,
+                '#ff6f91'
+            );
+            this.alchemyBatch = null;
+            this.refreshResourceUI();
+            return true;
+        }
         const count = Math.max(0, Math.floor(Number(batch.outputCount) || 0));
         for (let i = 0; i < count; i++) {
             this.addInventoryItem({
@@ -652,6 +674,10 @@
         const successRoll = Math.random();
         const successRate = Math.max(0, Math.min(1, Number(selectedFurnace.successRate) || 0));
         const success = successRoll <= successRate;
+        const explosionChance = selectedFurnaceKey === 'HU_THIEN_DINH'
+            ? 0
+            : Math.max(0, Math.min(1, Number(alchemyConfig.FURNACE_EXPLOSION_CHANCE) || 0));
+        const isExplosion = Math.random() < explosionChance;
         const outputCount = success
             ? Math.max(1, Math.floor(baseCount * (Number(selectedFurnace.outputMultiplier) || 1)))
             : 0;
@@ -667,6 +693,7 @@
             outputRealmKey: output.realmKey || null,
             outputRealmName: output.realmName || null,
             outputSpecialKey: output.specialKey || null,
+            isExplosion,
             resolved: false
         };
         showNotify(
