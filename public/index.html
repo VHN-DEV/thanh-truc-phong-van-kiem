@@ -79,6 +79,9 @@
             <div id="btn-inventory" class="btn btn-setting btn-inventory">
                 <img src="./assets/images/tui-tru-vat.svg" class="sword-icon" alt="Túi trữ vật">
             </div>
+            <div id="btn-map" class="btn btn-setting btn-map" title="Bản đồ thần thức" aria-label="Bản đồ thần thức">
+                <span class="map-glyph" aria-hidden="true">🗺</span>
+            </div>
         </div>
 
         <div class="breakthrough-group">
@@ -375,6 +378,19 @@
                     <h4>Đan dược</h4>
                     <div id="profile-pills" class="profile-pills"></div>
                 </section>
+            </div>
+        </div>
+    </div>
+
+    <div id="map-popup" class="popup-overlay">
+        <div class="popup-content popup-content-map">
+            <div class="popup-header">
+                <h3>BẢN ĐỒ THẦN THỨC</h3>
+                <span id="close-map" class="close-btn">&times;</span>
+            </div>
+            <div class="popup-body map-popup-body">
+                <canvas id="map-canvas" width="520" height="520"></canvas>
+                <div id="map-hint" class="map-hint"></div>
             </div>
         </div>
     </div>

@@ -206,8 +206,35 @@
     max-width: 1120px;
 }
 
+.popup-content-map {
+    max-width: 580px;
+}
+
 .popup-content-beast {
     max-width: 1160px;
+}
+
+.map-popup-body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+#map-canvas {
+    width: min(92vw, 520px);
+    height: min(92vw, 520px);
+    max-height: 65vh;
+    border-radius: 10px;
+    border: 1px solid rgba($primary-color, 0.34);
+    background: rgba(4, 8, 12, 0.95);
+}
+
+.map-hint {
+    width: 100%;
+    text-align: center;
+    color: #9fd7f0;
+    font-size: 13px;
 }
 
 .popup-panel-body {

@@ -267,7 +267,7 @@ const DIFFICULTY_PROFILES = {
     EASY: {
         key: 'EASY',
         label: 'Dễ',
-        spawnCount: 8,
+        spawnCount: 14,
         enemyHpMultiplier: 0.85,
         enemyDamageMultiplier: 0.75,
         eliteChanceMultiplier: 0.8
@@ -275,7 +275,7 @@ const DIFFICULTY_PROFILES = {
     NORMAL: {
         key: 'NORMAL',
         label: 'Trung bình',
-        spawnCount: 10,
+        spawnCount: 18,
         enemyHpMultiplier: 1,
         enemyDamageMultiplier: 1,
         eliteChanceMultiplier: 1
@@ -283,7 +283,7 @@ const DIFFICULTY_PROFILES = {
     HARD: {
         key: 'HARD',
         label: 'Khó',
-        spawnCount: 14,
+        spawnCount: 24,
         enemyHpMultiplier: 1.22,
         enemyDamageMultiplier: 1.28,
         eliteChanceMultiplier: 1.35
@@ -411,6 +411,7 @@ function init() {
     if (SkillsUI) SkillsUI.init();
     if (InsectBookUI) InsectBookUI.init();
     if (ProfileUI) ProfileUI.init();
+    if (MapUI) MapUI.init();
     Input.renderAttackModeUI();
     starField = new StarField(CONFIG.BG.STAR_COUNT, width, height);
     window.starField = starField;
@@ -693,6 +694,12 @@ function animate() {
     Input.drawSingleSwordUltimateProjectiles(ctx, scaleFactor);
     Input.drawSingleSwordUltimateChargeIndicator(ctx, scaleFactor);
     renderCursor();
+    if (MapUI && typeof MapUI.render === 'function') {
+        MapUI.render({
+            player: guardCenter,
+            enemies
+        });
+    }
 
     const zoom = Math.max(0.001, Camera.currentZoom || 1);
     const visibleHalfWidth = window.innerWidth / (2 * zoom);
