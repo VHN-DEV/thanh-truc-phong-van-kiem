@@ -1596,6 +1596,9 @@ Object.assign(Input, {
         for (let i = 0; i < enemies.length; i++) {
             const enemy = enemies[i];
             if (!enemy || enemy.hp <= 0) continue;
+            if (typeof enemy.updateCombatMode === 'function') {
+                enemy.updateCombatMode(centerX, centerY, dt);
+            }
             const enemyAtk = Math.max(1, Number(enemy.combatStats?.ATK) || 0);
             const baseDamage = Math.max(1, enemyAtk || Number(enemy.damage) || Number(enemy.rankData?.damage) || 1);
             const enemyAcc = Math.max(0.15, Math.min(0.98, Number(enemy.combatStats?.ACC) || 0.78));
@@ -1603,10 +1606,12 @@ Object.assign(Input, {
             const enemyCritDmg = Math.max(1, Number(enemy.combatStats?.CRIT_DMG) || 1.5);
             const dist = Math.hypot((enemy.x || 0) - centerX, (enemy.y || 0) - centerY);
             const retaliating = now < (enemy.retaliateUntil || 0);
-            const triggerRange = contactRadius * (retaliating ? 4.2 : 2.9);
+            const enraged = enemy.combatMode === 'ENRAGED';
+            const aggressive = enemy.combatMode === 'AGGRESSIVE' || retaliating;
+            const triggerRange = contactRadius * (enraged ? 5.2 : aggressive ? 4.2 : 2.2);
             if (dist > triggerRange) continue;
 
-            let hostile = retaliating;
+            let hostile = aggressive;
             if (!hostile) {
                 const proactiveAggroUntil = Number(enemy.proactiveAggroUntil) || 0;
                 if (now < proactiveAggroUntil) {
@@ -1642,7 +1647,8 @@ Object.assign(Input, {
             if (!hostile) continue;
 
             const attackPattern = this.getEnemyAttackPattern(enemy);
-            const attackCooldown = enemy.isElite ? 820 : 1050;
+            const modeAttackSpeedMult = enraged ? 0.72 : aggressive ? 0.86 : 1;
+            const attackCooldown = (enemy.isElite ? 820 : 1050) * modeAttackSpeedMult;
             if (now - (enemy.lastAttackAt || 0) < attackCooldown) continue;
             enemy.lastAttackAt = now;
 

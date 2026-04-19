@@ -118,6 +118,10 @@ class Enemy {
         this.lastAttackAt = 0;
         this.proactiveAggroUntil = 0;
         this.nextProactiveAggroRollAt = 0;
+        this.combatMode = 'CALM';
+        this.hostileUntil = 0;
+        this.leftCombatAt = 0;
+        this.enragedAt = 0;
 
         // 1. KIỂM TRA SỐ LƯỢNG QUÁI VỪA SỨC HIỆN CÓ
         const playerRank = Input.rankIndex || 0;
@@ -209,6 +213,8 @@ class Enemy {
             ACC: Math.max(0.25, Math.min(0.97, 0.72 + (dexterity * 0.0011))),
             SPD: Math.max(1, Math.round(agility * (this.isElite ? 1.2 : 1)))
         };
+        this.baseCombatStats = { ...this.combatStats };
+        this.baseDamage = this.damage;
         this.basicStats = {
             HP: this.hp,
             MAX_HP: this.maxHp,
@@ -231,6 +237,7 @@ class Enemy {
 
         // 4. KHỞI TẠO DI CHUYỂN
         this.wanderSpeed = (this.isElite ? 0.8 : 0.4) * (this.rankData.speedMult || 1);
+        this.baseWanderSpeed = this.wanderSpeed;
         
         // Cập nhật Icon
         if (CONFIG.ENEMY.ANIMALS) {
@@ -242,6 +249,7 @@ class Enemy {
 
         this.dodgeChance = CONFIG.ENEMY.BASE_DODGE_CHANCE + (this.isElite ? CONFIG.ENEMY.ELITE_DODGE_BONUS : 0);
         // Có thể cộng thêm tỉ lệ dựa trên chênh lệch cảnh giới nếu muốn
+        this.applyCombatModeStats();
     }
 
     getRandomRankById(minId, maxId) {
@@ -418,7 +426,12 @@ class Enemy {
             }
         }
 
-        this.lastHitTime = Date.now(); 
+        this.lastHitTime = Date.now();
+        this.hostileUntil = Math.max(
+            this.hostileUntil || 0,
+            performance.now() + Math.max(1200, Number(CONFIG.ENEMY?.BEHAVIOR?.AGGRO_DURATION_MS) || 3200)
+        );
+        this.setCombatMode('AGGRESSIVE');
         this.retaliateUntil = performance.now() + 1800;
         this.lastRetaliateAt = performance.now();
 
@@ -654,6 +667,77 @@ class Enemy {
         this.controlEffects.shieldRecoveryBlockedUntil = Math.max(this.controlEffects?.shieldRecoveryBlockedUntil || 0, performance.now() + blockDuration);
     }
 
+    setCombatMode(mode) {
+        const nextMode = mode === 'ENRAGED'
+            ? 'ENRAGED'
+            : mode === 'AGGRESSIVE'
+                ? 'AGGRESSIVE'
+                : 'CALM';
+        if (this.combatMode === nextMode) return;
+        this.combatMode = nextMode;
+        this.applyCombatModeStats();
+    }
+
+    applyCombatModeStats() {
+        const baseCombatStats = this.baseCombatStats || this.combatStats || {};
+        const baseDamage = Math.max(1, Number(this.baseDamage) || Number(this.damage) || 1);
+        const behaviorCfg = CONFIG.ENEMY?.BEHAVIOR || {};
+        const enrageBuff = behaviorCfg.ENRAGE_BUFF || {};
+        const isEnraged = this.combatMode === 'ENRAGED';
+        const damageMult = isEnraged ? Math.max(1, Number(enrageBuff.DAMAGE_MULT) || 1) : 1;
+        const defenseMult = isEnraged ? Math.max(1, Number(enrageBuff.DEFENSE_MULT) || 1) : 1;
+        const speedMult = isEnraged ? Math.max(1, Number(enrageBuff.SPEED_MULT) || 1) : 1;
+
+        this.damage = Math.max(1, Math.round(baseDamage * damageMult));
+        this.wanderSpeed = Math.max(0.05, (this.baseWanderSpeed || this.wanderSpeed || 0.4) * speedMult);
+        this.combatStats = {
+            ...baseCombatStats,
+            ATK: Math.max(1, Math.round((Number(baseCombatStats.ATK) || baseDamage) * damageMult)),
+            DEF: Math.max(1, Math.round((Number(baseCombatStats.DEF) || 1) * defenseMult)),
+            MDEF: Math.max(1, Math.round((Number(baseCombatStats.MDEF) || 1) * defenseMult)),
+            SPD: Math.max(1, Math.round((Number(baseCombatStats.SPD) || 1) * speedMult))
+        };
+    }
+
+    updateCombatMode(playerX, playerY, dt = 0.016) {
+        const now = performance.now();
+        const behaviorCfg = CONFIG.ENEMY?.BEHAVIOR || {};
+        const enrageCfg = behaviorCfg.ENRAGE || {};
+        const enrageThreshold = Math.max(0.05, Math.min(0.95, Number(enrageCfg.HP_THRESHOLD) || 0.35));
+        const leashDistance = Math.max(80, Number(behaviorCfg.LEASH_DISTANCE) || 320);
+        const aggroDurationMs = Math.max(500, Number(behaviorCfg.AGGRO_DURATION_MS) || 3200);
+        const calmHealPerSec = Math.max(0, Number(behaviorCfg.CALM_HEAL_PER_SEC) || 0.035);
+        const distToPlayer = Math.hypot((this.x || 0) - playerX, (this.y || 0) - playerY);
+        const hpRatio = this.maxHp > 0 ? this.hp / this.maxHp : 1;
+
+        if (hpRatio <= enrageThreshold) {
+            if (this.combatMode !== 'ENRAGED') {
+                this.enragedAt = now;
+            }
+            this.hostileUntil = Math.max(this.hostileUntil || 0, now + aggroDurationMs);
+            this.setCombatMode('ENRAGED');
+            return;
+        }
+
+        if ((this.hostileUntil || 0) > now) {
+            this.setCombatMode('AGGRESSIVE');
+            return;
+        }
+
+        if (distToPlayer <= leashDistance) {
+            this.hostileUntil = now + aggroDurationMs;
+            this.setCombatMode('AGGRESSIVE');
+            return;
+        }
+
+        if (this.combatMode !== 'CALM') this.leftCombatAt = now;
+        this.setCombatMode('CALM');
+        if (this.hp < this.maxHp) {
+            this.hp = Math.min(this.maxHp, this.hp + (this.maxHp * calmHealPerSec * Math.max(0.001, dt)));
+            if (this.basicStats) this.basicStats.HP = Math.max(0, Math.round(this.hp));
+        }
+    }
+
     updateMovement(scaleFactor) {
         const now = Date.now() * 0.001;
         const effectNow = performance.now();
@@ -742,7 +826,8 @@ class Enemy {
 
         const labelOffset = Math.min(this.r * 0.72, 42 * scaleFactor);
         const textY = -labelOffset - (this.hasShield ? 15 : 10) * scaleFactor;
-        ctx.fillText(this.rankName, 0, textY);
+        const combatSuffix = this.combatMode === 'ENRAGED' ? ' [CUỒNG NỘ]' : this.combatMode === 'AGGRESSIVE' ? ' [TẤN CÔNG]' : '';
+        ctx.fillText(`${this.rankName}${combatSuffix}`, 0, textY);
         ctx.shadowBlur = 0; 
 
         // 2. VẼ THANH MÁU

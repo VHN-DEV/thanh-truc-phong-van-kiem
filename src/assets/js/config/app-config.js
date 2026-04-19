@@ -331,6 +331,19 @@ const CONFIG = {
         SHIELD_HP_RATIO: 0.1,                       // 0.1 tương đương 10% máu quái
         RECOVERY_DELAY_MS: 3000,                    // Thời gian chờ sau khi bị tấn công trước khi bắt đầu hồi phục khiên
         RECOVERY_SPEED_PER_SEC: 0.05,               // Tốc độ hồi phục khiên mỗi giây (0.05 = 5% HP khiên mỗi giây)
+        BEHAVIOR: {
+            AGGRO_DURATION_MS: 3200,                // Khi bị đánh, quái duy trì trạng thái tấn công trong ít nhất khoảng thời gian này
+            LEASH_DISTANCE: 340,                    // Nếu người chơi rời quá xa phạm vi này, quái sẽ dần thoát giao tranh
+            CALM_HEAL_PER_SEC: 0.035,               // Tốc độ hồi máu khi quái trở về trạng thái ôn hoà (theo % max HP mỗi giây)
+            ENRAGE: {
+                HP_THRESHOLD: 0.35                  // Dưới 35% máu sẽ chuyển cuồng nộ
+            },
+            ENRAGE_BUFF: {
+                DAMAGE_MULT: 1.35,                  // Cuồng nộ: tăng sát thương
+                DEFENSE_MULT: 1.22,                 // Cuồng nộ: tăng phòng thủ
+                SPEED_MULT: 1.2                     // Cuồng nộ: tăng tốc độ di chuyển/tấn công
+            }
+        },
         PROACTIVE_ATTACK: {
             BASE_CHANCE: 0.16,                      // Tỉ lệ cơ bản để quái chủ động tấn công khi ở gần người chơi
             MIN_CHANCE: 0.02,                       // Giới hạn tối thiểu để vẫn còn khả năng chủ động
