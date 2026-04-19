@@ -1799,21 +1799,39 @@ Object.assign(Input, {
                         const enemyRankIndex = CONFIG.CULTIVATION.RANKS.indexOf(enemy.rankData);
                         const playerRankIndex = this.rankIndex || 0;
                         const rankDiff = enemyRankIndex - playerRankIndex;
-                        const baseChance = Number(proactiveCfg.BASE_CHANCE) || 0.16;
-                        const lowerOrEqualBonus = Math.max(0, Number(proactiveCfg.LOWER_OR_EQUAL_BONUS_PER_LEVEL) || 0.04);
-                        const higherPenalty = Math.max(0, Number(proactiveCfg.HIGHER_RANK_PENALTY_PER_LEVEL) || 0.06);
+                        const baseChance = Number(proactiveCfg.BASE_CHANCE) || 0.045;
+                        const higherRankBonus = Math.max(
+                            0,
+                            Number(proactiveCfg.HIGHER_RANK_BONUS_PER_LEVEL)
+                            || Number(proactiveCfg.LOWER_OR_EQUAL_BONUS_PER_LEVEL)
+                            || 0.045
+                        );
+                        const lowerOrEqualPenalty = Math.max(
+                            0,
+                            Number(proactiveCfg.LOWER_OR_EQUAL_PENALTY_PER_LEVEL)
+                            || Number(proactiveCfg.HIGHER_RANK_PENALTY_PER_LEVEL)
+                            || 0.03
+                        );
                         const eliteBonus = enemy.isElite ? Math.max(0, Number(proactiveCfg.ELITE_BONUS) || 0.05) : 0;
                         const adjustedChance = rankDiff > 0
-                            ? baseChance - (rankDiff * higherPenalty) + eliteBonus
-                            : baseChance + (Math.abs(rankDiff) * lowerOrEqualBonus) + eliteBonus;
+                            ? baseChance + (rankDiff * higherRankBonus) + eliteBonus
+                            : baseChance - (Math.abs(rankDiff) * lowerOrEqualPenalty) + eliteBonus;
                         const proactiveChance = Math.max(
-                            Number(proactiveCfg.MIN_CHANCE) || 0.02,
-                            Math.min(Number(proactiveCfg.MAX_CHANCE) || 0.42, adjustedChance)
+                            Number(proactiveCfg.MIN_CHANCE) || 0.005,
+                            Math.min(Number(proactiveCfg.MAX_CHANCE) || 0.48, adjustedChance)
                         );
 
                         enemy.nextProactiveAggroRollAt = now + rollIntervalMs + random(0, 200);
                         if (Math.random() < proactiveChance) {
-                            enemy.proactiveAggroUntil = now + Math.max(1200, Number(proactiveCfg.AGGRO_WINDOW_MS) || 2800);
+                            const aggroWindowMs = Math.max(1200, Number(proactiveCfg.AGGRO_WINDOW_MS) || 2800);
+                            enemy.proactiveAggroUntil = now + aggroWindowMs;
+                            enemy.hostileUntil = Math.max(
+                                Number(enemy.hostileUntil) || 0,
+                                now + aggroWindowMs
+                            );
+                            if (typeof enemy.setCombatMode === 'function') {
+                                enemy.setCombatMode('AGGRESSIVE');
+                            }
                             hostile = true;
                         }
                     }
