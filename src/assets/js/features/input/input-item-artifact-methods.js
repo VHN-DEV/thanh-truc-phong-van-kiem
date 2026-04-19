@@ -1496,7 +1496,22 @@ Object.assign(Input, {
             HIGH: 'HIGH',
             SUPREME: 'SUPREME'
         };
-        const potionCategories = ['EXP', 'INSIGHT', 'ATTACK', 'SHIELD_BREAK', 'BERSERK', 'RAGE', 'MANA', 'MAX_MANA', 'REGEN', 'SPEED', 'FORTUNE'];
+        const potionCategories = [
+            'EXP',
+            'INSIGHT',
+            'ATTACK',
+            'SHIELD_BREAK',
+            'BATTLE_AURA',
+            'BODY_TECHNIQUE',
+            'SENSE',
+            'BERSERK',
+            'RAGE',
+            'MANA',
+            'MAX_MANA',
+            'REGEN',
+            'SPEED',
+            'FORTUNE'
+        ];
 
         potionCategories.forEach(category => {
             QUALITY_ORDER.forEach(quality => {

@@ -85,6 +85,9 @@ AlchemyUI = {
                     specialKey: recipe?.output?.specialKey || null
                 };
                 const outputName = Input.getItemDisplayName(outputSpec);
+                const outputQualityConfig = typeof Input.getItemQualityConfig === 'function'
+                    ? Input.getItemQualityConfig(outputSpec)
+                    : null;
                 const outputDescription = typeof Input.getItemDescription === 'function'
                     ? Input.getItemDescription(outputSpec)
                     : '';
@@ -111,6 +114,7 @@ AlchemyUI = {
                     formulaQuality: recipe?.formulaQuality || 'LOW',
                     tier: recipe?.realmTier || 'Đan',
                     outputName,
+                    outputColor: outputQualityConfig?.color || '#7aa3b7',
                     outputDescription,
                     brewTimeMs: Math.max(1000, Math.floor(Number(recipe?.brewTimeMs) || Number(CONFIG.ALCHEMY?.DEFAULT_BREW_MS) || 30000)),
                     canCraft: requirements.every(req => req.ok),
@@ -161,7 +165,7 @@ AlchemyUI = {
             const isBusy = activeBatch && remainingMs > 0;
 
             return `
-                <article class="inventory-slot has-pill-art" style="--slot-accent:${recipe.canCraft ? '#8fffcf' : '#7aa3b7'}">
+                <article class="inventory-slot has-pill-art" style="--slot-accent:${escapeHtml(recipe.outputColor || '#7aa3b7')}">
                     <div class="slot-badge">${escapeHtml(formulaLabel)}</div>
                     <h4>${escapeHtml(recipe.name)}</h4>
                     <p>${escapeHtml(recipe.tier)} • Thành đan: ${escapeHtml(recipe.outputName)}</p>
