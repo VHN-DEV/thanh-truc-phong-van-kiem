@@ -1237,7 +1237,7 @@ Object.assign(Input, {
     getEnemyAttackPattern(enemy) {
         if (enemy?.combatMode === 'ENRAGED') {
             const now = performance.now();
-            const enragedPatterns = ['BITE', 'CLAW', 'BEAM', 'ARC_MISSILE', 'SPIKE_RING'];
+            const enragedPatterns = ['BITE', 'CLAW', 'BEAM', 'ARC_MISSILE', 'SPIKE_RING', 'VOLLEY', 'RUSH_COMBO', 'NOVA_BURST'];
             if (!enemy.enragedPattern || now >= (enemy.nextEnragedPatternRollAt || 0)) {
                 const currentIndex = enragedPatterns.indexOf(enemy.enragedPattern);
                 let nextIndex = Math.floor(Math.random() * enragedPatterns.length);
@@ -1251,7 +1251,7 @@ Object.assign(Input, {
         }
 
         enemy.enragedPattern = null;
-        const patterns = ['CHARGE', 'BITE', 'CLAW', 'ORB', 'BEAM', 'ARC_MISSILE', 'SPIKE_RING'];
+        const patterns = ['CHARGE', 'BITE', 'CLAW', 'ORB', 'BEAM', 'ARC_MISSILE', 'SPIKE_RING', 'VOLLEY', 'RUSH_COMBO', 'NOVA_BURST'];
         if (enemy?.attackPattern) return enemy.attackPattern;
         const rankId = Number(enemy?.rankData?.id) || 1;
         enemy.attackPattern = patterns[(rankId + Math.floor((enemy?.floatOffset || 0) * 0.01)) % patterns.length];
@@ -1766,6 +1766,69 @@ Object.assign(Input, {
                             attackerCrit: enemyCrit,
                             attackerCritDmg: enemyCritDmg,
                             attackType: 'MAGICAL'
+                        });
+                    }
+                    break;
+                }
+                case 'VOLLEY': {
+                    const volleyCount = enemy.isElite ? 5 : 3;
+                    const baseAngle = Math.atan2(centerY - (enemy.y || centerY), centerX - (enemy.x || centerX));
+                    for (let volley = 0; volley < volleyCount; volley++) {
+                        const spread = ((volley - ((volleyCount - 1) / 2)) * 0.2) + random(-0.04, 0.04);
+                        const targetX = (enemy.x || centerX) + (Math.cos(baseAngle + spread) * 130);
+                        const targetY = (enemy.y || centerY) + (Math.sin(baseAngle + spread) * 130);
+                        this.castEnemyProjectile(enemy, targetX, targetY, {
+                            type: 'orb',
+                            speed: 255 + (volley * 16),
+                            radius: enemy.isElite ? 8.4 : 7.2,
+                            life: 2,
+                            damage: baseDamage * (0.58 + (volley * 0.08)),
+                            color: volley % 2 === 0 ? '#8fd8ff' : '#ffb98b',
+                            attackerAcc: enemyAcc,
+                            attackerCrit: enemyCrit,
+                            attackerCritDmg: enemyCritDmg,
+                            attackType: 'MAGICAL',
+                            trailEveryMs: 36
+                        });
+                    }
+                    break;
+                }
+                case 'RUSH_COMBO':
+                    if (dist <= contactRadius * 2.2) {
+                        const comboHits = enemy.isElite ? 3 : 2;
+                        for (let combo = 0; combo < comboHits; combo++) {
+                            this.queueEnemyMeleeStrike(enemy, combo === comboHits - 1 ? 'BITE' : 'CHARGE', centerX, centerY, {
+                                durationMs: (enemy.isElite ? 140 : 180) + (combo * 36),
+                                damage: baseDamage * (combo === comboHits - 1 ? 1.12 : 0.7),
+                                ailmentChance: combo === comboHits - 1 ? 0.36 : 0.24,
+                                source: combo === comboHits - 1 ? 'đột sát kết liễu' : 'xung phong liên hoàn',
+                                attackerAcc: enemyAcc,
+                                attackerCrit: enemyCrit,
+                                attackerCritDmg: enemyCritDmg,
+                                attackType: 'PHYSICAL',
+                                latchDurationMs: combo === comboHits - 1 ? (enemy.isElite ? 1400 : 900) : 800
+                            });
+                        }
+                    }
+                    break;
+                case 'NOVA_BURST': {
+                    const ringCount = enemy.isElite ? 10 : 7;
+                    for (let ring = 0; ring < ringCount; ring++) {
+                        const angle = (Math.PI * 2 * ring) / ringCount;
+                        this.castEnemyProjectile(enemy, (enemy.x || centerX) + Math.cos(angle) * 160, (enemy.y || centerY) + Math.sin(angle) * 160, {
+                            type: ring % 2 === 0 ? 'needle' : 'arc',
+                            speed: ring % 2 === 0 ? 300 : 230,
+                            radius: ring % 2 === 0 ? 4.8 : 6.6,
+                            damage: baseDamage * (ring % 2 === 0 ? 0.55 : 0.72),
+                            homing: ring % 2 !== 0,
+                            arc: ring % 2 === 0 ? 0.4 : 1.35,
+                            color: ring % 2 === 0 ? '#ffe29d' : '#a9f1ff',
+                            attackerAcc: enemyAcc,
+                            attackerCrit: enemyCrit,
+                            attackerCritDmg: enemyCritDmg,
+                            attackType: 'MAGICAL',
+                            trailEveryMs: 30,
+                            trailSizeMult: 1.15
                         });
                     }
                     break;
