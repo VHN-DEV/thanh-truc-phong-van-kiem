@@ -1246,7 +1246,7 @@ Object.assign(Input, {
     getEnemyAttackPattern(enemy) {
         if (enemy?.combatMode === 'ENRAGED') {
             const now = performance.now();
-            const enragedPatterns = ['BITE', 'CLAW', 'BEAM', 'ARC_MISSILE', 'SPIKE_RING', 'VOLLEY', 'RUSH_COMBO', 'NOVA_BURST', 'LASER_RAY', 'HUNTER_ORB'];
+            const enragedPatterns = ['BITE', 'CLAW', 'BEAM', 'ARC_MISSILE', 'SPIKE_RING', 'VOLLEY', 'RUSH_COMBO', 'NOVA_BURST', 'LASER_RAY', 'HUNTER_ORB', 'ELEMENTAL_ART'];
             if (!enemy.enragedPattern || now >= (enemy.nextEnragedPatternRollAt || 0)) {
                 const currentIndex = enragedPatterns.indexOf(enemy.enragedPattern);
                 let nextIndex = Math.floor(Math.random() * enragedPatterns.length);
@@ -1260,7 +1260,7 @@ Object.assign(Input, {
         }
 
         enemy.enragedPattern = null;
-        const patterns = ['CHARGE', 'BITE', 'CLAW', 'ORB', 'BEAM', 'ARC_MISSILE', 'SPIKE_RING', 'VOLLEY', 'RUSH_COMBO', 'NOVA_BURST', 'LASER_RAY', 'HUNTER_ORB', 'FROST_BIND', 'MIASMA_SLOW'];
+        const patterns = ['CHARGE', 'BITE', 'CLAW', 'ORB', 'BEAM', 'ARC_MISSILE', 'SPIKE_RING', 'VOLLEY', 'RUSH_COMBO', 'NOVA_BURST', 'LASER_RAY', 'HUNTER_ORB', 'FROST_BIND', 'MIASMA_SLOW', 'ELEMENTAL_ART'];
         if (enemy?.attackPattern) return enemy.attackPattern;
         const rankId = Number(enemy?.rankData?.id) || 1;
         enemy.attackPattern = patterns[(rankId + Math.floor((enemy?.floatOffset || 0) * 0.01)) % patterns.length];
@@ -1533,7 +1533,8 @@ Object.assign(Input, {
             statusKey: options.statusKey || '',
             statusChance: Math.max(0, Math.min(1, Number(options.statusChance) || 0)),
             statusStacks: Math.max(1, Number(options.statusStacks) || 1),
-            statusDurationMs: Math.max(300, Number(options.statusDurationMs) || 0)
+            statusDurationMs: Math.max(300, Number(options.statusDurationMs) || 0),
+            sourceLabel: options.sourceLabel || 'phi đạn tà lực'
         });
     },
 
@@ -1566,8 +1567,60 @@ Object.assign(Input, {
             statusKey: options.statusKey || '',
             statusChance: Math.max(0, Math.min(1, Number(options.statusChance) || 0)),
             statusStacks: Math.max(1, Number(options.statusStacks) || 1),
-            statusDurationMs: Math.max(300, Number(options.statusDurationMs) || 0)
+            statusDurationMs: Math.max(300, Number(options.statusDurationMs) || 0),
+            sourceLabel: options.sourceLabel || 'tia laze tà lực'
         });
+    },
+
+    castEnemyElementalAttack(enemy, centerX, centerY, baseDamage, combatMeta = {}) {
+        const elements = ['FIRE', 'WATER', 'EARTH', 'WOOD', 'ICE', 'THUNDER', 'LIGHT', 'DARK', 'CHAOS', 'SPACE', 'TIME'];
+        const element = elements[Math.floor(Math.random() * elements.length)];
+        const meta = {
+            attackerAcc: combatMeta.attackerAcc,
+            attackerCrit: combatMeta.attackerCrit,
+            attackerCritDmg: combatMeta.attackerCritDmg,
+            attackType: 'MAGICAL'
+        };
+
+        switch (element) {
+            case 'FIRE':
+                this.castEnemyProjectile(enemy, centerX, centerY, { ...meta, type: 'orb', speed: 280, radius: 8.6, damage: baseDamage * 1.02, color: '#ff9a63', sourceLabel: 'hỏa diễm đạn', statusKey: 'qiBurn', statusChance: 0.46, statusDurationMs: 4300, trailEveryMs: 26 });
+                break;
+            case 'WATER':
+                this.castEnemyProjectile(enemy, centerX, centerY, { ...meta, type: 'arc', speed: 215, radius: 9.2, damage: baseDamage * 0.9, color: '#72cfff', sourceLabel: 'thủy lưu đạn', statusKey: 'sluggish', statusChance: 0.38, statusDurationMs: 3600 });
+                break;
+            case 'EARTH':
+                this.castEnemyProjectile(enemy, centerX, centerY, { ...meta, type: 'orb', speed: 170, radius: 10.8, damage: baseDamage * 1.12, color: '#cda87b', sourceLabel: 'địa nham chấn kích', statusKey: 'brokenBone', statusChance: 0.36, statusDurationMs: 3800 });
+                break;
+            case 'WOOD':
+                this.castEnemyProjectile(enemy, centerX, centerY, { ...meta, type: 'arc', speed: 205, radius: 8.6, damage: baseDamage * 0.92, color: '#72d884', sourceLabel: 'mộc linh quấn sát', homing: true, homingStrength: 0.14, statusKey: 'rooted', statusChance: 0.34, statusDurationMs: 1300 });
+                break;
+            case 'ICE':
+                this.castEnemyProjectile(enemy, centerX, centerY, { ...meta, type: 'orb', speed: 210, radius: 9.4, damage: baseDamage * 0.9, color: '#9be8ff', sourceLabel: 'băng tinh hàn kích', statusKey: 'frozen', statusChance: 0.42, statusDurationMs: 1200 });
+                break;
+            case 'THUNDER':
+                this.castEnemyLaser(enemy, centerX, centerY, { ...meta, life: 0.2, radius: 8, damage: baseDamage * 1.08, color: '#b798ff', laserLength: 520, sourceLabel: 'lôi quang xạ tuyến', statusKey: 'rooted', statusChance: 0.28, statusDurationMs: 900 });
+                break;
+            case 'LIGHT':
+                this.castEnemyLaser(enemy, centerX, centerY, { ...meta, life: 0.26, radius: 9, damage: baseDamage * 1.03, color: '#fff0a3', laserLength: 560, sourceLabel: 'thánh quang xạ tuyến', statusKey: 'blind', statusChance: 0.38, statusDurationMs: 2800 });
+                break;
+            case 'DARK':
+                this.castEnemyProjectile(enemy, centerX, centerY, { ...meta, type: 'arc', speed: 235, radius: 8, damage: baseDamage * 1.04, color: '#9f86ff', sourceLabel: 'ám ảnh truy hồn', homing: true, homingStrength: 0.18, statusKey: 'blind', statusChance: 0.4, statusDurationMs: 2600, trailEveryMs: 22 });
+                break;
+            case 'CHAOS':
+                this.castEnemyProjectile(enemy, centerX, centerY, { ...meta, type: 'arc', speed: 240, radius: 9.6, damage: baseDamage * 1.16, color: '#ff7bd8', sourceLabel: 'hỗn độn loạn lưu', homing: true, homingStrength: 0.15, arc: 1.8, statusKey: 'poison', statusChance: 0.3, statusDurationMs: 4200 });
+                break;
+            case 'SPACE':
+                this.castEnemyLaser(enemy, centerX, centerY, { ...meta, life: 0.28, radius: 8.8, damage: baseDamage * 1.1, color: '#7be7ff', laserLength: 620, sourceLabel: 'không gian xé rách', statusKey: 'rooted', statusChance: 0.44, statusDurationMs: 1400 });
+                break;
+            case 'TIME':
+                this.castEnemyProjectile(enemy, centerX, centerY, { ...meta, type: 'orb', speed: 165, radius: 9.5, life: 5.4, damage: baseDamage * 0.98, color: '#ffd37e', sourceLabel: 'thời gian đình trệ', homing: true, homingStrength: 0.1, statusKey: 'frozen', statusChance: 0.36, statusDurationMs: 900 });
+                this.castEnemyProjectile(enemy, centerX, centerY, { ...meta, type: 'orb', speed: 175, radius: 8.8, life: 5.8, damage: baseDamage * 0.72, color: '#a2c1ff', sourceLabel: 'thời gian trì trệ', homing: true, homingStrength: 0.1, statusKey: 'sluggish', statusChance: 0.52, statusDurationMs: 4200, statusStacks: 2 });
+                break;
+            default:
+                this.castEnemyProjectile(enemy, centerX, centerY, { ...meta, type: 'orb', speed: 220, radius: 8, damage: baseDamage * 0.9, color: '#a8ddff' });
+                break;
+        }
     },
 
     updateEnemyHostileProjectiles(dt, centerX, centerY) {
@@ -1595,7 +1648,7 @@ Object.assign(Input, {
                 const hitDistance = Math.hypot(centerX - closestX, centerY - closestY);
 
                 if (!shot.hasDamaged && hitDistance <= this.getCursorCoreHitRadius() + (shot.radius || 8)) {
-                    this.inflictEnemyAttackDamage(shot.damage, 0.35, 'tia laze tà lực', {
+                    this.inflictEnemyAttackDamage(shot.damage, 0.35, shot.sourceLabel || 'tia laze tà lực', {
                         attackerAcc: shot.attackerAcc,
                         attackerCrit: shot.attackerCrit,
                         attackerCritDmg: shot.attackerCritDmg,
@@ -1658,7 +1711,7 @@ Object.assign(Input, {
 
             const hitDistance = Math.hypot(shot.x - centerX, shot.y - centerY);
             if (hitDistance <= this.getCursorCoreHitRadius()) {
-                this.inflictEnemyAttackDamage(shot.damage, 0.28, 'phi đạn tà lực', {
+                this.inflictEnemyAttackDamage(shot.damage, 0.28, shot.sourceLabel || 'phi đạn tà lực', {
                     attackerAcc: shot.attackerAcc,
                     attackerCrit: shot.attackerCrit,
                     attackerCritDmg: shot.attackerCritDmg,
@@ -2021,6 +2074,13 @@ Object.assign(Input, {
                         statusDurationMs: enemy.isElite ? 6200 : 5000,
                         trailEveryMs: 34,
                         trailSizeMult: 1.22
+                    });
+                    break;
+                case 'ELEMENTAL_ART':
+                    this.castEnemyElementalAttack(enemy, centerX, centerY, baseDamage, {
+                        attackerAcc: enemyAcc,
+                        attackerCrit: enemyCrit,
+                        attackerCritDmg: enemyCritDmg
                     });
                     break;
                 default:
