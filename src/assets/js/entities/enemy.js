@@ -164,6 +164,31 @@ class Enemy {
         const eliteMult = this.isElite ? 4.0 : 1.0;
         this.maxHp = Math.floor(baseRankHp * (1 + Math.random() * 0.05) * eliteMult);
         this.hp = this.maxHp;
+        const vitality = Math.max(1, Math.round((this.maxHp / 18) * (this.isElite ? 1.28 : 1)));
+        const agility = Math.max(1, Math.round((this.rankData.speedMult || 1) * (this.isElite ? 30 : 22)));
+        const dexterity = Math.max(1, Math.round((this.damage * 2.6) + (this.isElite ? 8 : 2)));
+        const wisdom = Math.max(1, Math.round((this.rankData.id || 1) * 1.6 + (this.isElite ? 8 : 0)));
+        const luck = Math.max(1, Math.round((this.isElite ? 20 : 8) + ((this.rankData.id || 1) * 0.9)));
+        this.attributeStats = {
+            STR: Math.max(1, Math.round(this.damage * (this.isElite ? 2.4 : 1.8))),
+            AGI: agility,
+            DEX: dexterity,
+            VIT: vitality,
+            INT: wisdom,
+            WIS: wisdom,
+            LUK: luck
+        };
+        this.combatStats = {
+            ATK: Math.max(1, Math.round(this.damage * (this.isElite ? 1.55 : 1.2))),
+            DEF: Math.max(1, Math.round(vitality * 0.65)),
+            MATK: Math.max(1, Math.round(wisdom * 1.1)),
+            MDEF: Math.max(1, Math.round((wisdom * 0.55) + (vitality * 0.24))),
+            CRIT: Math.max(0, Math.min(0.68, 0.03 + (luck * 0.0022))),
+            CRIT_DMG: Math.max(1.35, Math.min(3, 1.45 + (luck * 0.011))),
+            EVA: Math.max(0, Math.min(0.76, 0.03 + (agility * 0.0016) + (luck * 0.0006))),
+            ACC: Math.max(0.25, Math.min(0.97, 0.72 + (dexterity * 0.0011))),
+            SPD: Math.max(1, Math.round(agility * (this.isElite ? 1.2 : 1)))
+        };
 
         const eliteSizeMult = this.isElite ? 1.8 : 1.0;
         this.r = (CONFIG.ENEMY.BASE_SIZE.MIN + Math.random() * CONFIG.ENEMY.BASE_SIZE.VAR) * eliteSizeMult;
@@ -308,6 +333,9 @@ class Enemy {
         // --- 1. LOGIC NÉ TRÁNH THEO % VÀ CHÊNH LỆCH CẢNH GIỚI ---
         // Tỉ lệ cơ bản (ví dụ 10%) + Tinh anh (15%) + Mỗi cấp chênh lệch (5%)
         let finalDodgeChance = (CONFIG.ENEMY.BASE_DODGE_CHANCE || 0.1) + (this.isElite ? (CONFIG.ENEMY.ELITE_DODGE_BONUS || 0.15) : 0);
+        const enemyEva = Math.max(0, Math.min(0.76, Number(this.combatStats?.EVA) || 0));
+        const playerAcc = Math.max(0.15, Math.min(0.98, Number(Input?.getPlayerCombatStats?.().ACC) || 0.8));
+        finalDodgeChance += Math.max(0, enemyEva - (playerAcc * 0.82));
         
         // Cộng thêm né tránh nếu quái vật có cảnh giới cao hơn người chơi
         if (rankDiff > 0) {
@@ -330,11 +358,20 @@ class Enemy {
         }
 
         // --- 2. TÍNH SÁT THƯƠNG CƠ BẢN (Nếu không né được) ---
-        const currentRank = CONFIG.CULTIVATION.RANKS[playerRankIndex];
-        const baseDamage = currentRank ? currentRank.damage : 1;
+        const playerStats = Input?.getPlayerCombatStats ? Input.getPlayerCombatStats() : null;
+        const baseDamage = playerStats?.ATK || (CONFIG.CULTIVATION.RANKS[playerRankIndex]?.damage || 1);
         const swordMultiplier = sword?.getDamageMultiplier ? sword.getDamageMultiplier() : (sword?.powerPenalty || 1);
         const playerAttackMultiplier = Input?.getAttackMultiplier ? Input.getAttackMultiplier() : 1;
-        let damage = Math.ceil(baseDamage * swordMultiplier * playerAttackMultiplier);
+        const rawDamage = Math.ceil(baseDamage * swordMultiplier * playerAttackMultiplier);
+        const enemyDef = Math.max(0, Number(this.combatStats?.DEF) || 0);
+        let damage = Math.max(1, Math.ceil(rawDamage * (100 / (100 + enemyDef))));
+        if (playerStats) {
+            const critRate = Math.max(0, Math.min(0.75, Number(playerStats.CRIT) || 0));
+            const critDmg = Math.max(1.2, Number(playerStats.CRIT_DMG) || 1.5);
+            if (Math.random() < critRate) {
+                damage = Math.max(1, Math.ceil(damage * critDmg));
+            }
+        }
 
         // --- 3. ÁP DỤNG LOGIC BẤT TỬ / GIẢM SÁT THƯƠNG ---
         if (rankDiff >= CONFIG.ENEMY.MAJOR_RANK_DIFF) {

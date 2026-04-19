@@ -1261,7 +1261,7 @@ Object.assign(Input, {
         }
 
         const shieldResult = this.absorbDamageWithHuThienDinh(afterNguCucDamage);
-        const finalDamage = shieldResult ? Math.max(0, shieldResult.remainingDamage) : afterNguCucDamage;
+        const postShieldDamage = shieldResult ? Math.max(0, shieldResult.remainingDamage) : afterNguCucDamage;
         if (shieldResult) {
             const artifactColor = this.getArtifactConfig('HU_THIEN_DINH')?.color || '#93c8d8';
             if (shieldResult.absorbed > 0) {
@@ -1271,7 +1271,16 @@ Object.assign(Input, {
                 showNotify('Đỉnh ảnh đã vỡ, tạm thời không thể hấp thụ thêm sát thương.', '#ffd2a1', 1300);
             }
         }
-        if (finalDamage <= 0) return;
+        const defenseStats = this.getPlayerCombatStats();
+        const defenseFactor = 1 - Math.min(0.82, defenseStats.DEF / (defenseStats.DEF + 180));
+        const evasionCheck = Math.random() < Math.max(0, Math.min(0.72, defenseStats.EVA));
+        const finalDamage = evasionCheck
+            ? 0
+            : Math.max(1, Math.round(postShieldDamage * defenseFactor));
+        if (finalDamage <= 0) {
+            showNotify('Thân pháp phát động: né tránh sát thương!', '#bff9ff', 900);
+            return;
+        }
 
         this.lastEnemyDamageAt = performance.now();
         this.updateHealth(-finalDamage, source);
@@ -2496,6 +2505,74 @@ Object.assign(Input, {
 
     getDropRateMultiplier() {
         return Math.max(0, 1 + this.bonusStats.dropRatePct);
+    },
+
+    getPlayerAttributeStats() {
+        const rank = this.getCurrentRank();
+        const rankIndex = Math.max(0, Number(this.rankIndex) || 0);
+        const rankScale = 1 + (rankIndex * 0.18);
+        const baseDamage = Math.max(1, Number(rank?.damage) || 1);
+        const baseHp = Math.max(1, Number(rank?.hp) || 100);
+        const baseMana = Math.max(1, Number(rank?.maxMana) || CONFIG.MANA.MAX || 100);
+        const moveScale = Math.max(0.35, this.getMovementSpeedMultiplier());
+        const spiritSense = Math.max(0, Number(this.getSwordFormationProgress?.().consciousness) || 0);
+        const luckSeed = Math.max(0, this.bonusStats.dropRatePct + (this.bonusStats.expGainPct * 0.5));
+
+        return {
+            STR: Math.max(1, Math.round((baseDamage * 0.95) + (rankScale * 3.2))),
+            AGI: Math.max(1, Math.round((moveScale * 28) + (rankScale * 2.4))),
+            DEX: Math.max(1, Math.round((baseDamage * 0.55) + (moveScale * 16) + (rankScale * 2))),
+            VIT: Math.max(1, Math.round((baseHp / 11) + (rankScale * 4.2))),
+            INT: Math.max(1, Math.round((baseMana / 8.5) + (rankScale * 3.4))),
+            WIS: Math.max(1, Math.round((baseMana / 10) + (spiritSense * 0.5) + (rankScale * 2.8))),
+            LUK: Math.max(1, Math.round(10 + (rankScale * 1.4) + (luckSeed * 110)))
+        };
+    },
+
+    getPlayerCombatStats() {
+        const attrs = this.getPlayerAttributeStats();
+        const atkMult = this.getAttackMultiplier();
+        const speedMult = this.getMovementSpeedMultiplier();
+        const shieldBreakMult = this.getShieldBreakMultiplier();
+
+        const atk = Math.max(1, Math.round(attrs.STR * atkMult * 1.8));
+        const def = Math.max(1, Math.round((attrs.VIT * 0.55) + (attrs.STR * 0.16)));
+        const matk = Math.max(1, Math.round((attrs.INT * 1.45) + (attrs.WIS * 0.35)));
+        const mdef = Math.max(1, Math.round((attrs.WIS * 0.7) + (attrs.VIT * 0.25)));
+        const critRate = Math.max(0, Math.min(0.75, 0.03 + (attrs.DEX * 0.0012) + (attrs.LUK * 0.0009)));
+        const critDmg = Math.max(1.25, Math.min(3.6, 1.55 + (attrs.STR * 0.0045) + (attrs.LUK * 0.0022)));
+        const eva = Math.max(0, Math.min(0.72, 0.02 + (attrs.AGI * 0.0014) + (attrs.LUK * 0.0005)));
+        const acc = Math.max(0.15, Math.min(0.98, 0.78 + (attrs.DEX * 0.0013) + (attrs.WIS * 0.0005)));
+        const spd = Math.max(1, Math.round(attrs.AGI * speedMult));
+
+        return {
+            ATK: atk,
+            DEF: def,
+            MATK: matk,
+            MDEF: mdef,
+            CRIT: critRate,
+            CRIT_DMG: critDmg,
+            EVA: eva,
+            ACC: acc,
+            SPD: spd,
+            SHIELD_BREAK: Math.max(1, Math.round(shieldBreakMult * 100))
+        };
+    },
+
+    getPlayerBasicStats() {
+        const combat = this.getPlayerCombatStats();
+        const rankId = Number(this.getCurrentRank()?.id) || 1;
+        const staminaCap = Math.max(50, Math.round(100 + (combat.SPD * 0.6) + (combat.DEF * 0.8)));
+        return {
+            HP: Math.round(this.hp),
+            MAX_HP: Math.round(this.maxHp),
+            MP: Math.round(this.mana),
+            MAX_MP: Math.round(this.maxMana),
+            SP: staminaCap,
+            MAX_SP: staminaCap,
+            EXP: Math.max(0, Math.round(this.exp)),
+            LV: rankId
+        };
     },
 
     getAttackMultiplier() {
