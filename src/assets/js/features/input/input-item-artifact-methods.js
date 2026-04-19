@@ -703,18 +703,18 @@ Object.assign(Input, {
         const button = document.getElementById('btn-alchemy-lab');
         if (!button) return;
 
-        const hasHuThien = this.hasArtifactPurchased('HU_THIEN_DINH') || this.hasArtifactUnlocked('HU_THIEN_DINH');
+        const hasHuThienRefined = this.hasArtifactUnlocked('HU_THIEN_DINH');
         const hasPurchasedFurnace = Object.values(this.alchemyFurnaces || {}).some(Boolean);
-        const ready = this.hasArtifactUnlocked('HU_THIEN_DINH') && this.isArtifactDeployed('HU_THIEN_DINH');
-        const title = !hasHuThien && !hasPurchasedFurnace
-            ? 'Cần mua Hư Thiên Đỉnh hoặc Đan lư ở Thiên Bảo Các để mở luyện đan'
+        const ready = hasHuThienRefined && this.isArtifactDeployed('HU_THIEN_DINH');
+        const title = !hasHuThienRefined && !hasPurchasedFurnace
+            ? 'Cần mua đan lư hoặc mua rồi luyện hóa Hư Thiên Đỉnh để mở luyện đan'
             : ready
                 ? 'Đan Lô đã sẵn sàng, có thể mở popup luyện đan'
                 : 'Đã có đan lư nhưng chưa triển khai Hư Thiên Đỉnh, vẫn có thể luyện với hiệu quả thấp hơn';
 
-        button.classList.toggle('is-hidden', !hasHuThien && !hasPurchasedFurnace);
+        button.classList.toggle('is-hidden', !hasHuThienRefined && !hasPurchasedFurnace);
         button.classList.toggle('is-active', ready);
-        button.style.display = (hasHuThien || hasPurchasedFurnace) ? 'flex' : 'none';
+        button.style.display = (hasHuThienRefined || hasPurchasedFurnace) ? 'flex' : 'none';
         button.setAttribute('aria-label', title);
         button.setAttribute('title', title);
     },
