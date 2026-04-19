@@ -72,6 +72,22 @@ class Enemy {
         return cache.byId.has(rankId) ? cache.byId.get(rankId) : -1;
     }
 
+    getMajorRealmScaleByRankId(rankId) {
+        const realms = Array.isArray(CONFIG.CULTIVATION?.MAJOR_REALMS)
+            ? CONFIG.CULTIVATION.MAJOR_REALMS
+            : [];
+        const safeRankId = Math.max(1, Number(rankId) || 1);
+        const realmIndex = realms.findIndex(realm => safeRankId >= realm.startId && safeRankId <= realm.endId);
+        if (realmIndex < 0) return 1;
+
+        const realm = realms[realmIndex];
+        const span = Math.max(1, (Number(realm.endId) || safeRankId) - (Number(realm.startId) || safeRankId) + 1);
+        const localProgress = Math.max(0, Math.min(1, (safeRankId - realm.startId) / span));
+        const realmBase = 1 + (realmIndex * 0.2);
+        const localBonus = localProgress * 0.16;
+        return Math.max(1, realmBase + localBonus);
+    }
+
     respawn() {
         this.spawnVersion = (this.spawnVersion || 0) + 1;
 
@@ -159,15 +175,16 @@ class Enemy {
         this.colors = [this.rankData.lightColor, this.rankData.color];
 
         // 3. THIẾT LẬP CHỈ SỐ SINH TỒN
+        const realmScale = this.getMajorRealmScaleByRankId(this.rankData?.id);
         const baseRankHp = this.rankData.hp || 1000;
-        this.damage = Math.max(1, Number(this.rankData.damage) || 1);
+        this.damage = Math.max(1, Math.round((Number(this.rankData.damage) || 1) * realmScale));
         const eliteMult = this.isElite ? 4.0 : 1.0;
-        this.maxHp = Math.floor(baseRankHp * (1 + Math.random() * 0.05) * eliteMult);
+        this.maxHp = Math.floor(baseRankHp * realmScale * (1 + Math.random() * 0.05) * eliteMult);
         this.hp = this.maxHp;
-        const vitality = Math.max(1, Math.round((this.maxHp / 18) * (this.isElite ? 1.28 : 1)));
-        const agility = Math.max(1, Math.round((this.rankData.speedMult || 1) * (this.isElite ? 30 : 22)));
-        const dexterity = Math.max(1, Math.round((this.damage * 2.6) + (this.isElite ? 8 : 2)));
-        const wisdom = Math.max(1, Math.round((this.rankData.id || 1) * 1.6 + (this.isElite ? 8 : 0)));
+        const vitality = Math.max(1, Math.round((this.maxHp / 18) * (this.isElite ? 1.28 : 1) * realmScale));
+        const agility = Math.max(1, Math.round((this.rankData.speedMult || 1) * (this.isElite ? 30 : 22) * (0.9 + (realmScale * 0.18))));
+        const dexterity = Math.max(1, Math.round((this.damage * 2.6 * realmScale) + (this.isElite ? 8 : 2)));
+        const wisdom = Math.max(1, Math.round(((this.rankData.id || 1) * 1.6 * realmScale) + (this.isElite ? 8 : 0)));
         const luck = Math.max(1, Math.round((this.isElite ? 20 : 8) + ((this.rankData.id || 1) * 0.9)));
         this.attributeStats = {
             STR: Math.max(1, Math.round(this.damage * (this.isElite ? 2.4 : 1.8))),

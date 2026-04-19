@@ -2576,6 +2576,18 @@ Object.assign(Input, {
         const rank = this.getCurrentRank();
         const rankIndex = Math.max(0, Number(this.rankIndex) || 0);
         const rankScale = 1 + (rankIndex * 0.18);
+        const majorRealms = Array.isArray(CONFIG.CULTIVATION?.MAJOR_REALMS)
+            ? CONFIG.CULTIVATION.MAJOR_REALMS
+            : [];
+        const rankId = Math.max(1, Number(rank?.id) || 1);
+        const realmIndex = majorRealms.findIndex(realm => rankId >= realm.startId && rankId <= realm.endId);
+        const realmScale = (() => {
+            if (realmIndex < 0) return 1;
+            const realm = majorRealms[realmIndex];
+            const span = Math.max(1, (Number(realm.endId) || rankId) - (Number(realm.startId) || rankId) + 1);
+            const localProgress = Math.max(0, Math.min(1, (rankId - realm.startId) / span));
+            return Math.max(1, 1 + (realmIndex * 0.2) + (localProgress * 0.16));
+        })();
         const baseDamage = Math.max(1, Number(rank?.damage) || 1);
         const baseHp = Math.max(1, Number(rank?.hp) || 100);
         const baseMana = Math.max(1, Number(rank?.maxMana) || CONFIG.MANA.MAX || 100);
@@ -2584,13 +2596,13 @@ Object.assign(Input, {
         const luckSeed = Math.max(0, this.bonusStats.dropRatePct + (this.bonusStats.expGainPct * 0.5));
 
         return {
-            STR: Math.max(1, Math.round((baseDamage * 0.95) + (rankScale * 3.2))),
-            AGI: Math.max(1, Math.round((moveScale * 28) + (rankScale * 2.4))),
-            DEX: Math.max(1, Math.round((baseDamage * 0.55) + (moveScale * 16) + (rankScale * 2))),
-            VIT: Math.max(1, Math.round((baseHp / 11) + (rankScale * 4.2))),
-            INT: Math.max(1, Math.round((baseMana / 8.5) + (rankScale * 3.4))),
-            WIS: Math.max(1, Math.round((baseMana / 10) + (spiritSense * 0.5) + (rankScale * 2.8))),
-            LUK: Math.max(1, Math.round(10 + (rankScale * 1.4) + (luckSeed * 110)))
+            STR: Math.max(1, Math.round(((baseDamage * 0.95) + (rankScale * 3.2)) * realmScale)),
+            AGI: Math.max(1, Math.round(((moveScale * 28) + (rankScale * 2.4)) * (0.92 + (realmScale * 0.16)))),
+            DEX: Math.max(1, Math.round(((baseDamage * 0.55) + (moveScale * 16) + (rankScale * 2)) * realmScale)),
+            VIT: Math.max(1, Math.round(((baseHp / 11) + (rankScale * 4.2)) * realmScale)),
+            INT: Math.max(1, Math.round(((baseMana / 8.5) + (rankScale * 3.4)) * realmScale)),
+            WIS: Math.max(1, Math.round(((baseMana / 10) + (spiritSense * 0.5) + (rankScale * 2.8)) * realmScale)),
+            LUK: Math.max(1, Math.round((10 + (rankScale * 1.4) + (luckSeed * 110)) * (0.9 + (realmScale * 0.12))))
         };
     },
 
