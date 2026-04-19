@@ -260,6 +260,36 @@ const startOverlay = document.getElementById('start-overlay');
 const startTitle = document.getElementById('start-title');
 const startSubtitle = document.getElementById('start-subtitle');
 const startButton = document.getElementById('btn-start-game');
+const difficultySelect = document.getElementById('difficulty-select');
+const difficultyOptions = Array.from(document.querySelectorAll('.difficulty-option'));
+const DIFFICULTY_PROFILES = {
+    EASY: {
+        key: 'EASY',
+        label: 'Dễ',
+        spawnCount: 8,
+        enemyHpMultiplier: 0.85,
+        enemyDamageMultiplier: 0.75,
+        eliteChanceMultiplier: 0.8
+    },
+    NORMAL: {
+        key: 'NORMAL',
+        label: 'Trung bình',
+        spawnCount: 10,
+        enemyHpMultiplier: 1,
+        enemyDamageMultiplier: 1,
+        eliteChanceMultiplier: 1
+    },
+    HARD: {
+        key: 'HARD',
+        label: 'Khó',
+        spawnCount: 14,
+        enemyHpMultiplier: 1.22,
+        enemyDamageMultiplier: 1.28,
+        eliteChanceMultiplier: 1.35
+    }
+};
+let selectedDifficultyKey = 'NORMAL';
+const baseEnemyEliteChance = Number(CONFIG.ENEMY.ELITE_CHANCE) || 0;
 
 function showStartOverlay(title, subtitle) {
     if (startTitle && title) startTitle.textContent = title;
@@ -271,6 +301,37 @@ function showStartOverlay(title, subtitle) {
 function hideStartOverlay() {
     startOverlay?.classList.remove('is-visible');
     document.body.classList.add('game-native-cursor-hidden');
+}
+
+function getSelectedDifficultyProfile() {
+    return DIFFICULTY_PROFILES[selectedDifficultyKey] || DIFFICULTY_PROFILES.NORMAL;
+}
+
+function applyDifficultyProfile() {
+    const profile = getSelectedDifficultyProfile();
+    CONFIG.ENEMY.SPAWN_COUNT = profile.spawnCount;
+    CONFIG.ENEMY.ELITE_CHANCE = Math.max(0, Math.min(1, baseEnemyEliteChance * profile.eliteChanceMultiplier));
+    CONFIG.ENEMY.RUNTIME_MULTIPLIERS = {
+        hp: profile.enemyHpMultiplier,
+        damage: profile.enemyDamageMultiplier
+    };
+    if (Input) {
+        Input.selectedDifficulty = profile.key;
+    }
+}
+
+function syncEnemyCount() {
+    const desiredCount = Math.max(1, parseInt(CONFIG.ENEMY.SPAWN_COUNT, 10) || 1);
+    while (enemies.length < desiredCount) enemies.push(new Enemy());
+    if (enemies.length > desiredCount) enemies.length = desiredCount;
+}
+
+function renderDifficultySelection() {
+    difficultyOptions.forEach(option => {
+        const isSelected = option.dataset.difficulty === selectedDifficultyKey;
+        option.classList.toggle('is-selected', isSelected);
+        option.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+    });
 }
 
 function getConfiguredSwordCount() {
@@ -352,7 +413,8 @@ function init() {
     Input.renderAttackModeUI();
     starField = new StarField(CONFIG.BG.STAR_COUNT, width, height);
     window.starField = starField;
-    for (let i = 0; i < CONFIG.ENEMY.SPAWN_COUNT; i++) enemies.push(new Enemy());
+    applyDifficultyProfile();
+    syncEnemyCount();
     syncSwordFormation({ rebuildAll: true });
     updateSwordCounter(swords);
     GameProgress.requestSave();
@@ -360,6 +422,8 @@ function init() {
 }
 
 function resetRunState() {
+    applyDifficultyProfile();
+    syncEnemyCount();
     Input.isGameOver = false;
     Input.isVoidCollapsed = false;
     if (Input.tribulation) {
@@ -397,6 +461,15 @@ function startGame() {
     gameStarted = true;
     hideStartOverlay();
 }
+
+difficultySelect?.addEventListener('click', (event) => {
+    const option = event.target?.closest?.('.difficulty-option');
+    if (!option) return;
+    const nextKey = option.dataset.difficulty;
+    if (!DIFFICULTY_PROFILES[nextKey]) return;
+    selectedDifficultyKey = nextKey;
+    renderDifficultySelection();
+});
 
 window.__onPlayerGameOver = () => {
     showNotify('Đạo thể trọng thương, thiên địa hồi chuyển ngươi về trạng thái toàn thịnh.', '#ff9f9f');
@@ -701,6 +774,7 @@ async function bootGame() {
     if (startButton) {
         startButton.addEventListener('click', () => startGame());
     }
+    renderDifficultySelection();
 
     const hasSavedProgress = Boolean(localStorage.getItem(GameProgress.storageKey));
     if (hasSavedProgress) {

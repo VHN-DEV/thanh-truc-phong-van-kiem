@@ -176,10 +176,13 @@ class Enemy {
 
         // 3. THIẾT LẬP CHỈ SỐ SINH TỒN
         const realmScale = this.getMajorRealmScaleByRankId(this.rankData?.id);
+        const runtimeMultipliers = CONFIG.ENEMY.RUNTIME_MULTIPLIERS || {};
+        const hpMultiplier = Math.max(0.2, Number(runtimeMultipliers.hp) || 1);
+        const damageMultiplier = Math.max(0.2, Number(runtimeMultipliers.damage) || 1);
         const baseRankHp = this.rankData.hp || 1000;
-        this.damage = Math.max(1, Math.round((Number(this.rankData.damage) || 1) * realmScale));
+        this.damage = Math.max(1, Math.round((Number(this.rankData.damage) || 1) * realmScale * damageMultiplier));
         const eliteMult = this.isElite ? 4.0 : 1.0;
-        this.maxHp = Math.floor(baseRankHp * realmScale * (1 + Math.random() * 0.05) * eliteMult);
+        this.maxHp = Math.floor(baseRankHp * realmScale * hpMultiplier * (1 + Math.random() * 0.05) * eliteMult);
         this.hp = this.maxHp;
         const vitality = Math.max(1, Math.round((this.maxHp / 18) * (this.isElite ? 1.28 : 1) * realmScale));
         const agility = Math.max(1, Math.round((this.rankData.speedMult || 1) * (this.isElite ? 30 : 22) * (0.9 + (realmScale * 0.18))));

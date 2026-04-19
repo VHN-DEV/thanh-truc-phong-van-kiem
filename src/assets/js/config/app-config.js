@@ -302,6 +302,10 @@ const CONFIG = {
         SPAWN_PADDING: 50,                // Khoảng cách an toàn từ mép màn hình khi quái xuất hiện
         ELITE_MULT: 5, // Hệ số nhân phần thưởng cho quái Tinh Anh
         ELITE_CHANCE: 0.01,               // Tỉ lệ quái tinh anh xuất hiện (1%)
+        RUNTIME_MULTIPLIERS: {
+            hp: 1,
+            damage: 1
+        },
         CONTACT_RADIUS: 44,               // Bán kính tiếp xúc cơ bản để kích hoạt logic tấn công cận chiến của quái
         MAX_MELEE_STRIKES: 120,           // Giới hạn số đòn cận chiến đang chờ xử lý để tránh phình mảng hiệu ứng
         MAX_HOSTILE_PROJECTILES: 260,     // Giới hạn số phi đạn thù địch tồn tại đồng thời để giữ ổn định hiệu năng
