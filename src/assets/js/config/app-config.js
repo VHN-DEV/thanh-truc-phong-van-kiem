@@ -808,6 +808,7 @@ const CONFIG = {
         ENABLED: true,
         REQUIRES_HU_THIEN_DINH: true,
         NOTIFY_COLOR: "#93c8d8",
+        FURNACE_EXPLOSION_CHANCE: 0.03,
         DEFAULT_BREW_MS: 32000,
         FORMULA_QUALITY_LABELS: {
             LOW: "Hạ phẩm",
