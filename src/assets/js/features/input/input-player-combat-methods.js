@@ -1242,7 +1242,7 @@ Object.assign(Input, {
         return enemy.attackPattern;
     },
 
-    inflictEnemyAttackDamage(amount, ailmentChance = 0.2, source = 'đòn đánh của yêu thú') {
+    inflictEnemyAttackDamage(amount, ailmentChance = 0.2, source = 'đòn đánh của yêu thú', options = {}) {
         const safeDamage = Math.max(0, Number(amount) || 0);
         if (safeDamage <= 0) return;
 
@@ -1272,8 +1272,10 @@ Object.assign(Input, {
             }
         }
         const defenseStats = this.getPlayerCombatStats();
+        const attackerAcc = Math.max(0.15, Math.min(0.98, Number(options.attackerAcc) || 0.78));
         const defenseFactor = 1 - Math.min(0.82, defenseStats.DEF / (defenseStats.DEF + 180));
-        const evasionCheck = Math.random() < Math.max(0, Math.min(0.72, defenseStats.EVA));
+        const effectiveEvasionChance = Math.max(0, Math.min(0.72, defenseStats.EVA - (attackerAcc * 0.65)));
+        const evasionCheck = Math.random() < effectiveEvasionChance;
         const finalDamage = evasionCheck
             ? 0
             : Math.max(1, Math.round(postShieldDamage * defenseFactor));
@@ -1330,6 +1332,7 @@ Object.assign(Input, {
             damage: Math.max(1, Number(options.damage) || 1),
             ailmentChance: Math.max(0, Number(options.ailmentChance) || 0.2),
             source: options.source || 'cận chiến yêu thú',
+            attackerAcc: Math.max(0.15, Math.min(0.98, Number(options.attackerAcc) || Number(enemy?.combatStats?.ACC) || 0.78)),
             hasDamaged: false,
             canMultiTickDamage: pattern === 'BITE',
             damageTickEveryMs: Math.max(180, Number(options.damageTickEveryMs) || 420),
@@ -1397,7 +1400,9 @@ Object.assign(Input, {
                         strike.latchUntil = now;
                         continue;
                     }
-                    this.inflictEnemyAttackDamage(strike.damage, strike.ailmentChance, strike.source);
+                    this.inflictEnemyAttackDamage(strike.damage, strike.ailmentChance, strike.source, {
+                        attackerAcc: strike.attackerAcc
+                    });
                     strike.hasDamaged = true;
                     if (strike.type === 'BITE') {
                         strike.latchUntil = now + strike.latchDurationMs;
@@ -1416,7 +1421,9 @@ Object.assign(Input, {
                         strike.nextDamageTickAt = now + strike.damageTickEveryMs;
                         continue;
                     }
-                    this.inflictEnemyAttackDamage(strike.damage * 0.28, Math.max(0.1, strike.ailmentChance * 0.45), 'cắn bám');
+                    this.inflictEnemyAttackDamage(strike.damage * 0.28, Math.max(0.1, strike.ailmentChance * 0.45), 'cắn bám', {
+                        attackerAcc: strike.attackerAcc
+                    });
                     strike.nextDamageTickAt = now + strike.damageTickEveryMs;
                 }
             }
@@ -1460,6 +1467,7 @@ Object.assign(Input, {
             radius: Math.max(3, Number(options.radius) || 8),
             color: options.color || enemy.rankData?.lightColor || '#8ee7ff',
             damage: Math.max(1, Number(options.damage) || Math.max(1, (enemy.damage || 1) * 0.85)),
+            attackerAcc: Math.max(0.15, Math.min(0.98, Number(options.attackerAcc) || Number(enemy?.combatStats?.ACC) || 0.78)),
             homing: Boolean(options.homing),
             arc: Number(options.arc) || 0,
             ownerId: enemy.floatOffset || 0,
@@ -1510,7 +1518,9 @@ Object.assign(Input, {
 
             const hitDistance = Math.hypot(shot.x - centerX, shot.y - centerY);
             if (hitDistance <= this.getCursorCoreHitRadius()) {
-                this.inflictEnemyAttackDamage(shot.damage, 0.28, 'phi đạn tà lực');
+                this.inflictEnemyAttackDamage(shot.damage, 0.28, 'phi đạn tà lực', {
+                    attackerAcc: shot.attackerAcc
+                });
                 continue;
             }
 
@@ -1562,7 +1572,9 @@ Object.assign(Input, {
         for (let i = 0; i < enemies.length; i++) {
             const enemy = enemies[i];
             if (!enemy || enemy.hp <= 0) continue;
-            const baseDamage = Math.max(1, Number(enemy.damage) || Number(enemy.rankData?.damage) || 1);
+            const enemyAtk = Math.max(1, Number(enemy.combatStats?.ATK) || 0);
+            const baseDamage = Math.max(1, enemyAtk || Number(enemy.damage) || Number(enemy.rankData?.damage) || 1);
+            const enemyAcc = Math.max(0.15, Math.min(0.98, Number(enemy.combatStats?.ACC) || 0.78));
             const dist = Math.hypot((enemy.x || 0) - centerX, (enemy.y || 0) - centerY);
             const retaliating = now < (enemy.retaliateUntil || 0);
             const triggerRange = contactRadius * (retaliating ? 4.2 : 2.9);
@@ -1615,7 +1627,8 @@ Object.assign(Input, {
                             durationMs: enemy.isElite ? 180 : 240,
                             damage: baseDamage * 1.2,
                             ailmentChance: 0.24,
-                            source: 'lao húc'
+                            source: 'lao húc',
+                            attackerAcc: enemyAcc
                         });
                     }
                     break;
@@ -1626,6 +1639,7 @@ Object.assign(Input, {
                             damage: baseDamage * 1.35,
                             ailmentChance: 0.34,
                             source: 'cắn xé',
+                            attackerAcc: enemyAcc,
                             latchDurationMs: enemy.isElite ? 1700 : 1200,
                             damageTickEveryMs: enemy.isElite ? 300 : 360
                         });
@@ -1637,20 +1651,22 @@ Object.assign(Input, {
                             durationMs: enemy.isElite ? 160 : 210,
                             damage: baseDamage,
                             ailmentChance: 0.3,
-                            source: 'cào cấu'
+                            source: 'cào cấu',
+                            attackerAcc: enemyAcc
                         });
                         if (Math.random() < 0.55) {
                             this.queueEnemyMeleeStrike(enemy, 'CLAW', centerX, centerY, {
                                 durationMs: enemy.isElite ? 190 : 250,
                                 damage: baseDamage * 0.48,
                                 ailmentChance: 0.2,
-                                source: 'liên trảo'
+                                source: 'liên trảo',
+                                attackerAcc: enemyAcc
                             });
                         }
                     }
                     break;
                 case 'ORB':
-                    this.castEnemyProjectile(enemy, centerX, centerY, { type: 'orb', speed: 240, radius: 9, damage: baseDamage * 0.95, color: '#8fd8ff' });
+                    this.castEnemyProjectile(enemy, centerX, centerY, { type: 'orb', speed: 240, radius: 9, damage: baseDamage * 0.95, color: '#8fd8ff', attackerAcc: enemyAcc });
                     break;
                 case 'BEAM': {
                     const beamRange = contactRadius * 4.8;
@@ -1662,6 +1678,7 @@ Object.assign(Input, {
                             life: 1.9,
                             damage: baseDamage * 1.12,
                             color: '#b8f3ff',
+                            attackerAcc: enemyAcc,
                             trailEveryMs: 32,
                             trailSizeMult: 1.28
                         });
@@ -1669,7 +1686,7 @@ Object.assign(Input, {
                     break;
                 }
                 case 'ARC_MISSILE':
-                    this.castEnemyProjectile(enemy, centerX, centerY, { type: 'arc', speed: 210, radius: 7, damage: baseDamage * 0.82, arc: 2.4, homing: true, color: '#ffc670' });
+                    this.castEnemyProjectile(enemy, centerX, centerY, { type: 'arc', speed: 210, radius: 7, damage: baseDamage * 0.82, arc: 2.4, homing: true, color: '#ffc670', attackerAcc: enemyAcc });
                     break;
                 case 'SPIKE_RING': {
                     const burstCount = enemy.isElite ? 8 : 6;
@@ -1681,7 +1698,8 @@ Object.assign(Input, {
                             radius: 5,
                             damage: baseDamage * 0.68,
                             arc: 1.2,
-                            color: '#ff9fb2'
+                            color: '#ff9fb2',
+                            attackerAcc: enemyAcc
                         });
                     }
                     break;
@@ -1692,7 +1710,8 @@ Object.assign(Input, {
                             durationMs: enemy.isElite ? 140 : 180,
                             damage: baseDamage,
                             ailmentChance: 0.2,
-                            source: 'công kích trực diện'
+                            source: 'công kích trực diện',
+                            attackerAcc: enemyAcc
                         });
                     }
                     break;
@@ -2322,9 +2341,8 @@ Object.assign(Input, {
     },
 
     getEffectiveAttackDamage() {
-        const rank = this.getCurrentRank();
-        const baseDamage = rank?.damage || 0;
-        return Math.max(1, Math.ceil(baseDamage * this.getAttackMultiplier()));
+        const combat = this.getPlayerCombatStats();
+        return Math.max(1, Math.round(combat.ATK));
     },
 
     getAliveSwordStats() {
