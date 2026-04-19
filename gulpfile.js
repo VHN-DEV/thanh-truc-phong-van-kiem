@@ -37,6 +37,7 @@ gulp.task('build-js', function () {
     'src/assets/js/features/ui/inventory-ui.js',
     'src/assets/js/features/ui/alchemy-ui.js',
     'src/assets/js/features/ui/beast-bag-ui.js',
+    'src/assets/js/features/ui/map-ui.js',
     'src/assets/js/features/ui/settings-ui.js',
     'src/assets/js/features/ui/cultivation-panels-ui.js',
     'src/assets/js/features/progression/game-progress.js',
