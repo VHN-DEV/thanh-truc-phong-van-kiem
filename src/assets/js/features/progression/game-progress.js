@@ -250,6 +250,7 @@ const GameProgress = {
             activeArtifacts: Input.activeArtifacts,
             nguCucSonCombined: Boolean(Input.nguCucSonCombined),
             phongLoiBlinkEnabled: Boolean(Input.phongLoiBlink?.enabled),
+            nguLoiThuatEnabled: Boolean(Input.nguLoiThuatEnabled),
             specialAuraMode: Input.specialAuraExpiresAt === Number.POSITIVE_INFINITY ? Input.specialAuraMode : null,
             insectEggs: Input.insectEggs,
             tamedInsects: Input.tamedInsects,
@@ -375,6 +376,8 @@ const GameProgress = {
             Input.activeArtifacts = this.getDefaultActiveArtifacts();
             Input.nguCucSonCombined = false;
             Input.phongLoiBlink = this.getDefaultPhongLoiBlinkState();
+            Input.nguLoiThuatEnabled = false;
+            Input.nguLoiThuatEffects = [];
             Input.insectEggs = {};
             Input.tamedInsects = {};
             Input.insectColonies = {};
@@ -505,6 +508,8 @@ const GameProgress = {
             Input.activeArtifacts = this.sanitizeBooleanMap(parsed.activeArtifacts, this.getDefaultActiveArtifacts());
             Input.nguCucSonCombined = Boolean(parsed.nguCucSonCombined);
             Input.phongLoiBlink = this.getDefaultPhongLoiBlinkState();
+            Input.nguLoiThuatEnabled = Boolean(parsed.nguLoiThuatEnabled);
+            Input.nguLoiThuatEffects = [];
             Input.insectEggs = this.sanitizeNumberMap(parsed.insectEggs);
             Input.tamedInsects = this.sanitizeNumberMap(parsed.tamedInsects);
             Input.insectColonies = this.sanitizeInsectColonies(parsed.insectColonies);
@@ -606,6 +611,7 @@ const GameProgress = {
             }
 
             Input.phongLoiBlink.enabled = Boolean(parsed.phongLoiBlinkEnabled) && Input.isArtifactDeployed('PHONG_LOI_SI');
+            Input.nguLoiThuatEnabled = Boolean(Input.nguLoiThuatEnabled) && Boolean(Input.hasNguLoiThuatUnlocked?.());
             Input.ensureValidBeastBagTab();
             return true;
         } catch (error) {

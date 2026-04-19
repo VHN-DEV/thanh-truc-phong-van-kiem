@@ -825,6 +825,17 @@ Object.assign(SkillsUI, {
                 return;
             }
 
+            const secretArtToggleBtn = e.target.closest('[data-secret-art-toggle]');
+            if (secretArtToggleBtn) {
+                e.stopPropagation();
+                e.preventDefault();
+                const toggleKey = secretArtToggleBtn.getAttribute('data-secret-art-toggle');
+                if (toggleKey === 'NGU_LOI_THUAT' && typeof Input.toggleNguLoiThuat === 'function' && Input.toggleNguLoiThuat()) {
+                    this.render();
+                }
+                return;
+            }
+
             const swordPanelBtn = e.target.closest('[data-sword-artifact-toggle]');
             if (swordPanelBtn) {
                 e.stopPropagation();
@@ -1016,6 +1027,36 @@ Object.assign(SkillsUI, {
             });
         }
 
+        const nguLoiItem = Input.getInventoryEntryByUniqueKey('NGU_LOI_THUAT', ['FLAME_ART']);
+        const nguLoiLearned = typeof Input.hasNguLoiThuatUnlocked === 'function' && Input.hasNguLoiThuatUnlocked();
+        const nguLoiEnabled = typeof Input.isNguLoiThuatEnabled === 'function' && Input.isNguLoiThuatEnabled();
+        if (nguLoiLearned || nguLoiItem || Input.hasUniquePurchase('NGU_LOI_THUAT')) {
+            secretArts.push({
+                key: 'NGU_LOI_THUAT',
+                name: CONFIG.SECRET_ARTS?.NGU_LOI_THUAT?.fullName || 'Ngự Lôi Thuật',
+                description: 'Khai/thu lôi thức. Mỗi đòn trúng sẽ dẫn lôi quang giáng thẳng vào mục tiêu.',
+                unlocked: nguLoiLearned,
+                active: nguLoiEnabled,
+                ready: nguLoiLearned,
+                accent: CONFIG.SECRET_ARTS?.NGU_LOI_THUAT?.color || '#7aa8ff',
+                productKey: 'NGU_LOI_THUAT',
+                statusLabel: nguLoiLearned ? 'Đã lĩnh ngộ' : nguLoiItem ? 'Chờ lĩnh ngộ' : 'Đã mua',
+                note: nguLoiLearned
+                    ? (nguLoiEnabled ? 'Lôi thức đang khai mở, đòn trúng sẽ kéo theo tia sét.' : 'Lôi thức đang thu liễm.')
+                    : 'Cần lĩnh ngộ bí pháp trong túi trước khi có thể khai mở lôi thức.',
+                modeKey: null,
+                toggleActionKey: nguLoiLearned ? 'NGU_LOI_THUAT' : null,
+                buttonLabel: nguLoiLearned
+                    ? (nguLoiEnabled
+                        ? (CONFIG.SECRET_ARTS?.NGU_LOI_THUAT?.toggleOffLabel || 'Thu')
+                        : (CONFIG.SECRET_ARTS?.NGU_LOI_THUAT?.toggleOnLabel || 'Khai'))
+                    : 'Lĩnh ngộ',
+                buttonDisabled: nguLoiLearned ? false : !nguLoiItem,
+                inventoryKey: nguLoiItem?.key || null,
+                roster: []
+            });
+        }
+
         return secretArts;
     },
 
@@ -1160,6 +1201,14 @@ Object.assign(SkillsUI, {
         if (skill.castActionKey) {
             return `
                 <button class="btn-slot-action" type="button" data-secret-art-cast="${escapeHtml(skill.castActionKey)}" ${skill.buttonDisabled ? 'disabled' : ''}>
+                    ${escapeHtml(skill.buttonLabel)}
+                </button>
+            `;
+        }
+
+        if (skill.toggleActionKey) {
+            return `
+                <button class="btn-slot-action" type="button" data-secret-art-toggle="${escapeHtml(skill.toggleActionKey)}" ${skill.buttonDisabled ? 'disabled' : ''}>
                     ${escapeHtml(skill.buttonLabel)}
                 </button>
             `;

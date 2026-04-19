@@ -2838,7 +2838,7 @@ Object.assign(Input, {
             return false;
         }
 
-        if (item.category === 'FLAME_ART' && this.hasCanLamBangDiemUnlocked()) {
+        if (item.category === 'FLAME_ART' && this.hasCultivationArt(item.uniqueKey)) {
             showNotify(`${this.getItemDisplayName(item)} đã được luyện hóa vào thần thức.`, qualityConfig.color || '#79d9ff');
             return false;
         }
@@ -2903,8 +2903,13 @@ Object.assign(Input, {
                 this.refreshResourceUI();
                 return true;
             case 'FLAME_ART':
-                this.unlockCultivationArt('CAN_LAM_BANG_DIEM');
-                showNotify(`Luyện hóa ${this.getItemDisplayName(item)}: lam diễm đã hiện nơi đầu niệm.`, qualityConfig.color);
+                this.unlockCultivationArt(item.uniqueKey);
+                if (item.uniqueKey === 'NGU_LOI_THUAT' && typeof this.setNguLoiThuatEnabled === 'function') {
+                    this.setNguLoiThuatEnabled(true, { silent: true });
+                    showNotify(`Lĩnh ngộ ${this.getItemDisplayName(item)}: lôi thức đã khai mở.`, qualityConfig.color || '#7aa8ff');
+                } else {
+                    showNotify(`Luyện hóa ${this.getItemDisplayName(item)}: lam diễm đã hiện nơi đầu niệm.`, qualityConfig.color);
+                }
                 this.refreshResourceUI();
                 return true;
             case 'ARTIFACT':
