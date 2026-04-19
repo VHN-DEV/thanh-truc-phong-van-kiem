@@ -1078,7 +1078,7 @@ Object.assign(Input, {
         let remaining = Math.max(0, Math.floor(stackBudget || 0));
         if (remaining <= 0) return 0;
         let removed = 0;
-        const order = ['bleeding', 'poison', 'qiBurn', 'brokenBone', 'blind'];
+        const order = ['frozen', 'rooted', 'sluggish', 'bleeding', 'poison', 'qiBurn', 'brokenBone', 'blind'];
 
         order.forEach(key => {
             if (remaining <= 0) return;
@@ -1150,8 +1150,23 @@ Object.assign(Input, {
             brokenBone: { label: 'Gãy xương', color: '#ff9f5d', description: 'Thân pháp bị chậm mạnh', chance: 0.16, durationMs: 6500, maxStacks: 3 },
             blind: { label: 'Mù', color: '#4fb4ff', description: 'Đòn đánh dễ trượt hơn', chance: 0.14, durationMs: 5200, maxStacks: 3 },
             poison: { label: 'Kịch độc', color: '#53d676', description: 'Ăn mòn máu và linh lực', chance: 0.12, durationMs: 7200, maxStacks: 4 },
-            qiBurn: { label: 'Nhiễu linh', color: '#58e0ff', description: 'Thiêu đốt linh lực', chance: 0.1, durationMs: 6000, maxStacks: 3 }
+            qiBurn: { label: 'Nhiễu linh', color: '#58e0ff', description: 'Thiêu đốt linh lực', chance: 0.1, durationMs: 6000, maxStacks: 3 },
+            rooted: { label: 'Trói buộc', color: '#a687ff', description: 'Tạm thời không thể di chuyển', chance: 0.08, durationMs: 1700, maxStacks: 2 },
+            frozen: { label: 'Đóng băng', color: '#8ee8ff', description: 'Choáng lạnh, đứng im trong chốc lát', chance: 0.07, durationMs: 1400, maxStacks: 2 },
+            sluggish: { label: 'Trì trệ', color: '#7eb9ff', description: 'Tốc độ di chuyển giảm cực mạnh', chance: 0.1, durationMs: 5400, maxStacks: 3 }
         };
+    },
+
+    applyNegativeStatus(key, stacks = 1, durationMs = null) {
+        const cfg = this.getNegativeStatusConfig();
+        const statusCfg = cfg[key];
+        if (!statusCfg) return false;
+        const state = this.negativeStatuses?.[key] || { stacks: 0, until: 0 };
+        state.stacks = Math.min(statusCfg.maxStacks || 3, (state.stacks || 0) + Math.max(1, Math.floor(stacks || 1)));
+        state.until = performance.now() + Math.max(300, Number(durationMs) || statusCfg.durationMs || 5000);
+        this.negativeStatuses[key] = state;
+        this.renderNegativeStatusUI();
+        return true;
     },
 
     tryApplyRandomNegativeStatus(baseChance = 0.2) {
@@ -1170,13 +1185,7 @@ Object.assign(Input, {
             }
         }
 
-        const state = this.negativeStatuses[chosen] || { stacks: 0, until: 0 };
-        const status = cfg[chosen];
-        state.stacks = Math.min(status.maxStacks || 3, (state.stacks || 0) + 1);
-        state.until = performance.now() + (status.durationMs || 5000);
-        this.negativeStatuses[chosen] = state;
-        this.renderNegativeStatusUI();
-        return true;
+        return this.applyNegativeStatus(chosen, 1, cfg[chosen]?.durationMs || 5000);
     },
 
     updateNegativeStatuses(dt) {
@@ -1235,8 +1244,24 @@ Object.assign(Input, {
     },
 
     getEnemyAttackPattern(enemy) {
+        if (enemy?.combatMode === 'ENRAGED') {
+            const now = performance.now();
+            const enragedPatterns = ['BITE', 'CLAW', 'BEAM', 'ARC_MISSILE', 'SPIKE_RING', 'VOLLEY', 'RUSH_COMBO', 'NOVA_BURST', 'LASER_RAY', 'HUNTER_ORB', 'ELEMENTAL_ART'];
+            if (!enemy.enragedPattern || now >= (enemy.nextEnragedPatternRollAt || 0)) {
+                const currentIndex = enragedPatterns.indexOf(enemy.enragedPattern);
+                let nextIndex = Math.floor(Math.random() * enragedPatterns.length);
+                if (currentIndex >= 0 && enragedPatterns.length > 1 && nextIndex === currentIndex) {
+                    nextIndex = (nextIndex + 1) % enragedPatterns.length;
+                }
+                enemy.enragedPattern = enragedPatterns[nextIndex];
+                enemy.nextEnragedPatternRollAt = now + random(1200, 2600);
+            }
+            return enemy.enragedPattern;
+        }
+
+        enemy.enragedPattern = null;
+        const patterns = ['CHARGE', 'BITE', 'CLAW', 'ORB', 'BEAM', 'ARC_MISSILE', 'SPIKE_RING', 'VOLLEY', 'RUSH_COMBO', 'NOVA_BURST', 'LASER_RAY', 'HUNTER_ORB', 'FROST_BIND', 'MIASMA_SLOW', 'ELEMENTAL_ART'];
         if (enemy?.attackPattern) return enemy.attackPattern;
-        const patterns = ['CHARGE', 'BITE', 'CLAW', 'ORB', 'BEAM', 'ARC_MISSILE', 'SPIKE_RING'];
         const rankId = Number(enemy?.rankData?.id) || 1;
         enemy.attackPattern = patterns[(rankId + Math.floor((enemy?.floatOffset || 0) * 0.01)) % patterns.length];
         return enemy.attackPattern;
@@ -1296,6 +1321,15 @@ Object.assign(Input, {
         this.lastEnemyDamageAt = performance.now();
         this.updateHealth(-finalDamage, source);
         this.tryApplyRandomNegativeStatus(ailmentChance);
+        const forcedStatusKey = String(options.statusKey || '').trim();
+        const forcedStatusChance = Math.max(0, Math.min(1, Number(options.statusChance) || 0));
+        if (forcedStatusKey && Math.random() < forcedStatusChance) {
+            this.applyNegativeStatus(
+                forcedStatusKey,
+                Math.max(1, Number(options.statusStacks) || 1),
+                Number(options.statusDurationMs) || null
+            );
+        }
 
         const burstCount = 6;
         for (let i = 0; i < burstCount; i++) {
@@ -1490,12 +1524,103 @@ Object.assign(Input, {
             attackerCritDmg: Math.max(1, Number(options.attackerCritDmg) || Number(enemy?.combatStats?.CRIT_DMG) || 1.5),
             attackType: options.attackType === 'MAGICAL' ? 'MAGICAL' : 'PHYSICAL',
             homing: Boolean(options.homing),
+            homingStrength: Math.max(0.02, Math.min(0.5, Number(options.homingStrength) || 0.12)),
             arc: Number(options.arc) || 0,
             ownerId: enemy.floatOffset || 0,
             trailEveryMs,
             trailSizeMult: Math.max(0.7, Number(options.trailSizeMult) || 1),
-            nextTrailAt: performance.now()
+            nextTrailAt: performance.now(),
+            statusKey: options.statusKey || '',
+            statusChance: Math.max(0, Math.min(1, Number(options.statusChance) || 0)),
+            statusStacks: Math.max(1, Number(options.statusStacks) || 1),
+            statusDurationMs: Math.max(300, Number(options.statusDurationMs) || 0),
+            sourceLabel: options.sourceLabel || 'phi đạn tà lực'
         });
+    },
+
+    castEnemyLaser(enemy, targetX, targetY, options = {}) {
+        const projectiles = this.ensureEnemyHostileProjectiles();
+        const maxProjectiles = Math.max(40, Number(CONFIG.ENEMY?.MAX_HOSTILE_PROJECTILES) || 0);
+        if (projectiles.length >= maxProjectiles) {
+            projectiles.shift();
+        }
+
+        const startX = enemy.x || targetX;
+        const startY = enemy.y || targetY;
+        const angle = Math.atan2(targetY - startY, targetX - startX);
+        projectiles.push({
+            type: 'laser',
+            x: startX,
+            y: startY,
+            vx: Math.cos(angle),
+            vy: Math.sin(angle),
+            life: Math.max(0.12, Number(options.life) || 0.24),
+            radius: Math.max(4, Number(options.radius) || 8),
+            color: options.color || '#9de9ff',
+            damage: Math.max(1, Number(options.damage) || Math.max(1, (enemy.damage || 1) * 1.15)),
+            attackerAcc: Math.max(0.15, Math.min(0.98, Number(options.attackerAcc) || Number(enemy?.combatStats?.ACC) || 0.78)),
+            attackerCrit: Math.max(0, Math.min(0.92, Number(options.attackerCrit) || Number(enemy?.combatStats?.CRIT) || 0)),
+            attackerCritDmg: Math.max(1, Number(options.attackerCritDmg) || Number(enemy?.combatStats?.CRIT_DMG) || 1.5),
+            attackType: options.attackType === 'MAGICAL' ? 'MAGICAL' : 'PHYSICAL',
+            laserLength: Math.max(160, Number(options.laserLength) || 460),
+            hasDamaged: false,
+            statusKey: options.statusKey || '',
+            statusChance: Math.max(0, Math.min(1, Number(options.statusChance) || 0)),
+            statusStacks: Math.max(1, Number(options.statusStacks) || 1),
+            statusDurationMs: Math.max(300, Number(options.statusDurationMs) || 0),
+            sourceLabel: options.sourceLabel || 'tia laze tà lực'
+        });
+    },
+
+    castEnemyElementalAttack(enemy, centerX, centerY, baseDamage, combatMeta = {}) {
+        const elements = ['FIRE', 'WATER', 'EARTH', 'WOOD', 'ICE', 'THUNDER', 'LIGHT', 'DARK', 'CHAOS', 'SPACE', 'TIME'];
+        const element = elements[Math.floor(Math.random() * elements.length)];
+        const meta = {
+            attackerAcc: combatMeta.attackerAcc,
+            attackerCrit: combatMeta.attackerCrit,
+            attackerCritDmg: combatMeta.attackerCritDmg,
+            attackType: 'MAGICAL'
+        };
+
+        switch (element) {
+            case 'FIRE':
+                this.castEnemyProjectile(enemy, centerX, centerY, { ...meta, type: 'orb', speed: 280, radius: 8.6, damage: baseDamage * 1.02, color: '#ff9a63', sourceLabel: 'hỏa diễm đạn', statusKey: 'qiBurn', statusChance: 0.46, statusDurationMs: 4300, trailEveryMs: 26 });
+                break;
+            case 'WATER':
+                this.castEnemyProjectile(enemy, centerX, centerY, { ...meta, type: 'arc', speed: 215, radius: 9.2, damage: baseDamage * 0.9, color: '#72cfff', sourceLabel: 'thủy lưu đạn', statusKey: 'sluggish', statusChance: 0.38, statusDurationMs: 3600 });
+                break;
+            case 'EARTH':
+                this.castEnemyProjectile(enemy, centerX, centerY, { ...meta, type: 'orb', speed: 170, radius: 10.8, damage: baseDamage * 1.12, color: '#cda87b', sourceLabel: 'địa nham chấn kích', statusKey: 'brokenBone', statusChance: 0.36, statusDurationMs: 3800 });
+                break;
+            case 'WOOD':
+                this.castEnemyProjectile(enemy, centerX, centerY, { ...meta, type: 'arc', speed: 205, radius: 8.6, damage: baseDamage * 0.92, color: '#72d884', sourceLabel: 'mộc linh quấn sát', homing: true, homingStrength: 0.14, statusKey: 'rooted', statusChance: 0.34, statusDurationMs: 1300 });
+                break;
+            case 'ICE':
+                this.castEnemyProjectile(enemy, centerX, centerY, { ...meta, type: 'orb', speed: 210, radius: 9.4, damage: baseDamage * 0.9, color: '#9be8ff', sourceLabel: 'băng tinh hàn kích', statusKey: 'frozen', statusChance: 0.42, statusDurationMs: 1200 });
+                break;
+            case 'THUNDER':
+                this.castEnemyLaser(enemy, centerX, centerY, { ...meta, life: 0.2, radius: 8, damage: baseDamage * 1.08, color: '#b798ff', laserLength: 520, sourceLabel: 'lôi quang xạ tuyến', statusKey: 'rooted', statusChance: 0.28, statusDurationMs: 900 });
+                break;
+            case 'LIGHT':
+                this.castEnemyLaser(enemy, centerX, centerY, { ...meta, life: 0.26, radius: 9, damage: baseDamage * 1.03, color: '#fff0a3', laserLength: 560, sourceLabel: 'thánh quang xạ tuyến', statusKey: 'blind', statusChance: 0.38, statusDurationMs: 2800 });
+                break;
+            case 'DARK':
+                this.castEnemyProjectile(enemy, centerX, centerY, { ...meta, type: 'arc', speed: 235, radius: 8, damage: baseDamage * 1.04, color: '#9f86ff', sourceLabel: 'ám ảnh truy hồn', homing: true, homingStrength: 0.18, statusKey: 'blind', statusChance: 0.4, statusDurationMs: 2600, trailEveryMs: 22 });
+                break;
+            case 'CHAOS':
+                this.castEnemyProjectile(enemy, centerX, centerY, { ...meta, type: 'arc', speed: 240, radius: 9.6, damage: baseDamage * 1.16, color: '#ff7bd8', sourceLabel: 'hỗn độn loạn lưu', homing: true, homingStrength: 0.15, arc: 1.8, statusKey: 'poison', statusChance: 0.3, statusDurationMs: 4200 });
+                break;
+            case 'SPACE':
+                this.castEnemyLaser(enemy, centerX, centerY, { ...meta, life: 0.28, radius: 8.8, damage: baseDamage * 1.1, color: '#7be7ff', laserLength: 620, sourceLabel: 'không gian xé rách', statusKey: 'rooted', statusChance: 0.44, statusDurationMs: 1400 });
+                break;
+            case 'TIME':
+                this.castEnemyProjectile(enemy, centerX, centerY, { ...meta, type: 'orb', speed: 165, radius: 9.5, life: 5.4, damage: baseDamage * 0.98, color: '#ffd37e', sourceLabel: 'thời gian đình trệ', homing: true, homingStrength: 0.1, statusKey: 'frozen', statusChance: 0.36, statusDurationMs: 900 });
+                this.castEnemyProjectile(enemy, centerX, centerY, { ...meta, type: 'orb', speed: 175, radius: 8.8, life: 5.8, damage: baseDamage * 0.72, color: '#a2c1ff', sourceLabel: 'thời gian trì trệ', homing: true, homingStrength: 0.1, statusKey: 'sluggish', statusChance: 0.52, statusDurationMs: 4200, statusStacks: 2 });
+                break;
+            default:
+                this.castEnemyProjectile(enemy, centerX, centerY, { ...meta, type: 'orb', speed: 220, radius: 8, damage: baseDamage * 0.9, color: '#a8ddff' });
+                break;
+        }
     },
 
     updateEnemyHostileProjectiles(dt, centerX, centerY) {
@@ -1509,12 +1634,59 @@ Object.assign(Input, {
             shot.life -= elapsed;
             if (shot.life <= 0) continue;
 
+            if (shot.type === 'laser') {
+                const len = Math.max(120, Number(shot.laserLength) || 420);
+                const endX = shot.x + ((shot.vx || 0) * len);
+                const endY = shot.y + ((shot.vy || 0) * len);
+                const lineDx = endX - shot.x;
+                const lineDy = endY - shot.y;
+                const lineLenSq = Math.max(1, (lineDx * lineDx) + (lineDy * lineDy));
+                const proj = (((centerX - shot.x) * lineDx) + ((centerY - shot.y) * lineDy)) / lineLenSq;
+                const t = Math.max(0, Math.min(1, proj));
+                const closestX = shot.x + (lineDx * t);
+                const closestY = shot.y + (lineDy * t);
+                const hitDistance = Math.hypot(centerX - closestX, centerY - closestY);
+
+                if (!shot.hasDamaged && hitDistance <= this.getCursorCoreHitRadius() + (shot.radius || 8)) {
+                    this.inflictEnemyAttackDamage(shot.damage, 0.35, shot.sourceLabel || 'tia laze tà lực', {
+                        attackerAcc: shot.attackerAcc,
+                        attackerCrit: shot.attackerCrit,
+                        attackerCritDmg: shot.attackerCritDmg,
+                        attackType: shot.attackType,
+                        statusKey: shot.statusKey,
+                        statusChance: shot.statusChance,
+                        statusStacks: shot.statusStacks,
+                        statusDurationMs: shot.statusDurationMs
+                    });
+                    shot.hasDamaged = true;
+                }
+
+                const laserNow = performance.now();
+                if (Math.random() < 0.85) {
+                    visualParticles.push({
+                        x: shot.x + (lineDx * Math.random()),
+                        y: shot.y + (lineDy * Math.random()),
+                        vx: random(-0.3, 0.3),
+                        vy: random(-0.3, 0.3),
+                        life: 0.18,
+                        decay: 0.09,
+                        size: random(1.1, 2.3),
+                        color: shot.color || '#9de9ff',
+                        glow: shot.color || '#9de9ff'
+                    });
+                }
+                shot.nextTrailAt = laserNow + 28;
+                projectiles[writeIndex++] = shot;
+                continue;
+            }
+
             if (shot.homing) {
                 const homingAngle = Math.atan2(centerY - shot.y, centerX - shot.x);
                 const targetVx = Math.cos(homingAngle) * Math.hypot(shot.vx, shot.vy);
                 const targetVy = Math.sin(homingAngle) * Math.hypot(shot.vx, shot.vy);
-                shot.vx += (targetVx - shot.vx) * Math.min(0.12, elapsed * 0.6);
-                shot.vy += (targetVy - shot.vy) * Math.min(0.12, elapsed * 0.6);
+                const homingStrength = Math.max(0.02, Math.min(0.5, Number(shot.homingStrength) || 0.12));
+                shot.vx += (targetVx - shot.vx) * Math.min(homingStrength, elapsed * 0.6);
+                shot.vy += (targetVy - shot.vy) * Math.min(homingStrength, elapsed * 0.6);
             }
 
             if (shot.arc !== 0) {
@@ -1539,11 +1711,15 @@ Object.assign(Input, {
 
             const hitDistance = Math.hypot(shot.x - centerX, shot.y - centerY);
             if (hitDistance <= this.getCursorCoreHitRadius()) {
-                this.inflictEnemyAttackDamage(shot.damage, 0.28, 'phi đạn tà lực', {
+                this.inflictEnemyAttackDamage(shot.damage, 0.28, shot.sourceLabel || 'phi đạn tà lực', {
                     attackerAcc: shot.attackerAcc,
                     attackerCrit: shot.attackerCrit,
                     attackerCritDmg: shot.attackerCritDmg,
-                    attackType: shot.attackType
+                    attackType: shot.attackType,
+                    statusKey: shot.statusKey,
+                    statusChance: shot.statusChance,
+                    statusStacks: shot.statusStacks,
+                    statusDurationMs: shot.statusDurationMs
                 });
                 continue;
             }
@@ -1596,6 +1772,9 @@ Object.assign(Input, {
         for (let i = 0; i < enemies.length; i++) {
             const enemy = enemies[i];
             if (!enemy || enemy.hp <= 0) continue;
+            if (typeof enemy.updateCombatMode === 'function') {
+                enemy.updateCombatMode(centerX, centerY, dt);
+            }
             const enemyAtk = Math.max(1, Number(enemy.combatStats?.ATK) || 0);
             const baseDamage = Math.max(1, enemyAtk || Number(enemy.damage) || Number(enemy.rankData?.damage) || 1);
             const enemyAcc = Math.max(0.15, Math.min(0.98, Number(enemy.combatStats?.ACC) || 0.78));
@@ -1603,10 +1782,12 @@ Object.assign(Input, {
             const enemyCritDmg = Math.max(1, Number(enemy.combatStats?.CRIT_DMG) || 1.5);
             const dist = Math.hypot((enemy.x || 0) - centerX, (enemy.y || 0) - centerY);
             const retaliating = now < (enemy.retaliateUntil || 0);
-            const triggerRange = contactRadius * (retaliating ? 4.2 : 2.9);
+            const enraged = enemy.combatMode === 'ENRAGED';
+            const aggressive = enemy.combatMode === 'AGGRESSIVE' || retaliating;
+            const triggerRange = contactRadius * (enraged ? 5.2 : aggressive ? 4.2 : 2.2);
             if (dist > triggerRange) continue;
 
-            let hostile = retaliating;
+            let hostile = aggressive;
             if (!hostile) {
                 const proactiveAggroUntil = Number(enemy.proactiveAggroUntil) || 0;
                 if (now < proactiveAggroUntil) {
@@ -1642,7 +1823,8 @@ Object.assign(Input, {
             if (!hostile) continue;
 
             const attackPattern = this.getEnemyAttackPattern(enemy);
-            const attackCooldown = enemy.isElite ? 820 : 1050;
+            const modeAttackSpeedMult = enraged ? 0.72 : aggressive ? 0.86 : 1;
+            const attackCooldown = (enemy.isElite ? 820 : 1050) * modeAttackSpeedMult;
             if (now - (enemy.lastAttackAt || 0) < attackCooldown) continue;
             enemy.lastAttackAt = now;
 
@@ -1748,6 +1930,159 @@ Object.assign(Input, {
                     }
                     break;
                 }
+                case 'VOLLEY': {
+                    const volleyCount = enemy.isElite ? 5 : 3;
+                    const baseAngle = Math.atan2(centerY - (enemy.y || centerY), centerX - (enemy.x || centerX));
+                    for (let volley = 0; volley < volleyCount; volley++) {
+                        const spread = ((volley - ((volleyCount - 1) / 2)) * 0.2) + random(-0.04, 0.04);
+                        const targetX = (enemy.x || centerX) + (Math.cos(baseAngle + spread) * 130);
+                        const targetY = (enemy.y || centerY) + (Math.sin(baseAngle + spread) * 130);
+                        this.castEnemyProjectile(enemy, targetX, targetY, {
+                            type: 'orb',
+                            speed: 255 + (volley * 16),
+                            radius: enemy.isElite ? 8.4 : 7.2,
+                            life: 2,
+                            damage: baseDamage * (0.58 + (volley * 0.08)),
+                            color: volley % 2 === 0 ? '#8fd8ff' : '#ffb98b',
+                            attackerAcc: enemyAcc,
+                            attackerCrit: enemyCrit,
+                            attackerCritDmg: enemyCritDmg,
+                            attackType: 'MAGICAL',
+                            trailEveryMs: 36
+                        });
+                    }
+                    break;
+                }
+                case 'RUSH_COMBO':
+                    if (dist <= contactRadius * 2.2) {
+                        const comboHits = enemy.isElite ? 3 : 2;
+                        for (let combo = 0; combo < comboHits; combo++) {
+                            this.queueEnemyMeleeStrike(enemy, combo === comboHits - 1 ? 'BITE' : 'CHARGE', centerX, centerY, {
+                                durationMs: (enemy.isElite ? 140 : 180) + (combo * 36),
+                                damage: baseDamage * (combo === comboHits - 1 ? 1.12 : 0.7),
+                                ailmentChance: combo === comboHits - 1 ? 0.36 : 0.24,
+                                source: combo === comboHits - 1 ? 'đột sát kết liễu' : 'xung phong liên hoàn',
+                                attackerAcc: enemyAcc,
+                                attackerCrit: enemyCrit,
+                                attackerCritDmg: enemyCritDmg,
+                                attackType: 'PHYSICAL',
+                                latchDurationMs: combo === comboHits - 1 ? (enemy.isElite ? 1400 : 900) : 800
+                            });
+                        }
+                    }
+                    break;
+                case 'NOVA_BURST': {
+                    const ringCount = enemy.isElite ? 10 : 7;
+                    for (let ring = 0; ring < ringCount; ring++) {
+                        const angle = (Math.PI * 2 * ring) / ringCount;
+                        this.castEnemyProjectile(enemy, (enemy.x || centerX) + Math.cos(angle) * 160, (enemy.y || centerY) + Math.sin(angle) * 160, {
+                            type: ring % 2 === 0 ? 'needle' : 'arc',
+                            speed: ring % 2 === 0 ? 300 : 230,
+                            radius: ring % 2 === 0 ? 4.8 : 6.6,
+                            damage: baseDamage * (ring % 2 === 0 ? 0.55 : 0.72),
+                            homing: ring % 2 !== 0,
+                            arc: ring % 2 === 0 ? 0.4 : 1.35,
+                            color: ring % 2 === 0 ? '#ffe29d' : '#a9f1ff',
+                            attackerAcc: enemyAcc,
+                            attackerCrit: enemyCrit,
+                            attackerCritDmg: enemyCritDmg,
+                            attackType: 'MAGICAL',
+                            trailEveryMs: 30,
+                            trailSizeMult: 1.15
+                        });
+                    }
+                    break;
+                }
+                case 'LASER_RAY': {
+                    const laserRange = contactRadius * 7.6;
+                    if (dist <= laserRange) {
+                        this.castEnemyLaser(enemy, centerX, centerY, {
+                            life: enemy.isElite ? 0.34 : 0.24,
+                            radius: enemy.isElite ? 10 : 8,
+                            damage: baseDamage * (enemy.isElite ? 1.28 : 1.08),
+                            color: enemy.isElite ? '#7ce8ff' : '#b5f1ff',
+                            laserLength: enemy.isElite ? 620 : 500,
+                            attackerAcc: enemyAcc,
+                            attackerCrit: enemyCrit,
+                            attackerCritDmg: enemyCritDmg,
+                            attackType: 'MAGICAL',
+                            statusKey: 'frozen',
+                            statusChance: enemy.isElite ? 0.4 : 0.26,
+                            statusDurationMs: enemy.isElite ? 1300 : 900
+                        });
+                    }
+                    break;
+                }
+                case 'HUNTER_ORB':
+                    this.castEnemyProjectile(enemy, centerX, centerY, {
+                        type: 'arc',
+                        speed: enemy.isElite ? 240 : 205,
+                        radius: enemy.isElite ? 9.5 : 8.5,
+                        life: enemy.isElite ? 8.2 : 6.4,
+                        damage: baseDamage * (enemy.isElite ? 1.02 : 0.88),
+                        arc: enemy.isElite ? 0.9 : 0.6,
+                        homing: true,
+                        homingStrength: enemy.isElite ? 0.2 : 0.16,
+                        color: '#ffd38c',
+                        attackerAcc: enemyAcc,
+                        attackerCrit: enemyCrit,
+                        attackerCritDmg: enemyCritDmg,
+                        attackType: 'MAGICAL',
+                        statusKey: 'rooted',
+                        statusChance: enemy.isElite ? 0.32 : 0.2,
+                        statusDurationMs: enemy.isElite ? 1800 : 1200,
+                        trailEveryMs: 24,
+                        trailSizeMult: 1.26
+                    });
+                    break;
+                case 'FROST_BIND':
+                    this.castEnemyProjectile(enemy, centerX, centerY, {
+                        type: 'orb',
+                        speed: enemy.isElite ? 220 : 190,
+                        radius: enemy.isElite ? 10 : 8.5,
+                        life: 3.4,
+                        damage: baseDamage * 0.78,
+                        color: '#99e7ff',
+                        attackerAcc: enemyAcc,
+                        attackerCrit: enemyCrit,
+                        attackerCritDmg: enemyCritDmg,
+                        attackType: 'MAGICAL',
+                        homing: true,
+                        homingStrength: 0.14,
+                        statusKey: 'frozen',
+                        statusChance: enemy.isElite ? 0.5 : 0.34,
+                        statusDurationMs: enemy.isElite ? 1600 : 1200,
+                        trailEveryMs: 28
+                    });
+                    break;
+                case 'MIASMA_SLOW':
+                    this.castEnemyProjectile(enemy, centerX, centerY, {
+                        type: 'orb',
+                        speed: 170,
+                        radius: enemy.isElite ? 10.5 : 9,
+                        life: enemy.isElite ? 5.8 : 4.4,
+                        damage: baseDamage * 0.66,
+                        color: '#7db6ff',
+                        arc: 0.48,
+                        attackerAcc: enemyAcc,
+                        attackerCrit: enemyCrit,
+                        attackerCritDmg: enemyCritDmg,
+                        attackType: 'MAGICAL',
+                        statusKey: 'sluggish',
+                        statusChance: enemy.isElite ? 0.72 : 0.58,
+                        statusStacks: enemy.isElite ? 2 : 1,
+                        statusDurationMs: enemy.isElite ? 6200 : 5000,
+                        trailEveryMs: 34,
+                        trailSizeMult: 1.22
+                    });
+                    break;
+                case 'ELEMENTAL_ART':
+                    this.castEnemyElementalAttack(enemy, centerX, centerY, baseDamage, {
+                        attackerAcc: enemyAcc,
+                        attackerCrit: enemyCrit,
+                        attackerCritDmg: enemyCritDmg
+                    });
+                    break;
                 default:
                     if (dist <= contactRadius * 1.2) {
                         this.queueEnemyMeleeStrike(enemy, 'CLAW', centerX, centerY, {
@@ -2676,12 +3011,23 @@ Object.assign(Input, {
 
     getMovementSpeedMultiplier() {
         const base = this.getSpeedMultiplier() + this.getArtifactMovementSpeedBonusPct();
+        const now = performance.now();
+        const frozen = this.negativeStatuses?.frozen;
+        if (frozen && frozen.stacks > 0 && now < (frozen.until || 0)) return 0;
+        const rooted = this.negativeStatuses?.rooted;
+        if (rooted && rooted.stacks > 0 && now < (rooted.until || 0)) return 0;
         const broken = this.negativeStatuses?.brokenBone;
+        const sluggish = this.negativeStatuses?.sluggish;
+        let current = base;
+        if (sluggish && sluggish.stacks > 0 && now < (sluggish.until || 0)) {
+            const slowPenalty = Math.min(0.9, sluggish.stacks * 0.28);
+            current *= (1 - slowPenalty);
+        }
         if (broken && broken.stacks > 0 && performance.now() < (broken.until || 0)) {
             const penalty = Math.min(0.72, broken.stacks * 0.2);
-            return Math.max(0.12, base * (1 - penalty));
+            return Math.max(0.05, current * (1 - penalty));
         }
-        return Math.max(0.35, base);
+        return Math.max(0.05, current);
     },
 
     ensureHuyetSacPhiPhongTrail() {
