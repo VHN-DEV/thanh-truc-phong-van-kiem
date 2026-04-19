@@ -158,4 +158,34 @@ textarea {
         font-size: 15px;
         cursor: pointer;
     }
+
+    .difficulty-select {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+        margin: 0 0 16px;
+    }
+
+    .difficulty-option {
+        border: 1px solid rgba(157, 230, 255, 0.35);
+        border-radius: 12px;
+        background: rgba(16, 44, 62, 0.65);
+        color: #d5ebf6;
+        padding: 8px 10px;
+        font-size: 13px;
+        font-weight: 700;
+        transition: all 0.18s ease;
+    }
+
+    .difficulty-option:hover {
+        border-color: rgba(183, 255, 224, 0.55);
+        transform: translateY(-1px);
+    }
+
+    .difficulty-option.is-selected {
+        border-color: rgba(183, 255, 224, 0.68);
+        background: linear-gradient(135deg, rgba(81, 217, 177, 0.34), rgba(45, 115, 214, 0.46));
+        color: #f1ffff;
+        box-shadow: 0 0 14px rgba(143, 255, 224, 0.25);
+    }
 }
