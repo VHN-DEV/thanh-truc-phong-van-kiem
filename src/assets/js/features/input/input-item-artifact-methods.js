@@ -5680,9 +5680,15 @@ Object.assign(Input, {
         visual.x += speedX;
         visual.y += speedY;
 
-        let targetAngle = 0;
-        if (Math.abs(speedX) >= 0.2 || Math.abs(speedY) >= 0.2) {
-            targetAngle = this.calculateMocKiemAngle(speedX, speedY);
+        const isMoving = Math.abs(speedX) >= 0.2 || Math.abs(speedY) >= 0.2;
+        const targetAngle = isMoving ? this.calculateMocKiemAngle(speedX, speedY) : 0;
+
+        let deltaAngle = targetAngle - visual.angle;
+        if (deltaAngle > Math.PI) deltaAngle -= Math.PI * 2;
+        if (deltaAngle < -Math.PI) deltaAngle += Math.PI * 2;
+        visual.angle += deltaAngle * angleLerp;
+
+        if (isMoving) {
             visual.track.push({
                 x: visual.x,
                 y: visual.y,
@@ -5695,10 +5701,6 @@ Object.assign(Input, {
             visual.track.shift();
         }
 
-        let deltaAngle = targetAngle - visual.angle;
-        if (deltaAngle > Math.PI) deltaAngle -= Math.PI * 2;
-        if (deltaAngle < -Math.PI) deltaAngle += Math.PI * 2;
-        visual.angle += deltaAngle * angleLerp;
         visual.lastScaleFactor = scaleFactor;
 
         return visual;
@@ -5734,14 +5736,14 @@ Object.assign(Input, {
             const curr = visual.track[i];
             const next = visual.track[i + 1];
             const alpha = i / Math.max(1, visual.track.length);
-            const p1x = curr.x + (Math.cos(curr.angle - Math.PI / 2) * size * 2);
-            const p1y = curr.y + (Math.sin(curr.angle - Math.PI / 2) * size * 2);
+            const p1x = curr.x + (Math.cos(curr.angle - Math.PI / 2) * size * 0.2);
+            const p1y = curr.y + (Math.sin(curr.angle - Math.PI / 2) * size * 0.2);
             const p2x = curr.x - (Math.cos(curr.angle - Math.PI / 2) * size * -14);
             const p2y = curr.y - (Math.sin(curr.angle - Math.PI / 2) * size * -14);
             const p3x = next.x - (Math.cos(next.angle - Math.PI / 2) * size * -14);
             const p3y = next.y - (Math.sin(next.angle - Math.PI / 2) * size * -14);
-            const p4x = next.x + (Math.cos(next.angle - Math.PI / 2) * size * 2);
-            const p4y = next.y + (Math.sin(next.angle - Math.PI / 2) * size * 2);
+            const p4x = next.x + (Math.cos(next.angle - Math.PI / 2) * size * 0.2);
+            const p4y = next.y + (Math.sin(next.angle - Math.PI / 2) * size * 0.2);
 
             ctx.fillStyle = withAlpha(trailColor, alpha);
             ctx.beginPath();
