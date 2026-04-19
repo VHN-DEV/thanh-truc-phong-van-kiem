@@ -443,7 +443,11 @@ class Enemy {
             performance.now() + Math.max(1200, Number(CONFIG.ENEMY?.BEHAVIOR?.AGGRO_DURATION_MS) || 3200)
         );
         this.setCombatMode('AGGRESSIVE');
-        this.retaliateUntil = performance.now() + 1800;
+        this.retaliateUntil = performance.now() + 4000;
+        this.proactiveAggroUntil = Math.max(
+            Number(this.proactiveAggroUntil) || 0,
+            performance.now() + 4000
+        );
         this.lastRetaliateAt = performance.now();
 
         // --- 4. XỬ LÝ KHIÊN ---

@@ -1784,7 +1784,7 @@ Object.assign(Input, {
             const retaliating = now < (enemy.retaliateUntil || 0);
             const enraged = enemy.combatMode === 'ENRAGED';
             const aggressive = enemy.combatMode === 'AGGRESSIVE' || retaliating;
-            const triggerRange = contactRadius * (enraged ? 5.2 : aggressive ? 4.2 : 2.2);
+            const triggerRange = contactRadius * (retaliating ? 6.2 : enraged ? 5.2 : aggressive ? 4.2 : 2.2);
             if (dist > triggerRange) continue;
 
             let hostile = aggressive;
@@ -1839,6 +1839,9 @@ Object.assign(Input, {
             }
 
             if (!hostile) continue;
+            if (retaliating && typeof enemy.setCombatMode === 'function') {
+                enemy.setCombatMode('AGGRESSIVE');
+            }
 
             const attackPattern = this.getEnemyAttackPattern(enemy);
             const modeAttackSpeedMult = enraged ? 0.72 : aggressive ? 0.86 : 1;
@@ -3537,7 +3540,7 @@ Object.assign(Input, {
 
         const normX = this.moveJoystick.offsetX / distance;
         const normY = this.moveJoystick.offsetY / distance;
-        const cursorSpeed = Math.max(0.2, parseFloat(CONFIG.INPUT.JOYSTICK_CURSOR_SPEED) || 1);
+        const cursorSpeed = Math.max(0.001, parseFloat(CONFIG.INPUT.JOYSTICK_CURSOR_SPEED) || 0.0035);
         const worldDistance = (this.moveJoystick.aimDistance * effectiveRatio * cursorSpeed) / Math.max(0.001, Camera.currentZoom || 1);
         const nextX = guardCenter.x + (normX * worldDistance);
         const nextY = guardCenter.y + (normY * worldDistance);
