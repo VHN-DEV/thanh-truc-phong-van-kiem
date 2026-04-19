@@ -91,17 +91,21 @@ class Enemy {
     respawn() {
         this.spawnVersion = (this.spawnVersion || 0) + 1;
 
-        const zoom = Camera.currentZoom;
-        const visibleWidth = window.innerWidth / zoom;
-        const visibleHeight = window.innerHeight / zoom;
-        const startX = (window.innerWidth / 2) - (visibleWidth / 2);
-        const startY = (window.innerHeight / 2) - (visibleHeight / 2);
-        const padding = CONFIG.ENEMY.SPAWN_PADDING;
+        const zoom = Math.max(0.001, Number(Camera.currentZoom) || 1);
+        const visibleHalfWidth = window.innerWidth / (2 * zoom);
+        const visibleHalfHeight = window.innerHeight / (2 * zoom);
+        const anchorX = Number.isFinite(Camera.centerX) ? Camera.centerX : (window.innerWidth / 2);
+        const anchorY = Number.isFinite(Camera.centerY) ? Camera.centerY : (window.innerHeight / 2);
+        const padding = Math.max(20, Number(CONFIG.ENEMY.SPAWN_PADDING) || 20);
+        const minSpawnDistance = Math.max(visibleHalfWidth, visibleHalfHeight) + padding;
+        const maxSpawnDistance = minSpawnDistance + Math.max(240, Math.min(window.innerWidth, window.innerHeight) * 0.9);
+        const spawnAngle = Math.random() * Math.PI * 2;
+        const spawnDistance = random(minSpawnDistance, maxSpawnDistance);
         
         this.lastHitTime = 0;
         this.lastNotifyTime = 0;
-        this.x = random(startX + padding, startX + visibleWidth - padding);
-        this.y = random(startY + padding, startY + visibleHeight - padding);
+        this.x = anchorX + Math.cos(spawnAngle) * spawnDistance;
+        this.y = anchorY + Math.sin(spawnAngle) * spawnDistance;
         this.particles = [];
         this.cracks = [];
         this.shieldLevel = 0;
@@ -295,9 +299,14 @@ class Enemy {
 
         // 2. Giới hạn vùng di chuyển (Boundary Check)
         // Nếu quái vật đi ra khỏi màn hình thì quay đầu lại
-        const margin = 50 * scaleFactor;
-        if (this.x < margin || this.x > window.innerWidth - margin) this.angle = Math.PI - this.angle;
-        if (this.y < margin || this.y > window.innerHeight - margin) this.angle = -this.angle;
+        const anchorX = Number.isFinite(Input?.x) ? Input.x : Camera.centerX;
+        const anchorY = Number.isFinite(Input?.y) ? Input.y : Camera.centerY;
+        const roamRadius = Math.max(window.innerWidth, window.innerHeight) * 2.4;
+        const distanceToPlayer = Math.hypot(this.x - anchorX, this.y - anchorY);
+        if (distanceToPlayer > roamRadius) {
+            const targetAngle = Math.atan2(anchorY - this.y, anchorX - this.x);
+            this.angle = targetAngle + random(-0.35, 0.35);
+        }
     }
 
     generateCracks(level) {
@@ -763,9 +772,14 @@ class Enemy {
         this.x += this.velocity.x;
         this.y += this.velocity.y;
 
-        const margin = 50 * scaleFactor;
-        if (this.x < margin || this.x > window.innerWidth - margin) this.angle = Math.PI - this.angle;
-        if (this.y < margin || this.y > window.innerHeight - margin) this.angle = -this.angle;
+        const anchorX = Number.isFinite(Input?.x) ? Input.x : Camera.centerX;
+        const anchorY = Number.isFinite(Input?.y) ? Input.y : Camera.centerY;
+        const roamRadius = Math.max(window.innerWidth, window.innerHeight) * 2.4;
+        const distanceToPlayer = Math.hypot(this.x - anchorX, this.y - anchorY);
+        if (distanceToPlayer > roamRadius) {
+            const targetAngle = Math.atan2(anchorY - this.y, anchorX - this.x);
+            this.angle = targetAngle + random(-0.35, 0.35);
+        }
     }
 
     draw(ctx, scaleFactor) {

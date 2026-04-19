@@ -81,6 +81,18 @@
                 box-shadow: 0 4px 0 $shadow-color, 0 0 16px rgba(#8fffcf, 0.42);
             }
         }
+
+        .btn-map {
+            border-color: rgba(#8fc9ff, 0.62);
+            box-shadow: 0 4px 0 $shadow-color, 0 0 14px rgba(#8fc9ff, 0.28);
+            background: rgba(8, 20, 33, 0.86);
+
+            .map-glyph {
+                font-size: 14px;
+                line-height: 1;
+                filter: saturate(1.05);
+            }
+        }
     }
 }
 
