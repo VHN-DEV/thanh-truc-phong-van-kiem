@@ -2,6 +2,7 @@ function getDefaultUniquePurchases() {
     return {
         THANH_LINH_KIEM_QUYET: false,
         DAI_CANH_KIEM_TRAN: false,
+        NGU_LOI_THUAT: false,
         CAN_LAM_BANG_DIEM: false,
         CHUONG_THIEN_BINH: false,
         KHU_TRUNG_THUAT: false,
@@ -20,6 +21,7 @@ function getDefaultCultivationArts() {
     return {
         THANH_LINH_KIEM_QUYET: false,
         DAI_CANH_KIEM_TRAN: false,
+        NGU_LOI_THUAT: false,
         CAN_LAM_BANG_DIEM: false,
         KHU_TRUNG_THUAT: false,
         PHONG_LOI_SI: false,

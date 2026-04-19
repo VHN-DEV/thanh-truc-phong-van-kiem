@@ -1264,6 +1264,25 @@ const CONFIG = {
             inventoryActionLabel: "Lĩnh ngộ",
             description: "Trận đạo bí pháp lấy Thanh Trúc Phong Vân Kiếm làm trận cơ. Chỉ sau khi lĩnh ngộ và gom đủ kiếm khí mới có thể bày trận hộ thân, trấn sát bốn phương.",
             visualStyle: "formation"
+        },
+        NGU_LOI_THUAT: {
+            fullName: "Ngự Lôi Thuật",
+            quality: "SUPREME",
+            color: "#7aa8ff",
+            secondaryColor: "#fefefe",
+            glowColor: "#2323fe",
+            sparkColor: "#feca32",
+            buyPriceLowStone: 720000,
+            buttonLabel: "Mua",
+            inventoryActionLabel: "Lĩnh ngộ",
+            toggleOnLabel: "Khai",
+            toggleOffLabel: "Thu",
+            strikeChance: 1,
+            thunderLifespanMin: 10,
+            thunderLifespanRand: 10,
+            thunderSegmentsMin: 20,
+            thunderSegmentsRand: 10,
+            description: "Bí pháp ngự lôi, sau khi lĩnh ngộ có thể khai/thu tức thì. Mỗi đòn trúng mục tiêu sẽ giáng tia sét bám theo điểm va chạm."
         }
     },
     ARTIFACTS: {

@@ -73,6 +73,8 @@ const INPUT_INITIAL_STATE = {
         maxChargeMs: 1200
     },
     phongLoiBlink: getDefaultPhongLoiBlinkState(),
+    nguLoiThuatEnabled: false,
+    nguLoiThuatEffects: [],
     insectEggs: {},
     tamedInsects: {},
     insectColonies: {},

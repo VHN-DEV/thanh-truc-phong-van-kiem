@@ -469,12 +469,18 @@ class Enemy {
                 this.hasShield = false;
                 this.createShieldDebris();
             }
-            
+
+            if (Input?.triggerNguLoiThuatHitEffect) {
+                Input.triggerNguLoiThuatHitEffect(this, 'shielded');
+            }
             return "shielded"; 
         }
 
         // --- 5. TRỪ MÁU QUÁI ---
         this.hp -= damage;
+        if (Input?.triggerNguLoiThuatHitEffect) {
+            Input.triggerNguLoiThuatHitEffect(this, this.hp <= 0 ? 'kill' : 'hit');
+        }
         if (this.basicStats) {
             this.basicStats.HP = Math.max(0, Math.round(this.hp));
         }

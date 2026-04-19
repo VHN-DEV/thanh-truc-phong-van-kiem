@@ -1891,6 +1891,181 @@ Object.assign(Input, {
         return this.hasCultivationArt('CAN_LAM_BANG_DIEM');
     },
 
+    hasNguLoiThuatUnlocked() {
+        return this.hasCultivationArt('NGU_LOI_THUAT');
+    },
+
+    isNguLoiThuatEnabled() {
+        return this.hasNguLoiThuatUnlocked() && Boolean(this.nguLoiThuatEnabled);
+    },
+
+    setNguLoiThuatEnabled(nextEnabled, { silent = false } = {}) {
+        if (!this.hasNguLoiThuatUnlocked()) return false;
+        const normalized = Boolean(nextEnabled);
+        if (Boolean(this.nguLoiThuatEnabled) === normalized) return false;
+        this.nguLoiThuatEnabled = normalized;
+
+        if (!silent) {
+            const cfg = CONFIG.SECRET_ARTS?.NGU_LOI_THUAT || {};
+            const label = normalized ? (cfg.toggleOnLabel || 'Khai') : (cfg.toggleOffLabel || 'Thu');
+            showNotify(`Ngự Lôi Thuật: ${label}.`, cfg.color || '#7aa8ff');
+        }
+
+        this.renderAttackModeUI?.();
+        return true;
+    },
+
+    toggleNguLoiThuat() {
+        return this.setNguLoiThuatEnabled(!this.isNguLoiThuatEnabled());
+    },
+
+    triggerNguLoiThuatHitEffect(enemy, hitType = 'normal') {
+        if (!this.isNguLoiThuatEnabled()) return false;
+        if (!enemy || enemy.hp <= 0) return false;
+
+        const cfg = CONFIG.SECRET_ARTS?.NGU_LOI_THUAT || {};
+        const strikeChance = Math.max(0, Math.min(1, Number(cfg.strikeChance) || 1));
+        if (Math.random() > strikeChance) return false;
+
+        if (!Array.isArray(this.nguLoiThuatEffects)) {
+            this.nguLoiThuatEffects = [];
+        }
+
+        const x = Number(enemy.x) || 0;
+        const y = Number(enemy.y) || 0;
+        const lifespan = Math.max(6, Math.round(Math.random() * (Number(cfg.thunderLifespanRand) || 10) + (Number(cfg.thunderLifespanMin) || 10)));
+        const segCount = Math.max(8, Math.round(Math.random() * (Number(cfg.thunderSegmentsRand) || 10) + (Number(cfg.thunderSegmentsMin) || 20)));
+        const direct = Math.random() * Math.PI * 2;
+        const segments = Array.from({ length: segCount }).map(() => ({
+            direct: direct + (Math.PI * Math.random() * 0.2 - 0.1),
+            length: Math.random() * 20 + 80,
+            change: Math.random() * 0.04 - 0.02
+        }));
+        const sparks = Array.from({ length: Math.round(Math.random() * 10 + 10) }).map(() => ({
+            x,
+            y,
+            prevX: x,
+            prevY: y,
+            v: {
+                direct: Math.random() * Math.PI * 2,
+                weight: Math.random() * 14 + 2,
+                friction: 0.88
+            },
+            a: {
+                change: Math.random() * 0.4 - 0.2
+            },
+            g: {
+                direct: Math.PI * 0.5 + (Math.random() * 0.4 - 0.2),
+                weight: Math.random() * 0.25 + 0.25
+            },
+            width: Math.random() * 3,
+            life: Math.round(Math.random() * 20 + 40),
+            maxLife: 0
+        })).map(spark => {
+            spark.maxLife = spark.life;
+            spark.a.min = spark.v.direct - Math.PI * 0.4;
+            spark.a.max = spark.v.direct + Math.PI * 0.4;
+            return spark;
+        });
+
+        this.nguLoiThuatEffects.push({
+            x,
+            y,
+            life: lifespan,
+            maxLife: lifespan,
+            color: cfg.secondaryColor || '#fefefe',
+            glow: cfg.glowColor || '#2323fe',
+            sparkColor: cfg.sparkColor || '#feca32',
+            width: 2,
+            segments,
+            sparks,
+            hitType
+        });
+
+        if (this.nguLoiThuatEffects.length > 24) {
+            this.nguLoiThuatEffects.splice(0, this.nguLoiThuatEffects.length - 24);
+        }
+        return true;
+    },
+
+    drawNguLoiThuatEffects(ctx) {
+        if (!Array.isArray(this.nguLoiThuatEffects) || this.nguLoiThuatEffects.length <= 0) return;
+
+        ctx.save();
+        ctx.globalCompositeOperation = 'screen';
+
+        this.nguLoiThuatEffects = this.nguLoiThuatEffects.filter(effect => {
+            effect.segments.forEach(segment => {
+                segment.direct += segment.change;
+                if (Math.random() > 0.96) segment.change *= -1;
+            });
+
+            ctx.beginPath();
+            ctx.globalAlpha = Math.max(0, effect.life / Math.max(1, effect.maxLife));
+            ctx.strokeStyle = effect.color;
+            ctx.lineWidth = effect.width;
+            ctx.shadowBlur = 32;
+            ctx.shadowColor = effect.glow;
+            ctx.moveTo(effect.x, effect.y);
+            let prev = { x: effect.x, y: effect.y };
+            effect.segments.forEach(segment => {
+                const nx = prev.x + Math.cos(segment.direct) * segment.length;
+                const ny = prev.y + Math.sin(segment.direct) * segment.length;
+                ctx.lineTo(nx, ny);
+                prev = { x: nx, y: ny };
+            });
+            ctx.stroke();
+            ctx.closePath();
+            ctx.shadowBlur = 0;
+
+            const strength = Math.random() * 80 + 40;
+            const light = ctx.createRadialGradient(effect.x, effect.y, 0, effect.x, effect.y, strength);
+            light.addColorStop(0, 'rgba(250, 200, 50, 0.6)');
+            light.addColorStop(0.1, 'rgba(250, 200, 50, 0.2)');
+            light.addColorStop(0.4, 'rgba(250, 200, 50, 0.06)');
+            light.addColorStop(0.65, 'rgba(250, 200, 50, 0.01)');
+            light.addColorStop(0.8, 'rgba(250, 200, 50, 0)');
+            ctx.beginPath();
+            ctx.fillStyle = light;
+            ctx.arc(effect.x, effect.y, strength, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.closePath();
+
+            effect.sparks = effect.sparks.filter(spark => {
+                spark.prevX = spark.x;
+                spark.prevY = spark.y;
+                spark.x += Math.cos(spark.v.direct) * spark.v.weight;
+                spark.x += Math.cos(spark.g.direct) * spark.g.weight;
+                spark.y += Math.sin(spark.v.direct) * spark.v.weight;
+                spark.y += Math.sin(spark.g.direct) * spark.g.weight;
+                if (spark.v.weight > 0.2) spark.v.weight *= spark.v.friction;
+                spark.v.direct += spark.a.change;
+                if (spark.v.direct > spark.a.max || spark.v.direct < spark.a.min) {
+                    spark.a.change *= -1;
+                }
+                spark.life -= 1;
+
+                if (spark.life > 0) {
+                    ctx.beginPath();
+                    ctx.globalAlpha = Math.max(0, spark.life / Math.max(1, spark.maxLife));
+                    ctx.strokeStyle = effect.sparkColor;
+                    ctx.lineWidth = spark.width;
+                    ctx.moveTo(spark.x, spark.y);
+                    ctx.lineTo(spark.prevX, spark.prevY);
+                    ctx.stroke();
+                    ctx.closePath();
+                }
+
+                return spark.life > 0;
+            });
+
+            effect.life -= 1;
+            return effect.life > 0 || effect.sparks.length > 0;
+        });
+
+        ctx.restore();
+    },
+
     castCanLamBangDiem() {
         if (this.isVoidCollapsed || !this.hasCanLamBangDiemUnlocked()) return false;
         if (!this.isArtifactDeployed('CAN_LAM_BANG_DIEM')) {

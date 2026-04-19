@@ -690,6 +690,7 @@ function animate() {
     Input.drawPhongLoiBlinkEffects(ctx, scaleFactor);
     Input.drawHuyetSacPhiPhongTrail(ctx, scaleFactor);
     Input.drawCanLamProjectiles(ctx, scaleFactor);
+    Input.drawNguLoiThuatEffects(ctx, scaleFactor);
     Input.drawEnemyMeleeStrikes(ctx, scaleFactor);
     Input.drawSingleSwordUltimateProjectiles(ctx, scaleFactor);
     Input.drawSingleSwordUltimateChargeIndicator(ctx, scaleFactor);
