@@ -189,6 +189,16 @@ class Enemy {
             ACC: Math.max(0.25, Math.min(0.97, 0.72 + (dexterity * 0.0011))),
             SPD: Math.max(1, Math.round(agility * (this.isElite ? 1.2 : 1)))
         };
+        this.basicStats = {
+            HP: this.hp,
+            MAX_HP: this.maxHp,
+            MP: Math.max(0, Math.round(this.rankData?.maxMana || 0)),
+            MAX_MP: Math.max(0, Math.round(this.rankData?.maxMana || 0)),
+            SP: Math.max(10, Math.round(this.combatStats.SPD * 1.2)),
+            MAX_SP: Math.max(10, Math.round(this.combatStats.SPD * 1.2)),
+            EXP: Math.max(1, Math.round(this.rankData?.expGive || 1)),
+            LV: Number(this.rankData?.id) || 1
+        };
 
         const eliteSizeMult = this.isElite ? 1.8 : 1.0;
         this.r = (CONFIG.ENEMY.BASE_SIZE.MIN + Math.random() * CONFIG.ENEMY.BASE_SIZE.VAR) * eliteSizeMult;
@@ -417,6 +427,9 @@ class Enemy {
 
         // --- 5. TRỪ MÁU QUÁI ---
         this.hp -= damage;
+        if (this.basicStats) {
+            this.basicStats.HP = Math.max(0, Math.round(this.hp));
+        }
 
         if (this.hp <= 0) {
             const rewardMult = this.isElite ? CONFIG.ENEMY.ELITE_MULT : 1;
