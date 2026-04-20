@@ -1935,6 +1935,9 @@ Object.assign(Input, {
         if (!normalized && Array.isArray(this.nguLongThuatTrail)) {
             this.nguLongThuatTrail.length = 0;
         }
+        if (!normalized) {
+            this.nguLongThuatVisual = null;
+        }
 
         if (!silent) {
             const cfg = CONFIG.SECRET_ARTS?.NGU_LONG_THUAT || {};

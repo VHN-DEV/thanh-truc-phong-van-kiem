@@ -77,6 +77,7 @@ const INPUT_INITIAL_STATE = {
     nguLoiThuatEffects: [],
     nguLongThuatEnabled: false,
     nguLongThuatTrail: [],
+    nguLongThuatVisual: null,
     insectEggs: {},
     tamedInsects: {},
     insectColonies: {},
