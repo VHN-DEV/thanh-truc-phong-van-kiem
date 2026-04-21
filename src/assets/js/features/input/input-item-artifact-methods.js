@@ -5885,9 +5885,11 @@ Object.assign(Input, {
 
         const drawCtx = visual.trailCtx || ctx;
         drawCtx.save();
-        // Giữ đúng logic nền "trail fade" từ HTML mẫu.
+        // Chỉ làm mờ vệt cũ theo alpha, không phủ nền đen để giữ nền game và con trỏ cũ.
+        drawCtx.globalCompositeOperation = 'destination-out';
         drawCtx.fillStyle = 'rgba(0,0,0,0.05)';
         drawCtx.fillRect(0, 0, widthSafe, heightSafe);
+        drawCtx.globalCompositeOperation = 'source-over';
 
         for (let i = 0; i < visual.particles.length; i++) {
             const particle = visual.particles[i];
