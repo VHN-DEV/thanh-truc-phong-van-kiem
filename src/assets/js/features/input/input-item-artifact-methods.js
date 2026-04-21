@@ -5828,8 +5828,11 @@ Object.assign(Input, {
         const radiusScaleMin = Math.max(0.1, Number(cfg.particleRadiusScaleMin) || 1);
         const radiusScaleMax = Math.max(radiusScaleMin, Number(cfg.particleRadiusScaleMax) || 1.5);
 
-        const pointerX = Number.isFinite(this.screenX) ? this.screenX : (widthSafe * 0.5);
-        const pointerY = Number.isFinite(this.screenY) ? this.screenY : (heightSafe * 0.5);
+        const fallbackScreenX = Number.isFinite(this.screenX) ? this.screenX : (widthSafe * 0.5);
+        const fallbackScreenY = Number.isFinite(this.screenY) ? this.screenY : (heightSafe * 0.5);
+        const fallbackWorld = Camera.screenToWorld(fallbackScreenX, fallbackScreenY);
+        const pointerX = Number.isFinite(this.x) ? this.x : (Number.isFinite(fallbackWorld?.x) ? fallbackWorld.x : (widthSafe * 0.5));
+        const pointerY = Number.isFinite(this.y) ? this.y : (Number.isFinite(fallbackWorld?.y) ? fallbackWorld.y : (heightSafe * 0.5));
 
         if (!this.nguLinhThuatVisual || !Array.isArray(this.nguLinhThuatVisual.particles)) {
             const trailCanvas = document.createElement('canvas');
