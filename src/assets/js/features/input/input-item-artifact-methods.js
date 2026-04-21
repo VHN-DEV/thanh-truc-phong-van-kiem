@@ -5841,6 +5841,8 @@ Object.assign(Input, {
                 pointer: { x: pointerX, y: pointerY },
                 radiusScale: radiusScaleMin,
                 mouseIsDown: false,
+                idleFrames: 0,
+                lastPointer: { x: pointerX, y: pointerY },
                 particles: [],
                 trailCanvas,
                 trailCtx: trailCanvas.getContext('2d')
@@ -5860,8 +5862,15 @@ Object.assign(Input, {
         }
         // Giống snippet: bật ngay khi mousedown (không chờ trạng thái attack đã bắt đầu).
         visual.mouseIsDown = Boolean(this.attackTimer || this.isAttacking);
+        const pointerDelta = Math.hypot(pointerX - (visual.lastPointer?.x ?? pointerX), pointerY - (visual.lastPointer?.y ?? pointerY));
+        if (visual.mouseIsDown || pointerDelta > 0.8) {
+            visual.idleFrames = 0;
+        } else {
+            visual.idleFrames = Math.min(240, (visual.idleFrames || 0) + 1);
+        }
         visual.pointer.x = pointerX;
         visual.pointer.y = pointerY;
+        visual.lastPointer = { x: pointerX, y: pointerY };
 
         if (visual.particles.length !== quantity) {
             visual.particles = Array.from({ length: quantity }).map(() => ({
@@ -5869,7 +5878,7 @@ Object.assign(Input, {
                 position: { x: pointerX, y: pointerY },
                 offset: { x: 0, y: 0 },
                 shift: { x: pointerX, y: pointerY },
-                speed: 0.01 + Math.random() * 0.04,
+                speed: 0.04 + Math.random() * 0.05,
                 targetSize: 1,
                 fillColor: '#' + ((Math.random() * 0x404040 + 0xaaaaaa) | 0).toString(16),
                 orbit: (baseRadius * 0.5) + (baseRadius * 0.5 * Math.random())
@@ -5887,24 +5896,31 @@ Object.assign(Input, {
         drawCtx.save();
         // Chỉ làm mờ vệt cũ theo alpha, không phủ nền đen để giữ nền game và con trỏ cũ.
         drawCtx.globalCompositeOperation = 'destination-out';
-        drawCtx.fillStyle = 'rgba(0,0,0,0.05)';
+        const fadeAlpha = visual.mouseIsDown
+            ? 0.1
+            : (visual.idleFrames > 10 ? 0.22 : (pointerDelta > 0.8 ? 0.14 : 0.18));
+        drawCtx.fillStyle = `rgba(0,0,0,${fadeAlpha})`;
         drawCtx.fillRect(0, 0, widthSafe, heightSafe);
         drawCtx.globalCompositeOperation = 'source-over';
+        if (!visual.mouseIsDown && visual.idleFrames > 24) {
+            drawCtx.clearRect(0, 0, widthSafe, heightSafe);
+        }
 
         for (let i = 0; i < visual.particles.length; i++) {
             const particle = visual.particles[i];
             const lp = { x: particle.position.x, y: particle.position.y };
             particle.offset.x += particle.speed;
             particle.offset.y += particle.speed;
-            particle.shift.x += (visual.pointer.x - particle.shift.x) * particle.speed;
-            particle.shift.y += (visual.pointer.y - particle.shift.y) * particle.speed;
+            const followStrength = Math.min(0.45, (particle.speed * 2.6) + (visual.mouseIsDown ? 0.1 : 0.06));
+            particle.shift.x += (visual.pointer.x - particle.shift.x) * followStrength;
+            particle.shift.y += (visual.pointer.y - particle.shift.y) * followStrength;
             particle.position.x = particle.shift.x + Math.cos(i + particle.offset.x) * (particle.orbit * visual.radiusScale);
             particle.position.y = particle.shift.y + Math.sin(i + particle.offset.y) * (particle.orbit * visual.radiusScale);
             particle.position.x = Math.max(0, Math.min(widthSafe, particle.position.x));
             particle.position.y = Math.max(0, Math.min(heightSafe, particle.position.y));
             particle.size += (particle.targetSize - particle.size) * 0.05;
             if (Math.round(particle.size) === Math.round(particle.targetSize)) {
-                particle.targetSize = 1 + Math.random() * 7;
+                particle.targetSize = 1 + Math.random() * 4.5;
             }
 
             drawCtx.beginPath();
