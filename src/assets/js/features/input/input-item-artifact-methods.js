@@ -5842,7 +5842,8 @@ Object.assign(Input, {
         const visual = this.nguLinhThuatVisual;
         visual.width = widthSafe;
         visual.height = heightSafe;
-        visual.mouseIsDown = Boolean(this.isPointerDown || this.isMouseDown || this.leftMouseDown || this.mouseDown);
+        // Tương đương mouseIsDown trong snippet gốc: khi đang giữ chuột để tấn công.
+        visual.mouseIsDown = Boolean(this.isAttacking);
         visual.pointer.x = this.x;
         visual.pointer.y = this.y;
 
@@ -5867,15 +5868,9 @@ Object.assign(Input, {
         visual.radiusScale = Math.min(radiusScaleMax, Math.max(radiusScaleMin, visual.radiusScale));
 
         ctx.save();
-        ctx.globalCompositeOperation = 'screen';
-        const glow = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, baseRadius * 2.2 * scaleFactor);
-        glow.addColorStop(0, 'rgba(183,230,255,0.12)');
-        glow.addColorStop(0.5, 'rgba(137,217,255,0.08)');
-        glow.addColorStop(1, 'rgba(137,217,255,0)');
-        ctx.fillStyle = glow;
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, baseRadius * 2.2 * scaleFactor, 0, Math.PI * 2);
-        ctx.fill();
+        // Giữ đúng logic nền "trail fade" từ HTML mẫu.
+        ctx.fillStyle = 'rgba(0,0,0,0.05)';
+        ctx.fillRect(0, 0, widthSafe, heightSafe);
 
         for (let i = 0; i < visual.particles.length; i++) {
             const particle = visual.particles[i];
@@ -5884,8 +5879,8 @@ Object.assign(Input, {
             particle.offset.y += particle.speed;
             particle.shift.x += (visual.pointer.x - particle.shift.x) * particle.speed;
             particle.shift.y += (visual.pointer.y - particle.shift.y) * particle.speed;
-            particle.position.x = particle.shift.x + Math.cos(i + particle.offset.x) * (particle.orbit * visual.radiusScale * scaleFactor);
-            particle.position.y = particle.shift.y + Math.sin(i + particle.offset.y) * (particle.orbit * visual.radiusScale * scaleFactor);
+            particle.position.x = particle.shift.x + Math.cos(i + particle.offset.x) * (particle.orbit * visual.radiusScale);
+            particle.position.y = particle.shift.y + Math.sin(i + particle.offset.y) * (particle.orbit * visual.radiusScale);
             particle.position.x = Math.max(0, Math.min(widthSafe, particle.position.x));
             particle.position.y = Math.max(0, Math.min(heightSafe, particle.position.y));
             particle.size += (particle.targetSize - particle.size) * 0.05;
@@ -5894,10 +5889,9 @@ Object.assign(Input, {
             }
 
             ctx.beginPath();
-            ctx.globalAlpha = 0.78;
             ctx.fillStyle = particle.fillColor;
             ctx.strokeStyle = particle.fillColor;
-            ctx.lineWidth = Math.max(0.6, particle.size * 0.8);
+            ctx.lineWidth = particle.size;
             ctx.moveTo(lp.x, lp.y);
             ctx.lineTo(particle.position.x, particle.position.y);
             ctx.stroke();
