@@ -6008,6 +6008,10 @@ Object.assign(Input, {
             e.y += (ep.y - e.y + (Math.sin(a) * (100 - i)) / 5) / 4;
         }
 
+        const segmentPalette = Array.isArray(cfg.segmentColors) && cfg.segmentColors.length
+            ? cfg.segmentColors
+            : [cfg.color || '#cccccc', '#9c9c9c', '#666666', cfg.secondaryColor || '#333333'];
+
         ctx.save();
         for (let i = elems.length - 1; i >= 1; i--) {
             const e = elems[i];
@@ -6016,26 +6020,31 @@ Object.assign(Input, {
             const s = ((162 + 4 * (1 - i)) / 50) * scaleFactor;
             const tx = (ep.x + e.x) / 2;
             const ty = (ep.y + e.y) / 2;
+            const depthRatio = i / Math.max(1, elems.length - 1);
+            const palettePos = depthRatio * (segmentPalette.length - 1);
+            const colorIndex = Math.max(0, Math.min(segmentPalette.length - 1, Math.floor(palettePos)));
+            const nextColorIndex = Math.max(0, Math.min(segmentPalette.length - 1, colorIndex + 1));
+            const segmentColor = segmentPalette[colorIndex];
+            const segmentSecondaryColor = segmentPalette[nextColorIndex] || cfg.secondaryColor || '#333333';
 
             ctx.save();
             ctx.translate(tx, ty);
             ctx.rotate(a);
             ctx.scale(s, s);
 
-            const boneWhite = cfg.secondaryColor || '#ffffff';
             if (visual.pathCache && i === 1) {
-                ctx.fillStyle = boneWhite;
+                ctx.fillStyle = segmentColor;
                 ctx.fill(visual.pathCache.cabezaWhite);
-                ctx.fillStyle = boneWhite;
+                ctx.fillStyle = segmentSecondaryColor;
                 ctx.fill(visual.pathCache.cabezaBlack);
             } else if (visual.pathCache) {
-                ctx.fillStyle = boneWhite;
+                ctx.fillStyle = segmentColor;
                 ctx.fill(visual.pathCache.espinaTop);
 
-                ctx.fillStyle = boneWhite;
+                ctx.fillStyle = segmentSecondaryColor;
                 ctx.fill(visual.pathCache.espinaBottom);
             } else {
-                ctx.fillStyle = boneWhite;
+                ctx.fillStyle = segmentColor;
                 ctx.beginPath();
                 ctx.arc(0, 0, Math.max(2.2, 7 - (i * 0.14)), 0, Math.PI * 2);
                 ctx.fill();
