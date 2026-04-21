@@ -832,6 +832,8 @@ Object.assign(SkillsUI, {
                 const toggleKey = secretArtToggleBtn.getAttribute('data-secret-art-toggle');
                 if (toggleKey === 'NGU_LOI_THUAT' && typeof Input.toggleNguLoiThuat === 'function' && Input.toggleNguLoiThuat()) {
                     this.render();
+                } else if (toggleKey === 'NGU_LINH_THUAT' && typeof Input.toggleNguLinhThuat === 'function' && Input.toggleNguLinhThuat()) {
+                    this.render();
                 } else if (toggleKey === 'NGU_LONG_THUAT' && typeof Input.toggleNguLongThuat === 'function' && Input.toggleNguLongThuat()) {
                     this.render();
                 }
@@ -1056,6 +1058,37 @@ Object.assign(SkillsUI, {
                 buttonDisabled: nguLoiLearned ? false : !nguLoiItem,
                 inventoryKey: nguLoiItem?.key || null,
                 hideActionButton: nguLoiLearned,
+                roster: []
+            });
+        }
+
+
+        const nguLinhItem = Input.getInventoryEntryByUniqueKey('NGU_LINH_THUAT', ['FLAME_ART']);
+        const nguLinhLearned = typeof Input.hasNguLinhThuatUnlocked === 'function' && Input.hasNguLinhThuatUnlocked();
+        const nguLinhEnabled = typeof Input.isNguLinhThuatEnabled === 'function' && Input.isNguLinhThuatEnabled();
+        if (nguLinhLearned || nguLinhItem || Input.hasUniquePurchase('NGU_LINH_THUAT')) {
+            secretArts.push({
+                key: 'NGU_LINH_THUAT',
+                name: CONFIG.SECRET_ARTS?.NGU_LINH_THUAT?.fullName || 'Ngự Linh Thuật',
+                description: 'Khai/thu linh thức, triển khai quỹ đạo linh tử xoay quanh tâm ấn.',
+                unlocked: nguLinhLearned,
+                active: nguLinhEnabled,
+                ready: nguLinhLearned,
+                accent: CONFIG.SECRET_ARTS?.NGU_LINH_THUAT?.color || '#b7e6ff',
+                productKey: 'NGU_LINH_THUAT',
+                statusLabel: nguLinhLearned ? 'Đã lĩnh ngộ' : nguLinhItem ? 'Chờ lĩnh ngộ' : 'Đã mua',
+                note: nguLinhLearned
+                    ? (nguLinhEnabled ? 'Linh thức đang khai mở, linh tử bám theo thần niệm.' : 'Linh thức đang thu liễm.')
+                    : 'Cần lĩnh ngộ bí pháp trong túi trước khi có thể khai mở linh thức.',
+                modeKey: null,
+                toggleActionKey: nguLinhLearned ? 'NGU_LINH_THUAT' : null,
+                buttonLabel: nguLinhLearned
+                    ? (nguLinhEnabled
+                        ? (CONFIG.SECRET_ARTS?.NGU_LINH_THUAT?.toggleOffLabel || 'Thu')
+                        : (CONFIG.SECRET_ARTS?.NGU_LINH_THUAT?.toggleOnLabel || 'Khai'))
+                    : 'Lĩnh ngộ',
+                buttonDisabled: nguLinhLearned ? false : !nguLinhItem,
+                inventoryKey: nguLinhItem?.key || null,
                 roster: []
             });
         }

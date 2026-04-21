@@ -1397,6 +1397,24 @@ const CONFIG = {
             toggleOnLabel: "Khai",
             toggleOffLabel: "Thu",
             description: "Bí pháp ngự long mô phỏng long ảnh bám theo tâm ấn như hiệu ứng Dragon Cursor. Sau khi lĩnh ngộ có thể khai/thu tức thì."
+        },
+        NGU_LINH_THUAT: {
+            fullName: "Ngự Linh Thuật",
+            quality: "SUPREME",
+            color: "#b7e6ff",
+            imagePath: imagePath("animals/jelly-fish.svg"),
+            secondaryColor: "#f3fbff",
+            glowColor: "#89d9ff",
+            buyPriceLowStone: 880000,
+            buttonLabel: "Mua",
+            inventoryActionLabel: "Lĩnh ngộ",
+            toggleOnLabel: "Khai",
+            toggleOffLabel: "Thu",
+            particleCount: 25,
+            particleRadius: 70,
+            particleRadiusScaleMin: 1,
+            particleRadiusScaleMax: 1.5,
+            description: "Bí pháp ngự linh, sau khi lĩnh ngộ có thể khai/thu tức thì. Khi khai mở sẽ tụ linh quang thành quỹ đạo linh tử vờn quanh tâm ấn."
         }
     },
     ARTIFACTS: {

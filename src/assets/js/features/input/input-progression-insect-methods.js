@@ -1919,6 +1919,38 @@ Object.assign(Input, {
         return this.setNguLoiThuatEnabled(!this.isNguLoiThuatEnabled());
     },
 
+
+    hasNguLinhThuatUnlocked() {
+        return this.hasCultivationArt('NGU_LINH_THUAT');
+    },
+
+    isNguLinhThuatEnabled() {
+        return this.hasNguLinhThuatUnlocked() && Boolean(this.nguLinhThuatEnabled);
+    },
+
+    setNguLinhThuatEnabled(nextEnabled, { silent = false } = {}) {
+        if (!this.hasNguLinhThuatUnlocked()) return false;
+        const normalized = Boolean(nextEnabled);
+        if (Boolean(this.nguLinhThuatEnabled) === normalized) return false;
+        this.nguLinhThuatEnabled = normalized;
+        if (!normalized) {
+            this.nguLinhThuatVisual = null;
+        }
+
+        if (!silent) {
+            const cfg = CONFIG.SECRET_ARTS?.NGU_LINH_THUAT || {};
+            const label = normalized ? (cfg.toggleOnLabel || 'Khai') : (cfg.toggleOffLabel || 'Thu');
+            showNotify(`Ngự Linh Thuật: ${label}.`, cfg.color || '#b7e6ff');
+        }
+
+        this.renderAttackModeUI?.();
+        return true;
+    },
+
+    toggleNguLinhThuat() {
+        return this.setNguLinhThuatEnabled(!this.isNguLinhThuatEnabled());
+    },
+
     hasNguLongThuatUnlocked() {
         return this.hasCultivationArt('NGU_LONG_THUAT');
     },

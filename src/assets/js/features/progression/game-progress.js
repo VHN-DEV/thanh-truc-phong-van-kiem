@@ -251,6 +251,7 @@ const GameProgress = {
             nguCucSonCombined: Boolean(Input.nguCucSonCombined),
             phongLoiBlinkEnabled: Boolean(Input.phongLoiBlink?.enabled),
             nguLoiThuatEnabled: Boolean(Input.nguLoiThuatEnabled),
+            nguLinhThuatEnabled: Boolean(Input.nguLinhThuatEnabled),
             nguLongThuatEnabled: Boolean(Input.nguLongThuatEnabled),
             specialAuraMode: Input.specialAuraExpiresAt === Number.POSITIVE_INFINITY ? Input.specialAuraMode : null,
             insectEggs: Input.insectEggs,
@@ -379,6 +380,8 @@ const GameProgress = {
             Input.phongLoiBlink = this.getDefaultPhongLoiBlinkState();
             Input.nguLoiThuatEnabled = false;
             Input.nguLoiThuatEffects = [];
+            Input.nguLinhThuatEnabled = false;
+            Input.nguLinhThuatVisual = null;
             Input.nguLongThuatEnabled = false;
             Input.nguLongThuatTrail = [];
             Input.nguLongThuatVisual = null;
@@ -514,6 +517,8 @@ const GameProgress = {
             Input.phongLoiBlink = this.getDefaultPhongLoiBlinkState();
             Input.nguLoiThuatEnabled = Boolean(parsed.nguLoiThuatEnabled);
             Input.nguLoiThuatEffects = [];
+            Input.nguLinhThuatEnabled = Boolean(parsed.nguLinhThuatEnabled);
+            Input.nguLinhThuatVisual = null;
             Input.nguLongThuatEnabled = Boolean(parsed.nguLongThuatEnabled);
             Input.nguLongThuatTrail = [];
             Input.nguLongThuatVisual = null;
@@ -619,6 +624,7 @@ const GameProgress = {
 
             Input.phongLoiBlink.enabled = Boolean(parsed.phongLoiBlinkEnabled) && Input.isArtifactDeployed('PHONG_LOI_SI');
             Input.nguLoiThuatEnabled = Boolean(Input.nguLoiThuatEnabled) && Boolean(Input.hasNguLoiThuatUnlocked?.());
+            Input.nguLinhThuatEnabled = Boolean(Input.nguLinhThuatEnabled) && Boolean(Input.hasNguLinhThuatUnlocked?.());
             Input.nguLongThuatEnabled = Boolean(Input.nguLongThuatEnabled) && Boolean(Input.hasNguLongThuatUnlocked?.());
             Input.ensureValidBeastBagTab();
             return true;

@@ -2934,6 +2934,9 @@ Object.assign(Input, {
                 if (item.uniqueKey === 'NGU_LOI_THUAT' && typeof this.setNguLoiThuatEnabled === 'function') {
                     this.setNguLoiThuatEnabled(true, { silent: true });
                     showNotify(`Lĩnh ngộ ${this.getItemDisplayName(item)}: lôi thức đã khai mở.`, qualityConfig.color || '#7aa8ff');
+                } else if (item.uniqueKey === 'NGU_LINH_THUAT' && typeof this.setNguLinhThuatEnabled === 'function') {
+                    this.setNguLinhThuatEnabled(true, { silent: true });
+                    showNotify(`Lĩnh ngộ ${this.getItemDisplayName(item)}: linh thức đã khai mở.`, qualityConfig.color || '#b7e6ff');
                 } else {
                     showNotify(`Luyện hóa ${this.getItemDisplayName(item)}: lam diễm đã hiện nơi đầu niệm.`, qualityConfig.color);
                 }
@@ -5810,6 +5813,101 @@ Object.assign(Input, {
         ctx.restore();
     },
 
+
+    drawNguLinhThuatCursor(ctx, scaleFactor) {
+        if (!this.isNguLinhThuatEnabled?.()) {
+            this.nguLinhThuatVisual = null;
+            return;
+        }
+
+        const cfg = CONFIG.SECRET_ARTS?.NGU_LINH_THUAT || {};
+        const widthSafe = Math.max(1, Number(ctx?.canvas?.width) || width || window.innerWidth || 1);
+        const heightSafe = Math.max(1, Number(ctx?.canvas?.height) || height || window.innerHeight || 1);
+        const quantity = Math.max(8, Math.floor(Number(cfg.particleCount) || 25));
+        const baseRadius = Math.max(12, Number(cfg.particleRadius) || 70);
+        const radiusScaleMin = Math.max(0.1, Number(cfg.particleRadiusScaleMin) || 1);
+        const radiusScaleMax = Math.max(radiusScaleMin, Number(cfg.particleRadiusScaleMax) || 1.5);
+
+        if (!this.nguLinhThuatVisual || !Array.isArray(this.nguLinhThuatVisual.particles)) {
+            this.nguLinhThuatVisual = {
+                width: widthSafe,
+                height: heightSafe,
+                pointer: { x: this.x, y: this.y },
+                radiusScale: radiusScaleMin,
+                mouseIsDown: false,
+                particles: []
+            };
+        }
+
+        const visual = this.nguLinhThuatVisual;
+        visual.width = widthSafe;
+        visual.height = heightSafe;
+        visual.mouseIsDown = Boolean(this.isPointerDown || this.isMouseDown || this.leftMouseDown || this.mouseDown);
+        visual.pointer.x = this.x;
+        visual.pointer.y = this.y;
+
+        if (visual.particles.length !== quantity) {
+            visual.particles = Array.from({ length: quantity }).map(() => ({
+                size: 1,
+                position: { x: this.x, y: this.y },
+                offset: { x: 0, y: 0 },
+                shift: { x: this.x, y: this.y },
+                speed: 0.01 + Math.random() * 0.04,
+                targetSize: 1,
+                fillColor: '#' + ((Math.random() * 0x404040 + 0xaaaaaa) | 0).toString(16),
+                orbit: (baseRadius * 0.5) + (baseRadius * 0.5 * Math.random())
+            }));
+        }
+
+        if (visual.mouseIsDown) {
+            visual.radiusScale += (radiusScaleMax - visual.radiusScale) * 0.02;
+        } else {
+            visual.radiusScale -= (visual.radiusScale - radiusScaleMin) * 0.02;
+        }
+        visual.radiusScale = Math.min(radiusScaleMax, Math.max(radiusScaleMin, visual.radiusScale));
+
+        ctx.save();
+        ctx.globalCompositeOperation = 'screen';
+        const glow = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, baseRadius * 2.2 * scaleFactor);
+        glow.addColorStop(0, 'rgba(183,230,255,0.12)');
+        glow.addColorStop(0.5, 'rgba(137,217,255,0.08)');
+        glow.addColorStop(1, 'rgba(137,217,255,0)');
+        ctx.fillStyle = glow;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, baseRadius * 2.2 * scaleFactor, 0, Math.PI * 2);
+        ctx.fill();
+
+        for (let i = 0; i < visual.particles.length; i++) {
+            const particle = visual.particles[i];
+            const lp = { x: particle.position.x, y: particle.position.y };
+            particle.offset.x += particle.speed;
+            particle.offset.y += particle.speed;
+            particle.shift.x += (visual.pointer.x - particle.shift.x) * particle.speed;
+            particle.shift.y += (visual.pointer.y - particle.shift.y) * particle.speed;
+            particle.position.x = particle.shift.x + Math.cos(i + particle.offset.x) * (particle.orbit * visual.radiusScale * scaleFactor);
+            particle.position.y = particle.shift.y + Math.sin(i + particle.offset.y) * (particle.orbit * visual.radiusScale * scaleFactor);
+            particle.position.x = Math.max(0, Math.min(widthSafe, particle.position.x));
+            particle.position.y = Math.max(0, Math.min(heightSafe, particle.position.y));
+            particle.size += (particle.targetSize - particle.size) * 0.05;
+            if (Math.round(particle.size) === Math.round(particle.targetSize)) {
+                particle.targetSize = 1 + Math.random() * 7;
+            }
+
+            ctx.beginPath();
+            ctx.globalAlpha = 0.78;
+            ctx.fillStyle = particle.fillColor;
+            ctx.strokeStyle = particle.fillColor;
+            ctx.lineWidth = Math.max(0.6, particle.size * 0.8);
+            ctx.moveTo(lp.x, lp.y);
+            ctx.lineTo(particle.position.x, particle.position.y);
+            ctx.stroke();
+            ctx.arc(particle.position.x, particle.position.y, particle.size / 2, 0, Math.PI * 2, true);
+            ctx.fill();
+        }
+
+        ctx.restore();
+    },
+
     drawNguLongThuatCursor(ctx, scaleFactor) {
         if (!this.isNguLongThuatEnabled?.()) {
             this.nguLongThuatVisual = null;
@@ -5936,6 +6034,7 @@ Object.assign(Input, {
             this.drawCursorSeed(ctx, scaleFactor);
         }
 
+        this.drawNguLinhThuatCursor(ctx, scaleFactor);
         this.drawNguLongThuatCursor(ctx, scaleFactor);
         this.drawPhongLoiArtifact(ctx, scaleFactor);
         this.drawHuThienDinhShield(ctx, scaleFactor);

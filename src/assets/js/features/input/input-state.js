@@ -75,6 +75,8 @@ const INPUT_INITIAL_STATE = {
     phongLoiBlink: getDefaultPhongLoiBlinkState(),
     nguLoiThuatEnabled: false,
     nguLoiThuatEffects: [],
+    nguLinhThuatEnabled: false,
+    nguLinhThuatVisual: null,
     nguLongThuatEnabled: false,
     nguLongThuatTrail: [],
     nguLongThuatVisual: null,

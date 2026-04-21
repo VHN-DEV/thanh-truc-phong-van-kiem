@@ -2350,6 +2350,9 @@ Object.assign(Input, {
                 if (item.uniqueKey === 'NGU_LOI_THUAT' && typeof this.setNguLoiThuatEnabled === 'function') {
                     this.setNguLoiThuatEnabled(true, { silent: true });
                     showNotify(`Lĩnh ngộ ${this.getItemDisplayName(item)}: lôi thức đã khai mở.`, qualityConfig.color || '#7aa8ff');
+                } else if (item.uniqueKey === 'NGU_LINH_THUAT' && typeof this.setNguLinhThuatEnabled === 'function') {
+                    this.setNguLinhThuatEnabled(true, { silent: true });
+                    showNotify(`Lĩnh ngộ ${this.getItemDisplayName(item)}: linh thức đã khai mở.`, qualityConfig.color || '#b7e6ff');
                 } else {
                     showNotify(`Luyện hóa ${this.getItemDisplayName(item)}: lam diễm đã hiện nơi đầu niệm.`, qualityConfig.color);
                 }
@@ -2528,6 +2531,9 @@ Object.assign(Input, {
                 if (item.uniqueKey === 'NGU_LOI_THUAT' && typeof this.setNguLoiThuatEnabled === 'function') {
                     this.setNguLoiThuatEnabled(true, { silent: true });
                     showNotify(`Lĩnh ngộ ${this.getItemDisplayName(item)}: lôi thức đã khai mở.`, qualityConfig.color || '#7aa8ff');
+                } else if (item.uniqueKey === 'NGU_LINH_THUAT' && typeof this.setNguLinhThuatEnabled === 'function') {
+                    this.setNguLinhThuatEnabled(true, { silent: true });
+                    showNotify(`Lĩnh ngộ ${this.getItemDisplayName(item)}: linh thức đã khai mở.`, qualityConfig.color || '#b7e6ff');
                 } else {
                     showNotify(`Luyện hóa ${this.getItemDisplayName(item)}: lam diễm đã hiện nơi đầu niệm.`, qualityConfig.color);
                 }
