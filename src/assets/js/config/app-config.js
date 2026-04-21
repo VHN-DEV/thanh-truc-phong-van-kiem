@@ -1964,4 +1964,25 @@ const CONFIG = {
     }
 };
 
+function ensureImagePathField(entry) {
+    if (!entry || typeof entry !== 'object') return;
+    if (!Object.prototype.hasOwnProperty.call(entry, 'imagePath')) {
+        entry.imagePath = '';
+    }
+}
+
+function ensureImagePathFieldInCollection(collection) {
+    if (!collection || typeof collection !== 'object') return;
+    Object.values(collection).forEach(ensureImagePathField);
+}
+
+ensureImagePathFieldInCollection(CONFIG.SECRET_ARTS);
+ensureImagePathFieldInCollection(CONFIG.ARTIFACTS);
+ensureImagePathFieldInCollection(CONFIG.INSECT?.UNIQUE_ITEMS);
+ensureImagePathFieldInCollection(CONFIG.ALCHEMY?.FURNACES);
+ensureImagePathFieldInCollection(CONFIG.ITEMS?.STORAGE_BAGS);
+ensureImagePathField(CONFIG.ITEMS?.SEVEN_COLOR_BAG);
+ensureImagePathField(CONFIG.INSECT?.BEAST_BAG);
+ensureImagePathField(CONFIG.INSECT?.SEVEN_COLOR_BEAST_BAG);
+
 // <!-- Create By: Vũ Hoài Nam -->
