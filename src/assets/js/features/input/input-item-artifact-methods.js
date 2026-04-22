@@ -5830,9 +5830,15 @@ Object.assign(Input, {
 
         const fallbackScreenX = Number.isFinite(this.screenX) ? this.screenX : (widthSafe * 0.5);
         const fallbackScreenY = Number.isFinite(this.screenY) ? this.screenY : (heightSafe * 0.5);
-        const fallbackWorld = Camera.screenToWorld(fallbackScreenX, fallbackScreenY);
-        const pointerX = Number.isFinite(this.x) ? this.x : (Number.isFinite(fallbackWorld?.x) ? fallbackWorld.x : (widthSafe * 0.5));
-        const pointerY = Number.isFinite(this.y) ? this.y : (Number.isFinite(fallbackWorld?.y) ? fallbackWorld.y : (heightSafe * 0.5));
+        const zoom = Math.max(0.001, Number(Camera.currentZoom) || 1);
+        const pointerWorldX = Number.isFinite(this.x) ? this.x : Number(Camera.centerX) || 0;
+        const pointerWorldY = Number.isFinite(this.y) ? this.y : Number(Camera.centerY) || 0;
+        const pointerX = Number.isFinite(this.x)
+            ? ((pointerWorldX - Camera.centerX) * zoom) + (widthSafe * 0.5)
+            : fallbackScreenX;
+        const pointerY = Number.isFinite(this.y)
+            ? ((pointerWorldY - Camera.centerY) * zoom) + (heightSafe * 0.5)
+            : fallbackScreenY;
 
         if (!this.nguLinhThuatVisual || !Array.isArray(this.nguLinhThuatVisual.particles)) {
             const trailCanvas = document.createElement('canvas');
@@ -5939,7 +5945,17 @@ Object.assign(Input, {
 
         drawCtx.restore();
         if (visual.trailCanvas) {
-            ctx.drawImage(visual.trailCanvas, 0, 0, widthSafe, heightSafe);
+            const topLeft = Camera.screenToWorld(0, 0);
+            const bottomRight = Camera.screenToWorld(widthSafe, heightSafe);
+            const drawWorldX = Number.isFinite(topLeft?.x) ? topLeft.x : 0;
+            const drawWorldY = Number.isFinite(topLeft?.y) ? topLeft.y : 0;
+            const drawWorldWidth = Number.isFinite(bottomRight?.x) && Number.isFinite(topLeft?.x)
+                ? (bottomRight.x - topLeft.x)
+                : widthSafe;
+            const drawWorldHeight = Number.isFinite(bottomRight?.y) && Number.isFinite(topLeft?.y)
+                ? (bottomRight.y - topLeft.y)
+                : heightSafe;
+            ctx.drawImage(visual.trailCanvas, drawWorldX, drawWorldY, drawWorldWidth, drawWorldHeight);
         }
     },
 
