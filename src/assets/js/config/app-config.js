@@ -1359,7 +1359,7 @@ const CONFIG = {
         },
         DAI_CANH_KIEM_TRAN: {
             fullName: "Đại Canh Kiếm Trận",
-            imagePath: imagePath("arcane-arts/flashpoint.svg"),
+            imagePath: imagePath("arcane-arts/monster-super-league.svg"),
             quality: "SUPREME",
             color: "#ffd36b",
             buyPriceLowStone: 1000000,
@@ -1655,7 +1655,7 @@ const CONFIG = {
         UNIQUE_ITEMS: {
             KHU_TRUNG_THUAT: {
                 fullName: "Khu Trùng Thuật",
-                imagePath: imagePath("animals/ant.svg"),
+                imagePath: imagePath("arcane-arts/bug.svg"),
                 quality: "HIGH",
                 color: "#ff92c2",
                 buyPriceLowStone: 4200,
