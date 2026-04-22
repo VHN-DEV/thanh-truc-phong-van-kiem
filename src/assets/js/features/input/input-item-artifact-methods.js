@@ -1511,7 +1511,8 @@ Object.assign(Input, {
                     count,
                     label: type.label,
                     color: type.color,
-                    lowValue: type.value
+                    lowValue: type.value,
+                    imagePath: type.imagePath || ''
                 };
             })
             .filter(Boolean);

@@ -43,17 +43,22 @@ InventoryUI = {
                 e.stopPropagation();
                 const itemKey = actionBtn.getAttribute('data-item-key');
                 const action = actionBtn.getAttribute('data-action') || 'use';
+                let actionHandled = false;
 
                 if (typeof Input.handleInventoryItemAction === 'function') {
-                    Input.handleInventoryItemAction(itemKey, action);
+                    actionHandled = Input.handleInventoryItemAction(itemKey, action);
                 } else if (action === 'sell') {
-                    Input.sellInventoryItem(itemKey);
+                    actionHandled = Input.sellInventoryItem(itemKey);
                 } else if (action === 'special') {
                     if (typeof Input.useInventoryItemSpecial === 'function') {
-                        Input.useInventoryItemSpecial(itemKey);
+                        actionHandled = Input.useInventoryItemSpecial(itemKey);
                     }
                 } else {
-                    Input.useInventoryItem(itemKey);
+                    actionHandled = Input.useInventoryItem(itemKey);
+                }
+
+                if (actionHandled) {
+                    this.render();
                 }
             });
         }
@@ -140,16 +145,23 @@ InventoryUI = {
                 </article>
             `;
         });
-        const spiritStoneCards = spiritStoneEntries.map(stone => `
+        const spiritStoneCards = spiritStoneEntries.map(stone => {
+            const spiritStoneItem = {
+                key: stone.key,
+                category: 'MATERIAL',
+                quality: stone.quality,
+                imagePath: stone.imagePath
+            };
+            const spiritStoneVisual = buildPillVisualMarkup(
+                spiritStoneItem,
+                { color: stone.color, imagePath: stone.imagePath },
+                { context: 'inventory' }
+            );
+
+            return `
             <article class="inventory-slot has-pill-art" style="--slot-accent:${escapeHtml(stone.color)}">
                 <div class="slot-badge">${formatNumber(stone.count)}x</div>
-                <div class="pill-visual is-material">
-                    <span class="pill-visual__aura" style="--pill-aura:${escapeHtml(stone.color)}"></span>
-                    <span class="pill-visual__core"></span>
-                    <span class="pill-visual__spark"></span>
-                    <span class="pill-visual__spark"></span>
-                    <span class="pill-visual__spark"></span>
-                </div>
+                ${spiritStoneVisual}
                 <h4>${escapeHtml(stone.label)}</h4>
                 <div class="item-description">
                     Tinh hoa thiên địa ngưng tụ trong linh thạch. Luyện hoá 1 viên nhận <strong>${formatNumber(stone.lowValue)} tu vi</strong>.
@@ -163,7 +175,8 @@ InventoryUI = {
                     >Luyện hoá</button>
                 </div>
             </article>
-        `);
+        `;
+        });
         const cards = normalCards.concat(spiritStoneCards);
 
         const emptySlotCount = Math.max(0, CONFIG.ITEMS.INVENTORY_MIN_SLOTS - cards.length);
