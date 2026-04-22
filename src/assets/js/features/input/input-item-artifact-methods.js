@@ -5833,12 +5833,12 @@ Object.assign(Input, {
         const zoom = Math.max(0.001, Number(Camera.currentZoom) || 1);
         const pointerWorldX = Number.isFinite(this.x) ? this.x : Number(Camera.centerX) || 0;
         const pointerWorldY = Number.isFinite(this.y) ? this.y : Number(Camera.centerY) || 0;
-        const pointerX = Number.isFinite(this.screenX)
-            ? this.screenX
-            : ((pointerWorldX - Camera.centerX) * zoom) + (widthSafe * 0.5);
-        const pointerY = Number.isFinite(this.screenY)
-            ? this.screenY
-            : ((pointerWorldY - Camera.centerY) * zoom) + (heightSafe * 0.5);
+        const pointerX = Number.isFinite(this.x)
+            ? ((pointerWorldX - Camera.centerX) * zoom) + (widthSafe * 0.5)
+            : fallbackScreenX;
+        const pointerY = Number.isFinite(this.y)
+            ? ((pointerWorldY - Camera.centerY) * zoom) + (heightSafe * 0.5)
+            : fallbackScreenY;
 
         if (!this.nguLinhThuatVisual || !Array.isArray(this.nguLinhThuatVisual.particles)) {
             const trailCanvas = document.createElement('canvas');
