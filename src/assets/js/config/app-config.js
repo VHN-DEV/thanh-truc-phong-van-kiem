@@ -456,6 +456,8 @@ const CONFIG = {
             "wolf.svg",
             "devil-mask.svg",
             "shambling-mound.svg",
+            "heron.svg",
+            "unfriendly-fire.svg",
         ].map(fileName => imagePath(`animals/${fileName}`)),
         MATERIAL_DROPS: {
             "ammonite": { GIAP_XAC: 5.2, LINH_LAN: 1.4 },
@@ -545,6 +547,8 @@ const CONFIG = {
             "spotted-bug": { PHONG_CHAM: 4.7, DOC_NANG: 2.3, TINH_THIT: 1.1 },
             "shambling-mound": { PHONG_CHAM: 4.7, DOC_NANG: 2.3, TINH_THIT: 1.1 },
             "devil-mask": { LINH_VU: 5.2, YEU_NANH: 2.0, YEU_HUYET: 1.4 },
+            "heron": { YEU_HUYET: 4.8, YEU_DAN: 1.8, THIEN_LINH_QUA: 0.36 },
+            "unfriendly-fire": { YEU_NANH: 5.7, YEU_HUYET: 1.6, TINH_THIT: 1.2 },
         }
     },
     ITEMS: {
