@@ -3166,8 +3166,7 @@ Object.assign(Input, {
 
     isAtTribulationThreshold() {
         const currentRank = this.getCurrentRank();
-        const popupEnabled = CONFIG.CULTIVATION?.TRIBULATION?.ENABLE_POPUP !== false;
-        return popupEnabled && Boolean(this.getTribulationStepForRank(currentRank?.id));
+        return Boolean(this.getTribulationStepForRank(currentRank?.id));
     },
 
     getTribulationTargetRankIndex() {
@@ -3180,7 +3179,6 @@ Object.assign(Input, {
     getTribulationConfig() {
         const cfg = CONFIG.CULTIVATION?.TRIBULATION || {};
         return {
-            popupEnabled: cfg.ENABLE_POPUP !== false,
             strikeCount: Math.max(1, Math.floor(Number(cfg.STRIKE_COUNT) || 9)),
             baseHp: Math.max(1, Math.floor(Number(cfg.BASE_HP) || 1000)),
             strikeIntervalMs: Math.max(250, Math.floor(Number(cfg.STRIKE_INTERVAL_MS) || 700)),
@@ -3243,10 +3241,28 @@ Object.assign(Input, {
     },
 
     openTribulationPopup() {
-        if (CONFIG.CULTIVATION?.TRIBULATION?.ENABLE_POPUP === false) return false;
         const popup = document.getElementById('tribulation-popup');
         if (!popup) return false;
         popup.classList.add('show');
+        return true;
+    },
+
+    openTribulationPopupForUiTest() {
+        const config = this.getTribulationConfig();
+        const popupOpened = this.openTribulationPopup();
+        if (!popupOpened) {
+            showNotify('Không thể mở popup độ kiếp để test giao diện', '#ff7777');
+            return false;
+        }
+
+        this.tribulation.active = false;
+        this.tribulation.currentStrike = 0;
+        this.tribulation.totalStrikes = config.strikeCount;
+        this.tribulation.maxHp = config.baseHp;
+        this.tribulation.hp = config.baseHp;
+        this.tribulation.successChance = this.getBreakthroughChanceDetails(this.getCurrentRank()).totalChance;
+        this.updateTribulationPopupUI();
+        showNotify('Đang mở popup độ kiếp ở chế độ test giao diện.', '#8fd0ff');
         return true;
     },
 
@@ -3284,10 +3300,6 @@ Object.assign(Input, {
 
     runTribulationSequence() {
         const config = this.getTribulationConfig();
-        if (!config.popupEnabled) {
-            showNotify('Popup độ kiếp đang được tắt trong config.', '#ffbe7a');
-            return;
-        }
         const rank = this.getCurrentRank();
         const chanceDetails = this.getBreakthroughChanceDetails(rank);
         const popupOpened = this.openTribulationPopup();
@@ -3599,6 +3611,11 @@ Object.assign(Input, {
             this.isReadyToBreak = false;
             showNotify(`Đã chạm ${currentRank.name}, thiên đạo không còn cửa ải cao hơn`, getRankAccentColor(currentRank));
             this.refreshResourceUI();
+            return;
+        }
+
+        if (CONFIG.CULTIVATION?.TRIBULATION?.ENABLE_POPUP === true) {
+            this.openTribulationPopupForUiTest();
             return;
         }
 
