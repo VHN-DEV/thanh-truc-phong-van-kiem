@@ -184,16 +184,17 @@ gulp.task('build-js', function () {
 
 // 3. Tạo manifest động cho icon SVG
 gulp.task('build-icons-manifest', function (done) {
-  const iconDir = path.join(__dirname, 'public/assets/images/icons');
+  const iconDir = path.join(__dirname, 'src/assets/images/icons');
   const outputDir = path.join(__dirname, 'public/assets/images/icons');
   const outputJsonFile = path.join(outputDir, 'icons-manifest.json');
   const outputJsFile = path.join(outputDir, 'icons-manifest.js');
 
-  const files = fs.readdirSync(iconDir)
+  fs.mkdirSync(outputDir, { recursive: true });
+
+  const files = collectRelativeFiles(iconDir)
     .filter((file) => file.toLowerCase().endsWith('.svg'))
     .sort((a, b) => a.localeCompare(b));
 
-  fs.mkdirSync(outputDir, { recursive: true });
   fs.writeFileSync(outputJsonFile, JSON.stringify(files, null, 2), 'utf8');
   fs.writeFileSync(outputJsFile, `window.__ICON_MANIFEST__ = ${JSON.stringify(files, null, 2)};
 `, 'utf8');
@@ -225,6 +226,12 @@ gulp.task('default', gulp.series(
 gulp.task('watch', function () {
   gulp.watch('src/assets/css/**/*.scss', gulp.series('build-css'));
   gulp.watch('src/assets/js/**/*.js', gulp.series('build-js'));
-  gulp.watch('src/assets/images/**/*', gulp.series('copy-images', 'build-icons-manifest'));
-  gulp.watch('src/assets/fonts/**/*.{otf,ttf,woff,woff2}', gulp.series('copy-fonts'));
+  gulp.watch(
+    'src/assets/images/**/*',
+    gulp.series('prune-stale-assets', 'copy-images', 'build-icons-manifest')
+  );
+  gulp.watch(
+    'src/assets/fonts/**/*.{otf,ttf,woff,woff2}',
+    gulp.series('prune-stale-assets', 'copy-fonts')
+  );
 });
