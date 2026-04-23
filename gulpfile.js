@@ -7,6 +7,13 @@ const rename = require('gulp-rename');
 const fs = require('fs');
 const path = require('path');
 
+// 0. Dọn thư mục assets cũ trước mỗi lần build
+gulp.task('clean-assets', function (done) {
+  const assetsDir = path.join(__dirname, 'public/assets');
+  fs.rmSync(assetsDir, { recursive: true, force: true });
+  done();
+});
+
 // 1. Biên dịch styles.scss (Đã sửa tên cho khớp với ảnh của bạn)
 gulp.task('build-css', function () {
   return gulp.src('src/assets/css/styles.scss') // Bỏ chữ 's' ở styles
@@ -97,7 +104,10 @@ gulp.task('copy-fonts', function () {
 });
 
 // Task chạy mặc định
-gulp.task('default', gulp.parallel('build-css', 'build-js', 'copy-fonts', gulp.series('copy-images', 'build-icons-manifest')));
+gulp.task('default', gulp.series(
+  'clean-assets',
+  gulp.parallel('build-css', 'build-js', 'copy-fonts', gulp.series('copy-images', 'build-icons-manifest'))
+));
 
 // Task theo dõi thay đổi
 gulp.task('watch', function () {
