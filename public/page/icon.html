@@ -51,7 +51,11 @@
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script>
     const PAGE_SIZE = 24;
-    const MANIFEST_URL = '/assets/images/icons/icons-manifest.json';
+    const ICONS_DIR_CANDIDATES = [
+      '/assets/images/icons',
+      '../assets/images/icons',
+      '/public/assets/images/icons'
+    ];
 
     const grid = document.getElementById('icon-grid');
     const searchInput = document.getElementById('search');
@@ -64,6 +68,7 @@
     let iconPaths = [];
     let filtered = [];
     let currentPage = 1;
+    let resolvedIconsDir = ICONS_DIR_CANDIDATES[0];
 
     const fileNameFromPath = (path) => path.split('/').pop() || path;
 
@@ -123,12 +128,28 @@
       renderPage();
     }
 
+
+    async function resolveIconsDir() {
+      for (const dir of ICONS_DIR_CANDIDATES) {
+        const manifestUrl = `${dir}/icons-manifest.json`;
+        try {
+          const response = await fetch(manifestUrl, { cache: 'no-store' });
+          if (!response.ok) continue;
+          const files = await response.json();
+          if (!Array.isArray(files)) continue;
+          resolvedIconsDir = dir;
+          return files;
+        } catch (error) {
+          // thử candidate kế tiếp
+        }
+      }
+      throw new Error('Không tải được manifest icon ở mọi đường dẫn đã thử.');
+    }
+
     async function loadIcons() {
       try {
-        const response = await fetch(MANIFEST_URL, { cache: 'no-store' });
-        if (!response.ok) throw new Error('Không tải được manifest');
-        const files = await response.json();
-        iconPaths = files.map((name) => `/assets/images/icons/${name}`);
+        const files = await resolveIconsDir();
+        iconPaths = files.map((name) => `${resolvedIconsDir}/${name}`);
         applyFilter('');
       } catch (error) {
         grid.innerHTML = '<p>Không tải được danh sách icon. Hãy chạy build để tạo manifest.</p>';
