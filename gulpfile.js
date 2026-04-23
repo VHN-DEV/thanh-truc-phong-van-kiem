@@ -219,10 +219,14 @@ gulp.task('copy-fonts', function () {
     .pipe(gulp.dest('public/assets/fonts'));
 });
 
-// Task chạy mặc định
-gulp.task('default', gulp.series(
+// Task chạy build đầy đủ (xóa file cũ + build lại)
+gulp.task('build', gulp.series(
+  'prune-stale-assets',
   gulp.parallel('build-css', 'build-js', 'copy-fonts', gulp.series('copy-images', 'build-icons-manifest'))
 ));
+
+// Task chạy mặc định
+gulp.task('default', gulp.series('build'));
 
 // Task theo dõi thay đổi
 gulp.task('watch', function () {
