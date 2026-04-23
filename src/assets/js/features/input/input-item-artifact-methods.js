@@ -102,7 +102,9 @@ Object.assign(Input, {
         return {
             maxCapacity: Math.max(1, Math.floor(Number(shieldConfig.MAX_CAPACITY) || 360)),
             damageReductionPct: clampNumber(Number(shieldConfig.DAMAGE_REDUCTION_PCT) || 0.9, 0, 1),
-            crackRecoverPerSec: clampNumber(Number(shieldConfig.CRACK_RECOVER_PER_SEC) || 0.13, 0, 1)
+            crackRecoverPerSec: clampNumber(Number(shieldConfig.CRACK_RECOVER_PER_SEC) || 0.13, 0, 1),
+            recoveryDelayMs: Math.max(0, Math.floor(Number(shieldConfig.RECOVERY_DELAY_MS) || 4200)),
+            recoveryCapacityPerSec: clampNumber(Number(shieldConfig.RECOVERY_CAPACITY_PER_SEC) || 0.2, 0, 1)
         };
     },
 
@@ -123,6 +125,7 @@ Object.assign(Input, {
                 maxCapacity,
                 currentCapacity: maxCapacity,
                 crackIntensity: 0,
+                wasBroken: false,
                 lastHitAt: 0,
                 lastRecoverAt: performance.now()
             };
@@ -136,6 +139,7 @@ Object.assign(Input, {
         state.maxCapacity = cfg.maxCapacity;
         state.currentCapacity = cfg.maxCapacity;
         state.crackIntensity = 0;
+        state.wasBroken = false;
         state.lastRecoverAt = performance.now();
         return state;
     },
@@ -149,6 +153,16 @@ Object.assign(Input, {
 
         if (state.crackIntensity > 0) {
             state.crackIntensity = clampNumber(state.crackIntensity - (cfg.crackRecoverPerSec * elapsedSec), 0, 1);
+        }
+
+        const idleMs = Math.max(0, now - (state.lastHitAt || 0));
+        if (idleMs >= cfg.recoveryDelayMs && state.currentCapacity < state.maxCapacity) {
+            const recoverAmount = state.maxCapacity * cfg.recoveryCapacityPerSec * elapsedSec;
+            state.currentCapacity = Math.min(state.maxCapacity, state.currentCapacity + recoverAmount);
+            if (state.currentCapacity > 0 && state.wasBroken) {
+                state.wasBroken = false;
+                showNotify('Nguyên Hợp Ngũ Cực Sơn đã ổn định lại và bắt đầu tự hồi phục.', this.getArtifactConfig('NGUYEN_HOP_NGU_CUC_SON')?.color || '#ffd76a', 1100);
+            }
         }
 
         state.lastRecoverAt = now;
@@ -171,6 +185,9 @@ Object.assign(Input, {
         state.crackIntensity = clampNumber(state.crackIntensity + (damageRatio * 1.7), 0, 1);
         state.lastHitAt = performance.now();
         state.lastRecoverAt = state.lastHitAt;
+        if (state.currentCapacity <= 0) {
+            state.wasBroken = true;
+        }
 
         return {
             absorbed,
@@ -3149,7 +3166,8 @@ Object.assign(Input, {
 
     isAtTribulationThreshold() {
         const currentRank = this.getCurrentRank();
-        return Boolean(this.getTribulationStepForRank(currentRank?.id));
+        const popupEnabled = CONFIG.CULTIVATION?.TRIBULATION?.ENABLE_POPUP !== false;
+        return popupEnabled && Boolean(this.getTribulationStepForRank(currentRank?.id));
     },
 
     getTribulationTargetRankIndex() {
@@ -3162,6 +3180,7 @@ Object.assign(Input, {
     getTribulationConfig() {
         const cfg = CONFIG.CULTIVATION?.TRIBULATION || {};
         return {
+            popupEnabled: cfg.ENABLE_POPUP !== false,
             strikeCount: Math.max(1, Math.floor(Number(cfg.STRIKE_COUNT) || 9)),
             baseHp: Math.max(1, Math.floor(Number(cfg.BASE_HP) || 1000)),
             strikeIntervalMs: Math.max(250, Math.floor(Number(cfg.STRIKE_INTERVAL_MS) || 700)),
@@ -3224,6 +3243,7 @@ Object.assign(Input, {
     },
 
     openTribulationPopup() {
+        if (CONFIG.CULTIVATION?.TRIBULATION?.ENABLE_POPUP === false) return false;
         const popup = document.getElementById('tribulation-popup');
         if (!popup) return false;
         popup.classList.add('show');
@@ -3264,6 +3284,10 @@ Object.assign(Input, {
 
     runTribulationSequence() {
         const config = this.getTribulationConfig();
+        if (!config.popupEnabled) {
+            showNotify('Popup độ kiếp đang được tắt trong config.', '#ffbe7a');
+            return;
+        }
         const rank = this.getCurrentRank();
         const chanceDetails = this.getBreakthroughChanceDetails(rank);
         const popupOpened = this.openTribulationPopup();
