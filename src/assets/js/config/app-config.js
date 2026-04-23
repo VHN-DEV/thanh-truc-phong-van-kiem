@@ -1079,6 +1079,7 @@ const CONFIG = {
             STRIKE_COUNT: 9,
             BASE_HP: 1000,
             STRIKE_INTERVAL_MS: 1200,
+            UI_TEST_STRIKE_INTERVAL_MS: 320, // Khi ENABLE_POPUP=true thì rút nhịp sét để giữ hiệu ứng bắn sét gần như liên tục.
             PREPARE_DELAY_MS: 800,
             // Dải sát thương tinh chỉnh để độ kiếp không gần-như-chắc-thất-bại.
             // Với 9 đạo lôi kiếp, mốc này cho tỉ lệ sống sót trung bình ~55%.

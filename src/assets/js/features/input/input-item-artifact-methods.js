@@ -3183,6 +3183,7 @@ Object.assign(Input, {
             strikeCount: Math.max(1, Math.floor(Number(cfg.STRIKE_COUNT) || 9)),
             baseHp: Math.max(1, Math.floor(Number(cfg.BASE_HP) || 1000)),
             strikeIntervalMs: Math.max(250, Math.floor(Number(cfg.STRIKE_INTERVAL_MS) || 700)),
+            uiTestStrikeIntervalMs: Math.max(120, Math.floor(Number(cfg.UI_TEST_STRIKE_INTERVAL_MS) || 320)),
             prepareDelayMs: Math.max(0, Math.floor(Number(cfg.PREPARE_DELAY_MS) || 450)),
             damageRatioMin: Math.max(0.01, Number(cfg.DAMAGE_RATIO_MIN) || 0.08),
             damageRatioMax: Math.max(0.01, Number(cfg.DAMAGE_RATIO_MAX) || 0.18)
@@ -3553,6 +3554,11 @@ Object.assign(Input, {
             }, 720);
         };
 
+        const uiTestStrikeIntervalMs = Math.max(140, Math.min(
+            Number(config.strikeIntervalMs) || 1200,
+            Number(config.uiTestStrikeIntervalMs) || 320
+        ));
+
         const performStrike = () => {
             if (!this.tribulation.active) return;
 
@@ -3604,7 +3610,8 @@ Object.assign(Input, {
                 if (this.tribulation.uiTestMode && this.tribulation.currentStrike >= this.tribulation.totalStrikes) {
                     this.tribulation.currentStrike = 0;
                 }
-                setTimeout(performStrike, config.strikeIntervalMs);
+                const nextStrikeDelay = this.tribulation.uiTestMode ? uiTestStrikeIntervalMs : config.strikeIntervalMs;
+                setTimeout(performStrike, nextStrikeDelay);
             }, mainStrikeDelay);
         };
 
