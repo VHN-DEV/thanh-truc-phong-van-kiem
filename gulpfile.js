@@ -65,7 +65,7 @@ gulp.task('build-js', function () {
 
 // 3. Tạo manifest động cho icon SVG
 gulp.task('build-icons-manifest', function (done) {
-  const iconDir = path.join(__dirname, 'src/assets/images/icons');
+  const iconDir = path.join(__dirname, 'public/assets/images/icons');
   const outputDir = path.join(__dirname, 'public/assets/images/icons');
   const outputFile = path.join(outputDir, 'icons-manifest.json');
 
@@ -94,7 +94,7 @@ gulp.task('copy-fonts', function () {
 });
 
 // Task chạy mặc định
-gulp.task('default', gulp.parallel('build-css', 'build-js', 'copy-images', 'copy-fonts', 'build-icons-manifest'));
+gulp.task('default', gulp.parallel('build-css', 'build-js', 'copy-fonts', gulp.series('copy-images', 'build-icons-manifest')));
 
 // Task theo dõi thay đổi
 gulp.task('watch', function () {

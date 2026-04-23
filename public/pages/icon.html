@@ -36,7 +36,7 @@
 <body>
   <main class="container">
     <h1>/icons</h1>
-    <p>Load động từ <code>assets/icons</code>. Click icon để copy đường dẫn SVG.</p>
+    <p>Load động từ <code>public/assets/images/icons</code> qua manifest. Click icon để copy đường dẫn SVG.</p>
     <div class="toolbar">
       <input id="search" type="search" placeholder="Tìm theo tên file..." aria-label="Tìm icon">
       <span id="count"></span>
@@ -51,7 +51,8 @@
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script>
     const PAGE_SIZE = 24;
-    const MANIFEST_URL = '/assets/images/icons/icons-manifest.json';
+    const ICON_BASE_PATH = '../assets/images/icons';
+    const MANIFEST_URL = `${ICON_BASE_PATH}/icons-manifest.json`;
 
     const grid = document.getElementById('icon-grid');
     const searchInput = document.getElementById('search');
@@ -128,7 +129,7 @@
         const response = await fetch(MANIFEST_URL, { cache: 'no-store' });
         if (!response.ok) throw new Error('Không tải được manifest');
         const files = await response.json();
-        iconPaths = files.map((name) => `/assets/images/icons/${name}`);
+        iconPaths = files.map((name) => `${ICON_BASE_PATH}/${name}`);
         applyFilter('');
       } catch (error) {
         grid.innerHTML = '<p>Không tải được danh sách icon. Hãy chạy build để tạo manifest.</p>';
