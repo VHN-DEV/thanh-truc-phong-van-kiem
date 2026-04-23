@@ -1,7 +1,6 @@
 window.__ICON_MANIFEST__ = [
   "abstract-047 (1).svg",
   "abstract-047.svg",
-  "afk-arena (1).svg",
   "afk-arena.svg",
   "agape (1).svg",
   "agape.svg",
@@ -78,7 +77,6 @@ window.__ICON_MANIFEST__ = [
   "minerals.svg",
   "misc-battlenet.svg",
   "monster-super-league.svg",
-  "nautilus-shell.svg",
   "nida-uapp.svg",
   "ore.svg",
   "oyster-pearl.svg",
@@ -92,7 +90,6 @@ window.__ICON_MANIFEST__ = [
   "redragon.svg",
   "rune-sword (1).svg",
   "rune-sword.svg",
-  "salmon.svg",
   "scarab-beetle.svg",
   "school-of-fish.svg",
   "scorpion.svg",
