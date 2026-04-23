@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Home</title>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: #07131f;
+      color: #e7f4ff;
+      font-family: "Noto Sans", system-ui, sans-serif;
+    }
+    .card {
+      width: min(560px, calc(100% - 32px));
+      border: 1px solid #1c3b57;
+      border-radius: 14px;
+      background: #0d1f2f;
+      padding: 24px;
+    }
+    h1 { margin: 0 0 8px; }
+    p { margin: 0 0 16px; color: #96afc7; }
+    .links { display: grid; gap: 10px; }
+    a {
+      color: #2ac3ff;
+      text-decoration: none;
+      border: 1px solid #1c3b57;
+      border-radius: 10px;
+      padding: 10px 12px;
+      display: block;
+      background: #12263a;
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>Trang Home</h1>
+    <p>Đi nhanh đến các trang tiện ích.</p>
+    <div class="links">
+      <a href="/">Về trang game chính (/)</a>
+      <a href="/icons">Mở thư viện icon (/icons)</a>
+      <a href="/page/icon/">Mở thư viện icon (/page/icon/)</a>
+    </div>
+  </main>
+</body>
+</html>
