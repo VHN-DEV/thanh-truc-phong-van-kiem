@@ -42,36 +42,35 @@
     .toast.is-visible { opacity: 1; transform: translateY(0); }
     .modal { position: fixed; inset: 0; display: none; align-items: flex-end; justify-content: center; background: rgba(2, 7, 12, 0.58); padding: 0; z-index: 30; }
     .modal.is-open { display: flex; }
-    .modal-panel { width: min(980px, calc(100% - 20px)); max-height: min(68vh, 620px); overflow: auto; border: 1px solid #d8dde4; border-bottom: none; border-radius: 16px 16px 0 0; background: #f5f7fa; color: #111827; padding: 12px; transform: translateY(105%); transition: transform 220ms ease; }
+    .modal-panel { width: 100%; height: 100%; overflow: auto; border: 0; border-radius: 0; background: #f5f7fa; color: #111827; padding: 18px; transform: translateY(105%); transition: transform 220ms ease; }
     .modal.is-open .modal-panel { transform: translateY(0); }
-    .modal-layout { display: grid; grid-template-columns: 260px 1fr; gap: 14px; }
+    .modal-layout { display: grid; grid-template-columns: 300px 1fr; gap: 16px; }
     .modal-left { display: grid; gap: 12px; align-content: start; }
     .preview-panel { border: 1px solid #d8dde4; border-radius: 12px; background: #eef1f5; padding: 14px; min-height: 250px; width: 250px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
     .preview-panel.is-dark { background: #0b1622; }
     .preview-panel img { max-width: 210px; max-height: 210px; object-fit: contain; }
-    .size-panel { border: 1px solid #d8dde4; border-radius: 12px; background: #eef1f5; padding: 10px; display: flex; gap: 10px; justify-content: space-between; }
-    .size-chip { text-align: center; color: #6b7280; font-size: 11px; }
-    .size-chip img { display: block; margin: 0 auto 4px; object-fit: contain; }
+    .preview-panel { min-height: 300px; width: 300px; }
     .modal-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 12px; }
-    .modal-title { margin: 0; font-size: 36px; line-height: 1; font-weight: 700; }
+    .modal-title { margin: 0; font-size: 30px; line-height: 1; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
     .modal-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
     .modal-btn { border: 1px solid #d1d5db; background: #ffffff; color: #111827; border-radius: 10px; padding: 7px 11px; cursor: pointer; font-weight: 600; }
     .modal-btn.is-primary { background: #2563eb; color: #fff; border-color: #2563eb; }
-    .helper-tabs, .export-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
-    .helper-tabs span, .export-tabs span { border: 1px solid #d1d5db; border-radius: 9px; padding: 6px 10px; background: #fff; font-size: 13px; color: #4b5563; }
-    .code-cmd { border: 1px solid #d8dde4; border-radius: 10px; background: #eef1f5; padding: 10px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; margin-bottom: 10px; }
     .controls { border: 1px solid #d8dde4; border-radius: 12px; padding: 12px; background: #fff; }
     .controls h3 { margin: 0 0 10px; font-size: 13px; color: #6b7280; letter-spacing: 0.04em; }
     .control-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
     .control-card { border: 1px solid #d8dde4; border-radius: 10px; padding: 10px; background: #f8fafc; }
-    .control-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
-    .bool-toggle { border: 1px solid #c7d2fe; border-radius: 999px; min-width: 64px; background: #fff; color: #334155; padding: 4px 10px; cursor: pointer; font-weight: 700; }
-    .bool-toggle.is-on { background: #2563eb; color: #fff; border-color: #2563eb; }
+    .control-top { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+    .switch { width: 38px; height: 20px; border-radius: 999px; border: 1px solid #cbd5e1; background: #e5e7eb; cursor: pointer; position: relative; padding: 0; }
+    .switch-thumb { width: 16px; height: 16px; border-radius: 999px; background: #fff; display: block; transform: translateX(1px); transition: transform 160ms ease; box-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+    .switch[data-state="checked"] { background: #2563eb; border-color: #2563eb; }
+    .switch[data-state="checked"] .switch-thumb { transform: translateX(19px); }
+    .sub-label { font-size: 10px; color: #6b7280; margin-top: 2px; }
     .color-wrap { display: flex; align-items: center; gap: 8px; }
     .color-wrap.is-hidden { display: none; }
     .color-code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; color: #374151; }
     .control-row input[type="color"] { width: 38px; height: 28px; border: none; background: transparent; cursor: pointer; }
     .svg-code { width: 100%; min-height: 170px; border: 1px solid #d8dde4; border-radius: 10px; background: #f8fafc; color: #1f2937; padding: 10px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; }
+    .icon-only-btn { width: 36px; height: 36px; border-radius: 999px; padding: 0; display: inline-flex; align-items: center; justify-content: center; font-size: 16px; }
     @media (max-width: 840px) {
       .modal-layout { grid-template-columns: 1fr; }
     }
@@ -100,31 +99,27 @@
       <div class="modal-layout">
         <aside class="modal-left">
           <div id="svg-preview-box" class="preview-panel"></div>
-          <div id="size-panel" class="size-panel"></div>
         </aside>
         <div>
           <div class="modal-head">
-            <h2 id="svg-modal-title" class="modal-title">SVG icon</h2>
+            <h2 id="svg-modal-title" class="modal-title"><span>📋</span><span id="svg-modal-title-text">SVG icon</span></h2>
             <div style="display:flex; gap:8px;">
-              <button id="copy-svg-name-btn" class="modal-btn" type="button">Copy name</button>
-              <button id="svg-modal-close" class="modal-btn" type="button">Đóng</button>
+              <button id="copy-svg-code-btn" class="modal-btn icon-only-btn is-primary" type="button" title="Copy SVG">📄</button>
+              <button id="download-svg-btn" class="modal-btn icon-only-btn" type="button" title="Download SVG">⬇</button>
+              <button id="download-png-btn" class="modal-btn icon-only-btn" type="button" title="Download PNG">🖼</button>
+              <button id="svg-modal-close" class="modal-btn icon-only-btn" type="button" title="Đóng">✕</button>
             </div>
           </div>
-          <div class="modal-actions">
-            <button id="copy-svg-code-btn" class="modal-btn is-primary" type="button">Copy SVG</button>
-            <button id="download-svg-btn" class="modal-btn" type="button">Download SVG</button>
-            <button id="download-png-btn" class="modal-btn" type="button">Download PNG</button>
-          </div>
-          <div class="helper-tabs"><span>pnpm</span><span>npm</span><span>yarn</span><span>bun</span></div>
-          <div class="code-cmd">pnpm dlx shadcn@latest add icon-json</div>
-          <div class="export-tabs"><span>IMG</span><span>DATA URI IMG</span><span>CDN</span><span>SVG</span><span>REACT</span><span>VUE</span><span>ASTRO</span><span>SOLID</span></div>
           <div class="controls">
             <h3>CUSTOMIZE COLORS</h3>
             <div class="control-row">
               <div class="control-card">
                 <div class="control-top">
-                  <strong>Fill</strong>
-                  <button id="fill-toggle-btn" class="bool-toggle" type="button">false</button>
+                  <button id="fill-toggle-btn" class="switch" type="button" role="switch" aria-checked="false" data-state="unchecked"><span class="switch-thumb"></span></button>
+                  <div>
+                    <strong>Fill</strong>
+                    <p class="sub-label">Replace all fill colors</p>
+                  </div>
                 </div>
                 <div id="fill-color-wrap" class="color-wrap is-hidden">
                   <input id="fill-color-picker" type="color" value="#1f2937">
@@ -133,8 +128,11 @@
               </div>
               <div class="control-card">
                 <div class="control-top">
-                  <strong>Stroke</strong>
-                  <button id="stroke-toggle-btn" class="bool-toggle" type="button">false</button>
+                  <button id="stroke-toggle-btn" class="switch" type="button" role="switch" aria-checked="false" data-state="unchecked"><span class="switch-thumb"></span></button>
+                  <div>
+                    <strong>Stroke</strong>
+                    <p class="sub-label">Replace all stroke colors</p>
+                  </div>
                 </div>
                 <div id="stroke-color-wrap" class="color-wrap is-hidden">
                   <input id="stroke-color-picker" type="color" value="#1f2937">
@@ -168,7 +166,8 @@
     const svgPreviewBox = document.getElementById('svg-preview-box');
     const svgCodeOutput = document.getElementById('svg-code-output');
     const copySvgCodeBtn = document.getElementById('copy-svg-code-btn');
-    const copySvgNameBtn = document.getElementById('copy-svg-name-btn');
+    const svgModalTitle = document.getElementById('svg-modal-title');
+    const svgModalTitleText = document.getElementById('svg-modal-title-text');
     const downloadSvgBtn = document.getElementById('download-svg-btn');
     const downloadPngBtn = document.getElementById('download-png-btn');
     const fillToggleBtn = document.getElementById('fill-toggle-btn');
@@ -179,7 +178,6 @@
     const strokeColorPicker = document.getElementById('stroke-color-picker');
     const strokeColorWrap = document.getElementById('stroke-color-wrap');
     const strokeColorCode = document.getElementById('stroke-color-code');
-    const sizePanel = document.getElementById('size-panel');
 
     let folderNames = Object.keys(IMAGE_BY_FOLDER);
     let activeFolder = folderNames[0] || '';
@@ -201,10 +199,10 @@
     }
 
     function renderColorToggleUI() {
-      fillToggleBtn.textContent = isFillEnabled ? 'true' : 'false';
-      strokeToggleBtn.textContent = isStrokeEnabled ? 'true' : 'false';
-      fillToggleBtn.classList.toggle('is-on', isFillEnabled);
-      strokeToggleBtn.classList.toggle('is-on', isStrokeEnabled);
+      fillToggleBtn.setAttribute('aria-checked', String(isFillEnabled));
+      strokeToggleBtn.setAttribute('aria-checked', String(isStrokeEnabled));
+      fillToggleBtn.setAttribute('data-state', isFillEnabled ? 'checked' : 'unchecked');
+      strokeToggleBtn.setAttribute('data-state', isStrokeEnabled ? 'checked' : 'unchecked');
       fillColorWrap.classList.toggle('is-hidden', !isFillEnabled);
       strokeColorWrap.classList.toggle('is-hidden', !isStrokeEnabled);
       fillColorCode.textContent = fillColorPicker.value;
@@ -255,24 +253,21 @@
       if (!customized) {
         if (isFileProtocol && currentSvgPath) {
           svgPreviewBox.innerHTML = `<img src="${currentSvgPath}" alt="${fileNameFromPath(currentSvgPath)}" style="max-width:180px;max-height:180px;object-fit:contain;">`;
-          sizePanel.innerHTML = [16, 24, 32, 48, 64].map((size) => `<div class="size-chip"><img src="${currentSvgPath}" width="${size}" height="${size}" alt="${size}px"><span>${size}px</span></div>`).join('');
           return;
         }
         svgCodeOutput.value = '';
         svgPreviewBox.innerHTML = '';
-        sizePanel.innerHTML = '';
         return;
       }
       svgCodeOutput.value = customized;
       const blob = new Blob([customized], { type: 'image/svg+xml;charset=utf-8' });
       previewBlobUrl = URL.createObjectURL(blob);
       svgPreviewBox.innerHTML = `<img src="${previewBlobUrl}" alt="SVG preview" style="max-width:180px;max-height:180px;object-fit:contain;">`;
-      sizePanel.innerHTML = [16, 24, 32, 48, 64].map((size) => `<div class="size-chip"><img src="${previewBlobUrl}" width="${size}" height="${size}" alt="${size}px"><span>${size}px</span></div>`).join('');
     }
 
     async function openSvgModal(path) {
       currentSvgPath = path;
-      document.getElementById('svg-modal-title').textContent = fileNameFromPath(path);
+      svgModalTitleText.textContent = fileNameFromPath(path);
       isFillEnabled = false;
       isStrokeEnabled = false;
       renderColorToggleUI();
@@ -280,7 +275,6 @@
       if (isFileProtocol) {
         originalSvgCode = '';
         svgPreviewBox.innerHTML = `<img src="${path}" alt="${fileNameFromPath(path)}" style="max-width:180px;max-height:180px;object-fit:contain;">`;
-        sizePanel.innerHTML = [16, 24, 32, 48, 64].map((size) => `<div class="size-chip"><img src="${path}" width="${size}" height="${size}" alt="${size}px"><span>${size}px</span></div>`).join('');
         svgCodeOutput.value = 'Bạn đang mở trang bằng file:// nên trình duyệt chặn đọc nội dung SVG (CORS).\\nHãy chạy qua http://localhost/... để dùng tính năng copy code, đổi fill/stroke.'; 
         svgModal.classList.add('is-open');
         return;
@@ -454,7 +448,7 @@
       isLightPopupPreview = !isLightPopupPreview;
       renderSvgModal();
     });
-    copySvgNameBtn.addEventListener('click', async () => {
+    svgModalTitle.addEventListener('click', async () => {
       const name = (fileNameFromPath(currentSvgPath || 'icon.svg')).replace(/\.svg$/i, '');
       await copyText(name, `Đã copy name: ${name}`);
     });
