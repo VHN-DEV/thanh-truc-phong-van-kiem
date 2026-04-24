@@ -51,9 +51,13 @@
     .preview-panel img { max-width: 210px; max-height: 210px; object-fit: contain; }
     .preview-panel { min-height: 300px; width: 300px; }
     .modal-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 12px; }
-    .modal-title { margin: 0; font-size: 30px; line-height: 1; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
+    .modal-title { margin: 0; font-size: 30px; line-height: 1; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; transition: transform 150ms ease-out, opacity 150ms ease-out; }
+    .modal-title:hover { opacity: 0.85; }
+    .modal-title:active { transform: scale(0.98); }
     .modal-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
-    .modal-btn { border: 1px solid #d1d5db; background: #ffffff; color: #111827; border-radius: 10px; padding: 7px 11px; cursor: pointer; font-weight: 600; }
+    .modal-btn { border: 1px solid #d1d5db; background: #ffffff; color: #111827; border-radius: 10px; padding: 7px 11px; cursor: pointer; font-weight: 600; transition: all 150ms ease-out; }
+    .modal-btn:hover { background: #eef2ff; }
+    .modal-btn:active { transform: scale(0.97); }
     .modal-btn.is-primary { background: #2563eb; color: #fff; border-color: #2563eb; }
     .controls { border: 1px solid #d8dde4; border-radius: 12px; padding: 12px; background: #fff; }
     .controls h3 { margin: 0 0 10px; font-size: 13px; color: #6b7280; letter-spacing: 0.04em; }
@@ -68,14 +72,17 @@
     .color-wrap { display: flex; align-items: center; gap: 8px; }
     .color-wrap.is-hidden { display: none; }
     .color-code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; color: #374151; }
-    .control-row input[type="color"] { width: 38px; height: 28px; border: none; background: transparent; cursor: pointer; }
-    .svg-code { width: 100%; min-height: 170px; border: 1px solid #d8dde4; border-radius: 10px; background: #f8fafc; color: #1f2937; padding: 10px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; }
+    .control-row input[type="color"] { width: 28px; height: 28px; border: none; border-radius: 999px; background: transparent; cursor: pointer; padding: 0; overflow: hidden; }
     .icon-only-btn { width: 36px; height: 36px; border-radius: 999px; padding: 0; display: inline-flex; align-items: center; justify-content: center; font-size: 16px; }
     .btn-group { display: inline-flex; align-items: stretch; border-radius: 8px; overflow: hidden; border: 1px solid #d1d5db; }
     .btn-group > button { border: 0; border-right: 1px solid #d1d5db; border-radius: 0; }
     .btn-group > button:last-child { border-right: 0; }
-    .icon-label-btn { display: inline-flex; align-items: center; gap: 6px; background: #2563eb; color: #fff; border: 0; padding: 6px 10px; font-size: 12px; font-weight: 700; cursor: pointer; }
-    .icon-square-btn { width: 32px; display: inline-flex; align-items: center; justify-content: center; background: #fff; color: #1f2937; border: 0; cursor: pointer; }
+    .icon-label-btn { display: inline-flex; align-items: center; gap: 6px; background: #2563eb; color: #fff; border: 0; padding: 6px 10px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 150ms ease-out; }
+    .icon-label-btn:hover { filter: brightness(0.95); }
+    .icon-label-btn:active { transform: scale(0.97); }
+    .icon-square-btn { width: 32px; display: inline-flex; align-items: center; justify-content: center; background: #fff; color: #1f2937; border: 0; cursor: pointer; transition: all 150ms ease-out; }
+    .icon-square-btn:hover { background: #eef2ff; }
+    .icon-square-btn:active { transform: scale(0.96); }
     @media (max-width: 840px) {
       .modal-layout { grid-template-columns: 1fr; }
     }
@@ -168,7 +175,6 @@
               </div>
             </div>
           </div>
-          <textarea id="svg-code-output" class="svg-code" readonly></textarea>
         </div>
       </div>
     </div>
@@ -191,7 +197,6 @@
     const svgModal = document.getElementById('svg-modal');
     const svgModalClose = document.getElementById('svg-modal-close');
     const svgPreviewBox = document.getElementById('svg-preview-box');
-    const svgCodeOutput = document.getElementById('svg-code-output');
     const copySvgCodeBtn = document.getElementById('copy-svg-code-btn');
     const svgModalTitle = document.getElementById('svg-modal-title');
     const svgModalTitleText = document.getElementById('svg-modal-title-text');
@@ -284,11 +289,9 @@
           svgPreviewBox.innerHTML = `<img src="${currentSvgPath}" alt="${fileNameFromPath(currentSvgPath)}" style="max-width:180px;max-height:180px;object-fit:contain;">`;
           return;
         }
-        svgCodeOutput.value = '';
         svgPreviewBox.innerHTML = '';
         return;
       }
-      svgCodeOutput.value = customized;
       const blob = new Blob([customized], { type: 'image/svg+xml;charset=utf-8' });
       previewBlobUrl = URL.createObjectURL(blob);
       svgPreviewBox.innerHTML = `<img src="${previewBlobUrl}" alt="SVG preview" style="max-width:180px;max-height:180px;object-fit:contain;">`;
@@ -304,7 +307,6 @@
       if (isFileProtocol) {
         originalSvgCode = '';
         svgPreviewBox.innerHTML = `<img src="${path}" alt="${fileNameFromPath(path)}" style="max-width:180px;max-height:180px;object-fit:contain;">`;
-        svgCodeOutput.value = 'Bạn đang mở trang bằng file:// nên trình duyệt chặn đọc nội dung SVG (CORS).\\nHãy chạy qua http://localhost/... để dùng tính năng copy code, đổi fill/stroke.'; 
         svgModal.classList.add('is-open');
         return;
       }
