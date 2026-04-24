@@ -455,6 +455,7 @@
     let isLightPreview = false;
     let currentSvgPath = '';
     let originalSvgCode = '';
+    const isFileProtocol = window.location.protocol === 'file:';
 
     function renderPreviewBgToggle() {
       document.documentElement.style.setProperty('--preview-bg', isLightPreview ? 'var(--preview-bg-light)' : 'rgba(4, 10, 16, 0.55)');
@@ -498,19 +499,33 @@
 
     function renderSvgModal() {
       const customized = getCustomizedSvgCode();
+      if (!customized) {
+        svgCodeOutput.value = '';
+        svgPreviewBox.innerHTML = '';
+        return;
+      }
       svgCodeOutput.value = customized;
       svgPreviewBox.innerHTML = customized;
     }
 
     async function openSvgModal(path) {
+      currentSvgPath = path;
+      document.getElementById('svg-modal-title').textContent = fileNameFromPath(path);
+      toggleFillColor.checked = false;
+      toggleStrokeColor.checked = false;
+
+      if (isFileProtocol) {
+        originalSvgCode = '';
+        svgPreviewBox.innerHTML = `<img src="${path}" alt="${fileNameFromPath(path)}" style="max-width:180px;max-height:180px;object-fit:contain;">`;
+        svgCodeOutput.value = 'Bạn đang mở trang bằng file:// nên trình duyệt chặn đọc nội dung SVG (CORS).\\nHãy chạy qua http://localhost/... để dùng tính năng copy code, đổi fill/stroke.'; 
+        svgModal.classList.add('is-open');
+        return;
+      }
+
       try {
         const response = await fetch(path, { cache: 'no-store' });
         if (!response.ok) throw new Error('Không tải được SVG');
         originalSvgCode = await response.text();
-        currentSvgPath = path;
-        document.getElementById('svg-modal-title').textContent = fileNameFromPath(path);
-        toggleFillColor.checked = false;
-        toggleStrokeColor.checked = false;
         renderSvgModal();
         svgModal.classList.add('is-open');
       } catch (error) {
@@ -636,12 +651,25 @@
     });
     copySvgCodeBtn.addEventListener('click', async () => {
       const code = getCustomizedSvgCode();
-      if (!code) return;
+      if (!code) {
+        if (!currentSvgPath) return;
+        await copyText(currentSvgPath, 'Không đọc được code SVG trong file://, đã copy đường dẫn file.');
+        return;
+      }
       await copyText(code, 'Đã copy code SVG.');
     });
     downloadSvgBtn.addEventListener('click', () => {
       const code = getCustomizedSvgCode();
-      if (!code) return;
+      if (!code) {
+        if (!currentSvgPath) return;
+        const a = document.createElement('a');
+        a.href = currentSvgPath;
+        a.download = fileNameFromPath(currentSvgPath);
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        return;
+      }
       const blob = new Blob([code], { type: 'image/svg+xml;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
