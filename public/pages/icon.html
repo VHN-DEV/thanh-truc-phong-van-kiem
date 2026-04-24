@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Icon Gallery</title>
+  <link rel="icon" href="../assets/images/favicon.ico">
   <style>
     :root {
       color-scheme: dark;
@@ -104,10 +105,10 @@
       </div>
     </div>
   </div>
-  <script src="../assets/images/images-manifest.js"></script>
+  <script src="./images-manifest.js"></script>
   <script>
     const PAGE_SIZE = 24;
-    const IMAGE_MANIFEST_URL = "../assets/images/images-manifest.json";
+    const IMAGE_MANIFEST_URL = "./images-manifest.json";
     let IMAGE_BY_FOLDER = window.__IMAGE_MANIFEST__ && typeof window.__IMAGE_MANIFEST__ === "object" ? window.__IMAGE_MANIFEST__ : {};
 
     const tabsRoot = document.getElementById('tabs');
