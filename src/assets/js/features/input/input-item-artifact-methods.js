@@ -6043,11 +6043,19 @@ Object.assign(Input, {
         const heightSafe = Math.max(1, Number(ctx?.canvas?.height) || height || window.innerHeight || 1);
         const fallbackScreenX = Number.isFinite(this.screenX) ? this.screenX : (widthSafe * 0.5);
         const fallbackScreenY = Number.isFinite(this.screenY) ? this.screenY : (heightSafe * 0.5);
-        const segmentCount = Math.max(6, Math.floor(Number(cursorStyle.SEGMENT_COUNT) || 22));
-        const idleRadiusMax = Math.max(0, Number(cursorStyle.IDLE_DRIFT_RADIUS) || 6);
+        const segmentCount = Math.max(6, Math.floor(Number(cursorStyle.SEGMENT_COUNT) || 40));
+        const idleDriftBaseRadius = Math.max(0, Number(cursorStyle.IDLE_DRIFT_RADIUS) || 20);
+        const idleDriftScreenFactor = Math.max(0, Number(cursorStyle.IDLE_DRIFT_SCREEN_FACTOR) || 1);
+        const idleDriftScreenPadding = Math.max(0, Number(cursorStyle.IDLE_DRIFT_SCREEN_PADDING) || 20);
+        const idleRadiusMax = Math.max(
+            idleDriftBaseRadius,
+            ((Math.min(widthSafe, heightSafe) * 0.5 * idleDriftScreenFactor) - idleDriftScreenPadding)
+        );
         const idleDriftMovingFactor = clampNumber(Number(cursorStyle.IDLE_DRIFT_WHILE_MOVING) || 0.12, 0, 1);
         const headFollowMoving = clampNumber(Number(cursorStyle.HEAD_FOLLOW_MOVING) || 0.5, 0.05, 1);
         const headFollowIdle = clampNumber(Number(cursorStyle.HEAD_FOLLOW_IDLE) || 0.28, 0.05, 1);
+        const motionSpeed = Math.max(0.0001, Number(cursorStyle.MOTION_SPEED) || 0.003);
+        const idleMotionSpeed = Math.max(motionSpeed, Number(cursorStyle.IDLE_MOTION_SPEED) || 0.006);
         const cameraScaleMultiplier = Math.max(0.85, Math.min(1, Number(scaleFactor) || 1));
         const sizeMultiplier = Math.max(0.08, Number(cursorStyle.SIZE_SCALE) || 0.32) * cameraScaleMultiplier;
         const baseSegmentSpacing = Math.max(1.5, Number(cursorStyle.SEGMENT_SPACING) || 7.25) * cameraScaleMultiplier;
@@ -6055,7 +6063,7 @@ Object.assign(Input, {
         const minSegmentSpacing = Math.max(1.5, Number(cursorStyle.MIN_SEGMENT_SPACING) || 4.8) * cameraScaleMultiplier;
         const tightenStrengthHead = clampNumber(Number(cursorStyle.TIGHTEN_STRENGTH_HEAD) || 0.58, 0.01, 1);
         const tightenStrengthTail = clampNumber(Number(cursorStyle.TIGHTEN_STRENGTH_TAIL) || 0.5, 0.01, 1);
-        const idleDriftGrowth = Math.max(0.01, Number(cursorStyle.IDLE_DRIFT_GROWTH) || 0.35);
+        const idleDriftGrowth = Math.max(0.01, Number(cursorStyle.IDLE_DRIFT_GROWTH) || 1);
 
         if (!this.nguLongThuatVisual || !Array.isArray(this.nguLongThuatVisual.elems) || this.nguLongThuatVisual.elems.length !== segmentCount) {
             this.nguLongThuatVisual = {
@@ -6075,7 +6083,10 @@ Object.assign(Input, {
         if (visual.width !== widthSafe || visual.height !== heightSafe) {
             visual.width = widthSafe;
             visual.height = heightSafe;
-            visual.radm = idleRadiusMax;
+            visual.radm = Math.max(
+                idleDriftBaseRadius,
+                ((Math.min(widthSafe, heightSafe) * 0.5 * idleDriftScreenFactor) - idleDriftScreenPadding)
+            );
         }
 
         const pointerX = Number.isFinite(this.screenX)
@@ -6173,7 +6184,7 @@ Object.assign(Input, {
         ctx.restore();
 
         if (visual.rad < visual.radm) visual.rad = Math.min(visual.radm, visual.rad + idleDriftGrowth);
-        visual.frm += 0.003;
+        visual.frm += inputMoved ? motionSpeed : idleMotionSpeed;
     },
 
     buildNguLongThuatSpriteCache() {

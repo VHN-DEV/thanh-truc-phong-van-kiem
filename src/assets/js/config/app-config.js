@@ -1366,9 +1366,13 @@ const CONFIG = {
                 HEAD_FOLLOW_IDLE: 0.28, // Độ bám của đầu rồng khi con trỏ đứng yên.
                 TIGHTEN_STRENGTH_HEAD: 0.58, // Độ siết các đốt gần đầu rồng.
                 TIGHTEN_STRENGTH_TAIL: 0.5, // Độ siết các đốt về phía đuôi rồng.
-                IDLE_DRIFT_RADIUS: 6, // Biên độ lượn nhẹ khi đứng yên. Giảm nếu muốn rồng gần như đứng hẳn.
+                IDLE_DRIFT_RADIUS: 20, // Biên độ idle tối thiểu khi màn hình nhỏ.
+                IDLE_DRIFT_SCREEN_FACTOR: 1, // Hệ số phủ biên độ idle theo nửa cạnh ngắn màn hình. 1 gần giống bản backup bay khắp màn hình.
+                IDLE_DRIFT_SCREEN_PADDING: 20, // Khoảng chừa mép màn hình khi rồng tự bay lúc đứng yên.
+                MOTION_SPEED: 0.003, // Tốc độ dao động cơ bản của rồng khi đang bám theo con trỏ.
+                IDLE_MOTION_SPEED: 0.006, // Tốc độ dao động khi con trỏ đứng yên để rồng tự bay nhanh hơn.
                 IDLE_DRIFT_WHILE_MOVING: 0.12, // Giữ lại bao nhiêu độ lượn khi đang rê chuột.
-                IDLE_DRIFT_GROWTH: 0.35 // Tốc độ tăng lại biên độ lượn theo từng khung hình khi đứng yên.
+                IDLE_DRIFT_GROWTH: 1 // Tốc độ tăng lại biên độ lượn theo từng khung hình khi đứng yên. 1 là gần giống bản backup.
             },
             description: "Bí pháp ngự long mô phỏng long ảnh bám theo tâm ấn như hiệu ứng Dragon Cursor. Sau khi lĩnh ngộ có thể khai/thu tức thì."
         },
