@@ -110,7 +110,7 @@
         }
         if (!customized) {
             if (isFileProtocol && currentSvgPath) {
-                svgPreviewBox.innerHTML = `<img src="${currentSvgPath}" alt="${fileNameFromPath(currentSvgPath)}" style="max-width:180px;max-height:180px;object-fit:contain;">`;
+                svgPreviewBox.innerHTML = `<img src="${currentSvgPath}" alt="${fileNameFromPath(currentSvgPath)}" style="width:100%;height:100%;max-width:180px;max-height:180px;object-fit:contain;">`;
                 return;
             }
             svgPreviewBox.innerHTML = '';
