@@ -195,7 +195,7 @@ window.__IMAGE_MANIFEST__ = {
     "../assets/images/dinosaurs/dinosaur (2).svg",
     "../assets/images/dinosaurs/dinosaur (4).svg",
     "../assets/images/dinosaurs/dinosaur (5).svg",
-    "../assets/images/dinosaurs/dinosaur-bones.png",
+    "../assets/images/dinosaurs/dinosaur-bones.svg",
     "../assets/images/dinosaurs/dinosaur-egg (1).svg",
     "../assets/images/dinosaurs/dinosaur-egg.svg",
     "../assets/images/dinosaurs/dinosaur.svg",
