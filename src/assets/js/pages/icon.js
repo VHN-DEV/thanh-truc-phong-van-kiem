@@ -53,7 +53,6 @@
             '--preview-bg',
             isLightPreview ? 'var(--preview-bg-light)' : 'rgba(4, 10, 16, 0.55)'
         );
-        previewBgToggle.textContent = `Nền sáng: ${isLightPreview ? 'true' : 'false'}`;
         previewBgToggle.classList.toggle('is-active', isLightPreview);
     }
 
