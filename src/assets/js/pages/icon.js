@@ -1,5 +1,5 @@
 ; (() => {
-    const PAGE_SIZE = 24;
+    const PAGE_SIZE = 28;
     const IMAGE_MANIFEST_URL = "../assets/js/pages/images-manifest.json";
     let IMAGE_BY_FOLDER = window.__IMAGE_MANIFEST__ && typeof window.__IMAGE_MANIFEST__ === "object" ? window.__IMAGE_MANIFEST__ : {};
 
